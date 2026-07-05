@@ -13,16 +13,31 @@
  */
 'use strict';
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { execFile } = require('child_process');
 
-const ROOT = process.env.CONGRUENCY_ROOT || '/home/notificationsforsteven';
+// A relative CONGRUENCY_ROOT resolves against the server's cwd — same convention as the
+// other downstreams' relative paths (e.g. ../big-jazz-main/...).
+const _rootEnv = process.env.CONGRUENCY_ROOT;
+const ROOT = _rootEnv ? path.resolve(_rootEnv) : os.homedir();
+
+// First existing path under ROOT among the candidate spellings; else the first — tolerant
+// of the folded-tree spelling (congruencey-*) and the legacy one (congruency-*).
+function resolveP(...rels) {
+  for (const r of rels) {
+    const p = path.join(ROOT, ...r.split('/'));
+    if (fs.existsSync(p)) return p;
+  }
+  return path.join(ROOT, ...rels[0].split('/'));
+}
+
 const P = {
-  verify:    path.join(ROOT, 'congruency-tests', 'verify'),
-  bugsRun:   path.join(ROOT, 'congruency-bugs', 'run'),
-  bugsJson:  path.join(ROOT, 'congruency-bugs', 'bugs.json'),
-  php:       path.join(ROOT, 'congruency-harness', 'php', 'php'),
-  telemetry: path.join(ROOT, 'congruency-harness', 'telemetry.sqlite'),
+  verify:    resolveP('congruencey-tests/verify', 'congruency-tests/verify'),
+  bugsRun:   resolveP('congruencey-bugs/run', 'congruency-bugs/run'),
+  bugsJson:  resolveP('congruencey-bugs/bugs.json', 'congruency-bugs/bugs.json'),
+  php:       resolveP('congruencey-harness/php/php', 'congruency-harness/php/php'),
+  telemetry: resolveP('congruencey-harness/telemetry.sqlite', 'congruency-harness/telemetry.sqlite'),
   telQuery:  path.join(__dirname, 'tools', 'telemetry.php'),
 };
 
