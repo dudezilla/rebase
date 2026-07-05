@@ -3,9 +3,10 @@
    get_magic_quotes_gpc() path. That function was removed in PHP 8 (our shim
    returns false), so the branch is dead — 100% is unreachable here. */
 require __DIR__ . '/coverage.php';
-require '/home/notificationsforsteven/congruency-harness/shim.php';   // get_magic_quotes_gpc()=false, mysql_real_escape_string
+$SRC = dirname(__DIR__, 2) . '/checkouts/current';   // repo/checkouts/current — relocatable, no hard-coded ~ path
+require $SRC . '/boot/shim.php';   // get_magic_quotes_gpc()=false, mysql_real_escape_string
 
-$src = file_get_contents('/home/notificationsforsteven/congruency/lib/DatabaseDrivers/MySQL/DataConnection.php');
+$src = file_get_contents($SRC . '/lib/DatabaseDrivers/MySQL/DataConnection.php');
 $inst = cov_instrument($src, $branches);
 $tmp = __DIR__ . '/_DataConnection.instrumented.php';
 file_put_contents($tmp, $inst);
