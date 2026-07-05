@@ -1,5 +1,5 @@
 
-this folder is sparse for a reason -it makes the entry point obvious ACTUALLY naming it ENTRY-POINT is self documenting. since this is a tiny project we will build our harness and code in one place 
+This folder is sparse for a reason -it makes the entry point obvious ACTUALLY naming it ENTRY-POINT is self documenting. since this is a tiny project we will build our harness and code in one place 
 we should include our reference server - or  a recipe to build one - (AGAIN ONE PYTHON - SCRIPT) no shell script - no-one is impressed by it.
 
 .json will be in the root of the folder.
