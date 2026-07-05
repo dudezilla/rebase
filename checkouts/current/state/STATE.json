@@ -1,0 +1,7 @@
+{
+  "_comment": "Per-crank state spec. The installer reads this to know how to (re)create and install this crank's state. Paths are relative to the mono/registry root. State is created deterministically by running `seed` under the provisioned php, tarring the result into `artifact`, and storing it on the `side_branch` at <crank>/database.tar.xz.",
+  "seed": "tooling/congruencey-harness/seed.php",
+  "artifact": "checkouts/current/state/database.tar.xz",
+  "side_branch": "state",
+  "expect_tables": ["Document_Templates", "Documents", "Products", "forms", "orders"]
+}
