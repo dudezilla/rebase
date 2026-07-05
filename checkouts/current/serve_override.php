@@ -1,7 +1,5 @@
 <?php
-/* auto_prepend override: point the harness router's ABS_PATH (app code root) at
- * THIS submission's snapshot, so the CMS is served from the tournament entry.
- * define() wins over the harness Constants_patched.php's later (duplicate) define. */
+/* auto_prepend override, repathed relocatably to THIS checkout. */
 if (!defined('ABS_PATH')) {
-    define('ABS_PATH', '/home/notificationsforsteven/congruency/2a2e4f8c142eafaac061fe1cebc3c93cf27849b3/');
+    define('ABS_PATH', str_replace(chr(92), "/", __DIR__) . "/");
 }

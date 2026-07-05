@@ -56,5 +56,18 @@
       "X:reproducible bugreport"
     ],
     "recorded": "2026-07-05T04:09:57"
+  },
+  {
+    "fix": "repath_to_new_tree.py",
+    "target": "checkouts/current/boot/* + serve_override.php",
+    "purpose": "boot the CMS from the new path: relocatable ABS_PATH + CONGRUENCY_SQLITE",
+    "materialized": [
+      "boot/shim.php",
+      "boot/AutoLoader.php",
+      "boot/Constants_patched.php",
+      "boot/router.php"
+    ],
+    "serve_override": "repathed",
+    "recorded": "2026-07-05T04:12:45"
   }
 ]
