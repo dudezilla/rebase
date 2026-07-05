@@ -1,0 +1,124 @@
+{
+  "root": "/home/notificationsforsteven",
+  "repos": [
+    {
+      "path": "/home/notificationsforsteven/congruencey",
+      "name": "congruencey",
+      "checks": {
+        "is_repo": true,
+        "head": "bab4a44d438482d489f0b8d88213391c44b9444c",
+        "branch": "order-logging",
+        "clean": true,
+        "dirty_count": 0,
+        "core_filemode": "false",
+        "submodule_count": 0
+      },
+      "submodules": [],
+      "errors": [],
+      "warnings": [],
+      "valid": true
+    },
+    {
+      "path": "/home/notificationsforsteven/congruencey-bugs",
+      "name": "congruencey-bugs",
+      "checks": {
+        "is_repo": true,
+        "head": "381498b4c829c60e8b494cd94b7a138f96c376cf",
+        "branch": "master",
+        "clean": true,
+        "dirty_count": 0,
+        "core_filemode": "false",
+        "submodule_count": 1
+      },
+      "submodules": [
+        {
+          "subpath": "vendor/congruencey",
+          "flag": " ",
+          "state": "in-sync",
+          "recorded_sha": "2d584ffea427ced412db2b78f025624b8d0a5262",
+          "errors": [],
+          "declared": true,
+          "url": "https://github.com/dudezilla/congruencey.git",
+          "initialised": true,
+          "parent_gitlink": "2d584ffea427ced412db2b78f025624b8d0a5262",
+          "submodule_head": "2d584ffea427ced412db2b78f025624b8d0a5262",
+          "clean": true
+        }
+      ],
+      "errors": [],
+      "warnings": [],
+      "valid": true
+    },
+    {
+      "path": "/home/notificationsforsteven/congruencey-harness",
+      "name": "congruencey-harness",
+      "checks": {
+        "is_repo": true,
+        "head": "8ca9ba014aaed3ada6bb0c02fa63cf629fb59cc0",
+        "branch": "master",
+        "clean": true,
+        "dirty_count": 0,
+        "core_filemode": "false",
+        "submodule_count": 0
+      },
+      "submodules": [],
+      "errors": [],
+      "warnings": [],
+      "valid": true
+    },
+    {
+      "path": "/home/notificationsforsteven/congruencey-tests",
+      "name": "congruencey-tests",
+      "checks": {
+        "is_repo": true,
+        "head": "d8fba0196b642a8661c2c03a5ed6917c3cea4013",
+        "branch": "master",
+        "clean": true,
+        "dirty_count": 0,
+        "core_filemode": "false",
+        "submodule_count": 0
+      },
+      "submodules": [],
+      "errors": [],
+      "warnings": [],
+      "valid": true
+    },
+    {
+      "path": "/home/notificationsforsteven/coverage",
+      "name": "coverage",
+      "checks": {
+        "is_repo": true,
+        "head": "8e26e533348661c185674d08735e05c31ca18e11",
+        "branch": "master",
+        "clean": true,
+        "dirty_count": 0,
+        "core_filemode": "false",
+        "submodule_count": 0
+      },
+      "submodules": [],
+      "errors": [],
+      "warnings": [],
+      "valid": true
+    },
+    {
+      "path": "/home/notificationsforsteven/pwdriver",
+      "name": "pwdriver",
+      "checks": {
+        "is_repo": true,
+        "head": "c9ae39628e1196a7156e32033b8b92c50c8cf1cd",
+        "branch": "master",
+        "clean": true,
+        "dirty_count": 0,
+        "core_filemode": "false",
+        "submodule_count": 0
+      },
+      "submodules": [],
+      "errors": [],
+      "warnings": [],
+      "valid": true
+    }
+  ],
+  "valid": true,
+  "total_repos": 6,
+  "total_submodules": 1
+}

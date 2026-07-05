@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Locate a PHP 8 interpreter and run the bug harness.
+# Order: $CONGRUENCEY_PHP -> php on PATH -> ./vendor/php/php (local static build).
+set -euo pipefail
+here="$(cd "$(dirname "$0")" && pwd)"
+
+php_bin="${CONGRUENCEY_PHP:-}"
+if [ -z "$php_bin" ]; then
+  if command -v php >/dev/null 2>&1; then
+    php_bin="$(command -v php)"
+  elif [ -x "$here/vendor/php/php" ]; then
+    php_bin="$here/vendor/php/php"
+  else
+    echo "No PHP interpreter found. Install PHP 8, or set CONGRUENCEY_PHP=/path/to/php." >&2
+    echo "A static build works: https://dl.static-php.dev/static-php-cli/common/" >&2
+    exit 127
+  fi
+fi
+
+if [ ! -f "$here/vendor/congruencey/www/Constants.php" ]; then
+  echo "Submodule missing — fetching code under test..." >&2
+  git -C "$here" submodule update --init >&2
+fi
+
+exec "$php_bin" "$here/harness.php" "$@"

@@ -1,0 +1,6 @@
+{
+  "name": "dudezilla/congruencey-tests",
+  "description": "Mechanically-verifiable test suite for the resurrected congruency CMS",
+  "require-dev": { "phpunit/phpunit": "^11" },
+  "config": { "vendor-dir": "vendor" }
+}

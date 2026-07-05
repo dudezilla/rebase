@@ -1,0 +1,20 @@
+Congruency change list
+-----------------------------------------------------------
+Feb 3 2007  -rewrote AutoLoader class, for Linux Compatibility. 
+
+
+
+
+
+
+
+
+----------------------------------------------------------------------------------
+
+December 18 2006 This is the first public release of Congruency.
+
+
+
+
+
+
