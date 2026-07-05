@@ -218,12 +218,12 @@ def compute_next_version(git, repo, major=None):
             except ValueError:
                 continue
     if not majors:                       # no versions yet -> first increment of the base major
-        return "%d.%04d" % (major if major is not None else 2, 1)
+        return "%d.%03d" % (major if major is not None else 4, 50)
     if major is None:
         major = max(majors)              # current highest whole-number major
     incs = majors.get(major, set())
     nxt = (max(incs) + 1) if incs else 1
-    return "%d.%04d" % (major, nxt)
+    return "%d.%03d" % (major, nxt)
 
 
 def main(argv=None):

@@ -1,0 +1,14 @@
+[
+  {
+    "fix": "fix_versioner_major4_minor3.py",
+    "target": "versioning/version_source.py",
+    "purpose": "versioner: major pinned 4, minor 3-digit padded, start 4.050, +1/patch",
+    "applied_change": true,
+    "proof": {
+      "start": "4.050",
+      "after_one_patch": "4.051",
+      "after_two": "4.052"
+    },
+    "recorded": "2026-07-05T04:06:55"
+  }
+]
