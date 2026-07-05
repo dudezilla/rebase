@@ -10,5 +10,27 @@
       "after_two": "4.052"
     },
     "recorded": "2026-07-05T04:06:55"
+  },
+  {
+    "fix": "install_state_db.py",
+    "target": "state/congruency.sqlite",
+    "purpose": "install SQL DB at new checkouts/state (uncompress recipe, gitignore artifact)",
+    "extracted": [
+      "congruency.sqlite",
+      "seed.php"
+    ],
+    "tables": [
+      "Document_Templates",
+      "Documents",
+      "Products",
+      "forms",
+      "orders",
+      "sqlite_sequence"
+    ],
+    "gitignored": [
+      "/checkouts/current/state/congruency.sqlite",
+      "/checkouts/current/state/seed.php"
+    ],
+    "recorded": "2026-07-05T04:07:58"
   }
 ]
