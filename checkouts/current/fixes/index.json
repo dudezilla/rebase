@@ -32,5 +32,29 @@
       "/checkouts/current/state/seed.php"
     ],
     "recorded": "2026-07-05T04:07:58"
+  },
+  {
+    "fix": "prove_git_store.py",
+    "target": "git data-store + SQL state",
+    "purpose": "prove git-primary store works (self-import green) and SQL loaded",
+    "import_proof": {
+      "import_ok": true,
+      "datasets": 38,
+      "store_round_trip": "38/38",
+      "blob_content_addresses": 38
+    },
+    "sql_tables": [
+      "Document_Templates",
+      "Documents",
+      "Products",
+      "forms",
+      "orders",
+      "sqlite_sequence"
+    ],
+    "deferred_corpus_reds": [
+      "BR:length",
+      "X:reproducible bugreport"
+    ],
+    "recorded": "2026-07-05T04:09:57"
   }
 ]
