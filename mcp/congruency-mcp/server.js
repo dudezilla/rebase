@@ -72,7 +72,7 @@ function textResult(text, isError = false) {
 
 async function toolRunVerify() {
   if (!fs.existsSync(P.verify)) return textResult(`verify script not found at ${P.verify}`, true);
-  const r = await run('bash', [P.verify], { timeout: 240000 });
+  const r = await run(P.verify, [], { timeout: 240000 });   // verify is a shebang script (now python), exec directly
   const out = (r.stdout + (r.stderr ? '\n' + r.stderr : ''));
   const m = out.match(/(\d+)\s+suites passed,\s+(\d+)\s+failed/);
   const summary = r.timedOut
