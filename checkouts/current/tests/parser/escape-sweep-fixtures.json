@@ -1,0 +1,307 @@
+[
+    {
+        "state": {
+            "name": "E1",
+            "args": [
+                "a&b"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"E1\"><arg>a&amp;b</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"E1\"><span class=\"arg\">a&amp;b</span></div>",
+            "json": "{\"tag\":\"E1\",\"args\":[\"a&b\"]}",
+            "yaml": "tag: E1\nargs:\n  - a&b\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "E2",
+            "args": [
+                "a&b",
+                "c<d>"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"E2\"><arg>a&amp;b</arg><arg>c&lt;d&gt;</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"E2\"><span class=\"arg\">a&amp;b</span><span class=\"arg\">c&lt;d&gt;</span></div>",
+            "json": "{\"tag\":\"E2\",\"args\":[\"a&b\",\"c<d>\"]}",
+            "yaml": "tag: E2\nargs:\n  - a&b\n  - c<d>\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "E3",
+            "args": [
+                "a&b",
+                "c<d>",
+                "q\"z"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"E3\"><arg>a&amp;b</arg><arg>c&lt;d&gt;</arg><arg>q\"z</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"E3\"><span class=\"arg\">a&amp;b</span><span class=\"arg\">c&lt;d&gt;</span><span class=\"arg\">q&quot;z</span></div>",
+            "json": "{\"tag\":\"E3\",\"args\":[\"a&b\",\"c<d>\",\"q\\\"z\"]}",
+            "yaml": "tag: E3\nargs:\n  - a&b\n  - c<d>\n  - q\"z\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "E4",
+            "args": [
+                "a&b",
+                "c<d>",
+                "q\"z",
+                "p'r"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"E4\"><arg>a&amp;b</arg><arg>c&lt;d&gt;</arg><arg>q\"z</arg><arg>p'r</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"E4\"><span class=\"arg\">a&amp;b</span><span class=\"arg\">c&lt;d&gt;</span><span class=\"arg\">q&quot;z</span><span class=\"arg\">p&#039;r</span></div>",
+            "json": "{\"tag\":\"E4\",\"args\":[\"a&b\",\"c<d>\",\"q\\\"z\",\"p'r\"]}",
+            "yaml": "tag: E4\nargs:\n  - a&b\n  - c<d>\n  - q\"z\n  - p'r\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "E5",
+            "args": [
+                "a&b",
+                "c<d>",
+                "q\"z",
+                "p'r",
+                "<<<t>>>"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"E5\"><arg>a&amp;b</arg><arg>c&lt;d&gt;</arg><arg>q\"z</arg><arg>p'r</arg><arg>&lt;&lt;&lt;t&gt;&gt;&gt;</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"E5\"><span class=\"arg\">a&amp;b</span><span class=\"arg\">c&lt;d&gt;</span><span class=\"arg\">q&quot;z</span><span class=\"arg\">p&#039;r</span><span class=\"arg\">&lt;&lt;&lt;t&gt;&gt;&gt;</span></div>",
+            "json": "{\"tag\":\"E5\",\"args\":[\"a&b\",\"c<d>\",\"q\\\"z\",\"p'r\",\"<<<t>>>\"]}",
+            "yaml": "tag: E5\nargs:\n  - a&b\n  - c<d>\n  - q\"z\n  - p'r\n  - <<<t>>>\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "E6",
+            "args": [
+                "a&b",
+                "c<d>",
+                "q\"z",
+                "p'r",
+                "<<<t>>>",
+                "x & y < z"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"E6\"><arg>a&amp;b</arg><arg>c&lt;d&gt;</arg><arg>q\"z</arg><arg>p'r</arg><arg>&lt;&lt;&lt;t&gt;&gt;&gt;</arg><arg>x &amp; y &lt; z</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"E6\"><span class=\"arg\">a&amp;b</span><span class=\"arg\">c&lt;d&gt;</span><span class=\"arg\">q&quot;z</span><span class=\"arg\">p&#039;r</span><span class=\"arg\">&lt;&lt;&lt;t&gt;&gt;&gt;</span><span class=\"arg\">x &amp; y &lt; z</span></div>",
+            "json": "{\"tag\":\"E6\",\"args\":[\"a&b\",\"c<d>\",\"q\\\"z\",\"p'r\",\"<<<t>>>\",\"x & y < z\"]}",
+            "yaml": "tag: E6\nargs:\n  - a&b\n  - c<d>\n  - q\"z\n  - p'r\n  - <<<t>>>\n  - x & y < z\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "E7",
+            "args": [
+                "a&b",
+                "c<d>",
+                "q\"z",
+                "p'r",
+                "<<<t>>>",
+                "x & y < z",
+                "&amp;lit"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"E7\"><arg>a&amp;b</arg><arg>c&lt;d&gt;</arg><arg>q\"z</arg><arg>p'r</arg><arg>&lt;&lt;&lt;t&gt;&gt;&gt;</arg><arg>x &amp; y &lt; z</arg><arg>&amp;amp;lit</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"E7\"><span class=\"arg\">a&amp;b</span><span class=\"arg\">c&lt;d&gt;</span><span class=\"arg\">q&quot;z</span><span class=\"arg\">p&#039;r</span><span class=\"arg\">&lt;&lt;&lt;t&gt;&gt;&gt;</span><span class=\"arg\">x &amp; y &lt; z</span><span class=\"arg\">&amp;amp;lit</span></div>",
+            "json": "{\"tag\":\"E7\",\"args\":[\"a&b\",\"c<d>\",\"q\\\"z\",\"p'r\",\"<<<t>>>\",\"x & y < z\",\"&amp;lit\"]}",
+            "yaml": "tag: E7\nargs:\n  - a&b\n  - c<d>\n  - q\"z\n  - p'r\n  - <<<t>>>\n  - x & y < z\n  - &amp;lit\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "E8",
+            "args": [
+                "a&b",
+                "c<d>",
+                "q\"z",
+                "p'r",
+                "<<<t>>>",
+                "x & y < z",
+                "&amp;lit",
+                "\"<>&'"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"E8\"><arg>a&amp;b</arg><arg>c&lt;d&gt;</arg><arg>q\"z</arg><arg>p'r</arg><arg>&lt;&lt;&lt;t&gt;&gt;&gt;</arg><arg>x &amp; y &lt; z</arg><arg>&amp;amp;lit</arg><arg>\"&lt;&gt;&amp;'</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"E8\"><span class=\"arg\">a&amp;b</span><span class=\"arg\">c&lt;d&gt;</span><span class=\"arg\">q&quot;z</span><span class=\"arg\">p&#039;r</span><span class=\"arg\">&lt;&lt;&lt;t&gt;&gt;&gt;</span><span class=\"arg\">x &amp; y &lt; z</span><span class=\"arg\">&amp;amp;lit</span><span class=\"arg\">&quot;&lt;&gt;&amp;&#039;</span></div>",
+            "json": "{\"tag\":\"E8\",\"args\":[\"a&b\",\"c<d>\",\"q\\\"z\",\"p'r\",\"<<<t>>>\",\"x & y < z\",\"&amp;lit\",\"\\\"<>&'\"]}",
+            "yaml": "tag: E8\nargs:\n  - a&b\n  - c<d>\n  - q\"z\n  - p'r\n  - <<<t>>>\n  - x & y < z\n  - &amp;lit\n  - \"<>&'\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "E9",
+            "args": [
+                "a&b",
+                "c<d>",
+                "q\"z",
+                "p'r",
+                "<<<t>>>",
+                "x & y < z",
+                "&amp;lit",
+                "\"<>&'",
+                "a<<b>>c"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"E9\"><arg>a&amp;b</arg><arg>c&lt;d&gt;</arg><arg>q\"z</arg><arg>p'r</arg><arg>&lt;&lt;&lt;t&gt;&gt;&gt;</arg><arg>x &amp; y &lt; z</arg><arg>&amp;amp;lit</arg><arg>\"&lt;&gt;&amp;'</arg><arg>a&lt;&lt;b&gt;&gt;c</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"E9\"><span class=\"arg\">a&amp;b</span><span class=\"arg\">c&lt;d&gt;</span><span class=\"arg\">q&quot;z</span><span class=\"arg\">p&#039;r</span><span class=\"arg\">&lt;&lt;&lt;t&gt;&gt;&gt;</span><span class=\"arg\">x &amp; y &lt; z</span><span class=\"arg\">&amp;amp;lit</span><span class=\"arg\">&quot;&lt;&gt;&amp;&#039;</span><span class=\"arg\">a&lt;&lt;b&gt;&gt;c</span></div>",
+            "json": "{\"tag\":\"E9\",\"args\":[\"a&b\",\"c<d>\",\"q\\\"z\",\"p'r\",\"<<<t>>>\",\"x & y < z\",\"&amp;lit\",\"\\\"<>&'\",\"a<<b>>c\"]}",
+            "yaml": "tag: E9\nargs:\n  - a&b\n  - c<d>\n  - q\"z\n  - p'r\n  - <<<t>>>\n  - x & y < z\n  - &amp;lit\n  - \"<>&'\n  - a<<b>>c\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "E10",
+            "args": [
+                "a&b",
+                "c<d>",
+                "q\"z",
+                "p'r",
+                "<<<t>>>",
+                "x & y < z",
+                "&amp;lit",
+                "\"<>&'",
+                "a<<b>>c",
+                "tab\\there"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"E10\"><arg>a&amp;b</arg><arg>c&lt;d&gt;</arg><arg>q\"z</arg><arg>p'r</arg><arg>&lt;&lt;&lt;t&gt;&gt;&gt;</arg><arg>x &amp; y &lt; z</arg><arg>&amp;amp;lit</arg><arg>\"&lt;&gt;&amp;'</arg><arg>a&lt;&lt;b&gt;&gt;c</arg><arg>tab\\there</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"E10\"><span class=\"arg\">a&amp;b</span><span class=\"arg\">c&lt;d&gt;</span><span class=\"arg\">q&quot;z</span><span class=\"arg\">p&#039;r</span><span class=\"arg\">&lt;&lt;&lt;t&gt;&gt;&gt;</span><span class=\"arg\">x &amp; y &lt; z</span><span class=\"arg\">&amp;amp;lit</span><span class=\"arg\">&quot;&lt;&gt;&amp;&#039;</span><span class=\"arg\">a&lt;&lt;b&gt;&gt;c</span><span class=\"arg\">tab\\there</span></div>",
+            "json": "{\"tag\":\"E10\",\"args\":[\"a&b\",\"c<d>\",\"q\\\"z\",\"p'r\",\"<<<t>>>\",\"x & y < z\",\"&amp;lit\",\"\\\"<>&'\",\"a<<b>>c\",\"tab\\\\there\"]}",
+            "yaml": "tag: E10\nargs:\n  - a&b\n  - c<d>\n  - q\"z\n  - p'r\n  - <<<t>>>\n  - x & y < z\n  - &amp;lit\n  - \"<>&'\n  - a<<b>>c\n  - tab\\there\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "A&B",
+            "args": [
+                "ok"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"A&amp;B\"><arg>ok</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"A&amp;B\"><span class=\"arg\">ok</span></div>",
+            "json": "{\"tag\":\"A&B\",\"args\":[\"ok\"]}",
+            "yaml": "tag: A&B\nargs:\n  - ok\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "q\"n",
+            "args": [
+                "a&b"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"q\"n\"><arg>a&amp;b</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"q&quot;n\"><span class=\"arg\">a&amp;b</span></div>",
+            "json": "{\"tag\":\"q\\\"n\",\"args\":[\"a&b\"]}",
+            "yaml": "tag: q\"n\nargs:\n  - a&b\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "<x>",
+            "args": [
+                "<<<y>>>"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"&lt;x&gt;\"><arg>&lt;&lt;&lt;y&gt;&gt;&gt;</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"&lt;x&gt;\"><span class=\"arg\">&lt;&lt;&lt;y&gt;&gt;&gt;</span></div>",
+            "json": "{\"tag\":\"<x>\",\"args\":[\"<<<y>>>\"]}",
+            "yaml": "tag: <x>\nargs:\n  - <<<y>>>\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    }
+]

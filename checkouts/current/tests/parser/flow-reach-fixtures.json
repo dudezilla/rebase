@@ -1,0 +1,26 @@
+{
+    "cancelled": [
+        "submit",
+        "cancel"
+    ],
+    "catalog": [
+        "cancel"
+    ],
+    "config_form": [],
+    "login": [
+        "cancel",
+        "logout"
+    ],
+    "order_complete": [
+        "submit",
+        "submit",
+        "submit"
+    ],
+    "order_form": [
+        "submit"
+    ],
+    "orderer": [
+        "submit",
+        "submit"
+    ]
+}
