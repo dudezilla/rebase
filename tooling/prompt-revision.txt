@@ -1,0 +1,16 @@
+Add a new section to the brief, placed immediately AFTER the "# ROLE" section, titled exactly:
+
+# STEP COUNTER — VERIFY IT'S STARTED (before anything else)
+
+Give it this content:
+
+Before any tournament work this round, verify the 100-step loop counter is started and running:
+1. The counter only advances while ARMED. Confirm the arm marker exists:
+     /home/notificationsforsteven/.tournament-active
+   If it is missing, START the counter by creating it:  touch /home/notificationsforsteven/.tournament-active
+2. Confirm the counter is live by reading:
+     - /home/notificationsforsteven/.tournament-steps       (current step number, 0-100)
+     - /home/notificationsforsteven/.tournament-beacon.log  (one timestamped beacon per step; the last line shows the current step N/100)
+3. Report the verified position as "STEP COUNTER: N/100 — started" at the very top of this round's output, as proof it is running. If you cannot confirm the counter is started, say so explicitly and do not proceed with tournament work until it is.
+
+(After applying this change to prompt.txt and saving, delete this revision request file as already instructed.)

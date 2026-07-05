@@ -1,0 +1,25 @@
+Installation
+---------------------------------------------------------
+This version of Congruency (version 0) does not execute.
+
+-Reason, a database of content is required.
+
+....
+		
+
+
+-create a database in mysql
+-create a user account
+-edit the values in ../www/constants.php file
+	-set os type
+	-install path
+	-database password
+	-database user
+	
+	
+	
+	Linux Issues:
+	
+	Certain SeLinux Policies are not compatible with Congruency. 
+	Reason:
+	Congruency uses a hiearchal directory tree, and certain SeLinux policies prevent scripts from executing scripts in other directories.

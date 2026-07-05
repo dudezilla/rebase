@@ -1,0 +1,267 @@
+[
+  {
+    "name": "Title",
+    "args": []
+  },
+  {
+    "name": "Body",
+    "args": [
+      "content"
+    ]
+  },
+  {
+    "name": "ItemList",
+    "args": [
+      "catalog",
+      "page",
+      "admin"
+    ]
+  },
+  {
+    "name": "Show",
+    "args": [
+      ""
+    ]
+  },
+  {
+    "name": "Amp",
+    "args": [
+      "a&b",
+      "c<d"
+    ]
+  },
+  {
+    "name": "Pair",
+    "args": [
+      "x",
+      "y"
+    ]
+  },
+  {
+    "name": "Empty",
+    "args": []
+  },
+  {
+    "name": "Solo",
+    "args": [
+      "x"
+    ]
+  },
+  {
+    "name": "Four",
+    "args": [
+      "a",
+      "b",
+      "c",
+      "d"
+    ]
+  },
+  {
+    "name": "Blanks",
+    "args": [
+      "",
+      "",
+      ""
+    ]
+  },
+  {
+    "name": "Digits",
+    "args": [
+      "1",
+      "23",
+      "456"
+    ]
+  },
+  {
+    "name": "Under",
+    "args": [
+      "a_b",
+      "c_d_e"
+    ]
+  },
+  {
+    "name": "Amp2",
+    "args": [
+      "a&b&c",
+      "<x>"
+    ]
+  },
+  {
+    "name": "Quote",
+    "args": [
+      "\"q\"",
+      "'a'"
+    ]
+  },
+  {
+    "name": "Long",
+    "args": [
+      "alpha",
+      "beta",
+      "gamma",
+      "delta",
+      "epsilon"
+    ]
+  },
+  {
+    "name": "Mix1",
+    "args": [
+      "a1",
+      "b_2",
+      "C3",
+      "d&e"
+    ]
+  },
+  {
+    "name": "Six",
+    "args": [
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f"
+    ]
+  },
+  {
+    "name": "Seven",
+    "args": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7"
+    ]
+  },
+  {
+    "name": "MixEmpty",
+    "args": [
+      "a",
+      "",
+      "c",
+      "",
+      "e"
+    ]
+  },
+  {
+    "name": "UnderAll",
+    "args": [
+      "a_b",
+      "c_d",
+      "e_f"
+    ]
+  },
+  {
+    "name": "Ampy",
+    "args": [
+      "a&b",
+      "c&d",
+      "e&f"
+    ]
+  },
+  {
+    "name": "Angles",
+    "args": [
+      "<a>",
+      "<b>",
+      "<c>"
+    ]
+  },
+  {
+    "name": "Quotes2",
+    "args": [
+      "\"a\"",
+      "'b'",
+      "\"c'"
+    ]
+  },
+  {
+    "name": "TagLike",
+    "args": [
+      "<<<x>>>",
+      "<<<y>>>"
+    ]
+  },
+  {
+    "name": "Digits2",
+    "args": [
+      "10",
+      "200",
+      "3000",
+      "40000"
+    ]
+  },
+  {
+    "name": "SingleEmpty",
+    "args": [
+      ""
+    ]
+  },
+  {
+    "name": "NameUnder",
+    "args": [
+      "p",
+      "q"
+    ]
+  },
+  {
+    "name": "Wide",
+    "args": [
+      "aa",
+      "bb",
+      "cc",
+      "dd",
+      "ee",
+      "ff",
+      "gg",
+      "hh"
+    ]
+  },
+  {
+    "name": "Ten",
+    "args": [
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f",
+      "g",
+      "h",
+      "i",
+      "j"
+    ]
+  },
+  {
+    "name": "Mixed3",
+    "args": [
+      "a1",
+      "b_2",
+      "C3",
+      "d&e",
+      "<f>"
+    ]
+  },
+  {
+    "name": "AllBlank",
+    "args": [
+      "",
+      "",
+      "",
+      "",
+      ""
+    ]
+  },
+  {
+    "name": "Numbers",
+    "args": [
+      "0",
+      "1",
+      "10",
+      "100",
+      "1000"
+    ]
+  }
+]

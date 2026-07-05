@@ -1,0 +1,12 @@
+{
+  "start": "config_form",
+  "terminal": ["order_complete", "cancelled"],
+  "step_no": { "login": 0, "catalog": 0, "config_form": 1, "order_form": 2, "orderer": 3, "order_complete": 4, "cancelled": 4 },
+  "transitions": {
+    "login":       { "submit": "catalog" },
+    "catalog":     { "select": "config_form", "logout": "login" },
+    "config_form": { "submit": "order_form",     "cancel": "catalog" },
+    "order_form":  { "submit": "orderer",        "back": "config_form", "invalid": "order_form", "cancel": "cancelled" },
+    "orderer":     { "submit": "order_complete", "back": "order_form" }
+  }
+}

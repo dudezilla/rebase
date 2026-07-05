@@ -1,0 +1,132 @@
+{
+    "Admin_Links": {
+        "category": "user",
+        "file": "invocators/tags/user/Admin_Links.php",
+        "class": "Admin_Links"
+    },
+    "BodyTag": {
+        "category": "document",
+        "file": "invocators/tags/document/BodyTag.php",
+        "class": "BodyTag"
+    },
+    "BugDemo": {
+        "category": "dev",
+        "file": "invocators/tags/dev/BugDemo.php",
+        "class": "BugDemo"
+    },
+    "BugReport": {
+        "category": "dev",
+        "file": "invocators/tags/dev/BugReport.php",
+        "class": "BugReport"
+    },
+    "Catalog_Controller": {
+        "category": "store",
+        "file": "invocators/tags/store/Catalog_Controller.php",
+        "class": "Catalog_Controller"
+    },
+    "CategoryView": {
+        "category": "store",
+        "file": "invocators/tags/store/CategoryView.php",
+        "class": "CategoryView"
+    },
+    "ConfigFormTag": {
+        "category": "dev",
+        "file": "invocators/tags/dev/ConfigFormTag.php",
+        "class": "ConfigFormTag"
+    },
+    "Config_Form_Invocator": {
+        "category": "forms",
+        "file": "invocators/tags/forms/Config_Form_Invocator.php",
+        "class": "Config_Form_Invocator"
+    },
+    "ContentTag": {
+        "category": "document",
+        "file": "invocators/tags/document/ContentTag.php",
+        "class": "ContentTag"
+    },
+    "Controls": {
+        "category": "user",
+        "file": "invocators/tags/user/Controls.php",
+        "class": "Controls"
+    },
+    "FormTag": {
+        "category": "dev",
+        "file": "invocators/tags/dev/FormTag.php",
+        "class": "FormTag"
+    },
+    "ItemList": {
+        "category": "store",
+        "file": "invocators/tags/store/ItemList.php",
+        "class": "ItemList"
+    },
+    "Login": {
+        "category": "login",
+        "file": "invocators/tags/login/Login.php",
+        "class": "Login"
+    },
+    "Logout": {
+        "category": "utilities",
+        "file": "invocators/tags/utilities/Logout.php",
+        "class": "Logout"
+    },
+    "OrderFormTag": {
+        "category": "dev",
+        "file": "invocators/tags/dev/OrderFormTag.php",
+        "class": "OrderFormTag"
+    },
+    "Order_Form_Invocator": {
+        "category": "forms",
+        "file": "invocators/tags/forms/Order_Form_Invocator.php",
+        "class": "Order_Form_Invocator"
+    },
+    "OrdererTag": {
+        "category": "dev",
+        "file": "invocators/tags/dev/OrdererTag.php",
+        "class": "OrdererTag"
+    },
+    "Orderer_Invocator": {
+        "category": "forms",
+        "file": "invocators/tags/forms/Orderer_Invocator.php",
+        "class": "Orderer_Invocator"
+    },
+    "PriceChanger": {
+        "category": "store",
+        "file": "invocators/tags/store/PriceChanger.php",
+        "class": "PriceChanger"
+    },
+    "PriceMakerControl": {
+        "category": "Maker",
+        "file": "invocators/tags/Maker/PriceMakerControl.php",
+        "class": "PriceMakerControl"
+    },
+    "ProductView": {
+        "category": "store",
+        "file": "invocators/tags/store/ProductView.php",
+        "class": "ProductView"
+    },
+    "ShowOrders": {
+        "category": "store",
+        "file": "invocators/tags/store/ShowOrders.php",
+        "class": "ShowOrders"
+    },
+    "ShowPost": {
+        "category": "utilities",
+        "file": "invocators/tags/utilities/ShowPost.php",
+        "class": "ShowPost"
+    },
+    "TestTagA": {
+        "category": "test_tags",
+        "file": "invocators/tags/test_tags/TestTagA.php",
+        "class": "TestTagA"
+    },
+    "TitleTag": {
+        "category": "document",
+        "file": "invocators/tags/document/TitleTag.php",
+        "class": "TitleTag"
+    },
+    "ToggleLogin": {
+        "category": "login",
+        "file": "invocators/tags/login/ToggleLogin.php",
+        "class": "ToggleLogin"
+    }
+}

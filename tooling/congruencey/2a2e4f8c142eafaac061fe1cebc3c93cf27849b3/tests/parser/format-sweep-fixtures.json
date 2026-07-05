@@ -1,0 +1,461 @@
+[
+    {
+        "state": {
+            "name": "S0",
+            "args": []
+        },
+        "rendered": {
+            "xml": "<tag name=\"S0\"></tag>",
+            "html": "<div class=\"tag\" data-name=\"S0\"></div>",
+            "json": "{\"tag\":\"S0\",\"args\":[]}",
+            "yaml": "tag: S0\nargs: []\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "S1",
+            "args": [
+                "arg0"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"S1\"><arg>arg0</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"S1\"><span class=\"arg\">arg0</span></div>",
+            "json": "{\"tag\":\"S1\",\"args\":[\"arg0\"]}",
+            "yaml": "tag: S1\nargs:\n  - arg0\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "S2",
+            "args": [
+                "arg0",
+                "arg1"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"S2\"><arg>arg0</arg><arg>arg1</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"S2\"><span class=\"arg\">arg0</span><span class=\"arg\">arg1</span></div>",
+            "json": "{\"tag\":\"S2\",\"args\":[\"arg0\",\"arg1\"]}",
+            "yaml": "tag: S2\nargs:\n  - arg0\n  - arg1\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "S3",
+            "args": [
+                "arg0",
+                "arg1",
+                "arg2"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"S3\"><arg>arg0</arg><arg>arg1</arg><arg>arg2</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"S3\"><span class=\"arg\">arg0</span><span class=\"arg\">arg1</span><span class=\"arg\">arg2</span></div>",
+            "json": "{\"tag\":\"S3\",\"args\":[\"arg0\",\"arg1\",\"arg2\"]}",
+            "yaml": "tag: S3\nargs:\n  - arg0\n  - arg1\n  - arg2\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "S4",
+            "args": [
+                "arg0",
+                "arg1",
+                "arg2",
+                "arg3"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"S4\"><arg>arg0</arg><arg>arg1</arg><arg>arg2</arg><arg>arg3</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"S4\"><span class=\"arg\">arg0</span><span class=\"arg\">arg1</span><span class=\"arg\">arg2</span><span class=\"arg\">arg3</span></div>",
+            "json": "{\"tag\":\"S4\",\"args\":[\"arg0\",\"arg1\",\"arg2\",\"arg3\"]}",
+            "yaml": "tag: S4\nargs:\n  - arg0\n  - arg1\n  - arg2\n  - arg3\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "S5",
+            "args": [
+                "arg0",
+                "arg1",
+                "arg2",
+                "arg3",
+                "arg4"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"S5\"><arg>arg0</arg><arg>arg1</arg><arg>arg2</arg><arg>arg3</arg><arg>arg4</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"S5\"><span class=\"arg\">arg0</span><span class=\"arg\">arg1</span><span class=\"arg\">arg2</span><span class=\"arg\">arg3</span><span class=\"arg\">arg4</span></div>",
+            "json": "{\"tag\":\"S5\",\"args\":[\"arg0\",\"arg1\",\"arg2\",\"arg3\",\"arg4\"]}",
+            "yaml": "tag: S5\nargs:\n  - arg0\n  - arg1\n  - arg2\n  - arg3\n  - arg4\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "S6",
+            "args": [
+                "arg0",
+                "arg1",
+                "arg2",
+                "arg3",
+                "arg4",
+                "arg5"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"S6\"><arg>arg0</arg><arg>arg1</arg><arg>arg2</arg><arg>arg3</arg><arg>arg4</arg><arg>arg5</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"S6\"><span class=\"arg\">arg0</span><span class=\"arg\">arg1</span><span class=\"arg\">arg2</span><span class=\"arg\">arg3</span><span class=\"arg\">arg4</span><span class=\"arg\">arg5</span></div>",
+            "json": "{\"tag\":\"S6\",\"args\":[\"arg0\",\"arg1\",\"arg2\",\"arg3\",\"arg4\",\"arg5\"]}",
+            "yaml": "tag: S6\nargs:\n  - arg0\n  - arg1\n  - arg2\n  - arg3\n  - arg4\n  - arg5\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "S7",
+            "args": [
+                "arg0",
+                "arg1",
+                "arg2",
+                "arg3",
+                "arg4",
+                "arg5",
+                "arg6"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"S7\"><arg>arg0</arg><arg>arg1</arg><arg>arg2</arg><arg>arg3</arg><arg>arg4</arg><arg>arg5</arg><arg>arg6</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"S7\"><span class=\"arg\">arg0</span><span class=\"arg\">arg1</span><span class=\"arg\">arg2</span><span class=\"arg\">arg3</span><span class=\"arg\">arg4</span><span class=\"arg\">arg5</span><span class=\"arg\">arg6</span></div>",
+            "json": "{\"tag\":\"S7\",\"args\":[\"arg0\",\"arg1\",\"arg2\",\"arg3\",\"arg4\",\"arg5\",\"arg6\"]}",
+            "yaml": "tag: S7\nargs:\n  - arg0\n  - arg1\n  - arg2\n  - arg3\n  - arg4\n  - arg5\n  - arg6\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "S8",
+            "args": [
+                "arg0",
+                "arg1",
+                "arg2",
+                "arg3",
+                "arg4",
+                "arg5",
+                "arg6",
+                "arg7"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"S8\"><arg>arg0</arg><arg>arg1</arg><arg>arg2</arg><arg>arg3</arg><arg>arg4</arg><arg>arg5</arg><arg>arg6</arg><arg>arg7</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"S8\"><span class=\"arg\">arg0</span><span class=\"arg\">arg1</span><span class=\"arg\">arg2</span><span class=\"arg\">arg3</span><span class=\"arg\">arg4</span><span class=\"arg\">arg5</span><span class=\"arg\">arg6</span><span class=\"arg\">arg7</span></div>",
+            "json": "{\"tag\":\"S8\",\"args\":[\"arg0\",\"arg1\",\"arg2\",\"arg3\",\"arg4\",\"arg5\",\"arg6\",\"arg7\"]}",
+            "yaml": "tag: S8\nargs:\n  - arg0\n  - arg1\n  - arg2\n  - arg3\n  - arg4\n  - arg5\n  - arg6\n  - arg7\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "S9",
+            "args": [
+                "arg0",
+                "arg1",
+                "arg2",
+                "arg3",
+                "arg4",
+                "arg5",
+                "arg6",
+                "arg7",
+                "arg8"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"S9\"><arg>arg0</arg><arg>arg1</arg><arg>arg2</arg><arg>arg3</arg><arg>arg4</arg><arg>arg5</arg><arg>arg6</arg><arg>arg7</arg><arg>arg8</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"S9\"><span class=\"arg\">arg0</span><span class=\"arg\">arg1</span><span class=\"arg\">arg2</span><span class=\"arg\">arg3</span><span class=\"arg\">arg4</span><span class=\"arg\">arg5</span><span class=\"arg\">arg6</span><span class=\"arg\">arg7</span><span class=\"arg\">arg8</span></div>",
+            "json": "{\"tag\":\"S9\",\"args\":[\"arg0\",\"arg1\",\"arg2\",\"arg3\",\"arg4\",\"arg5\",\"arg6\",\"arg7\",\"arg8\"]}",
+            "yaml": "tag: S9\nargs:\n  - arg0\n  - arg1\n  - arg2\n  - arg3\n  - arg4\n  - arg5\n  - arg6\n  - arg7\n  - arg8\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "S10",
+            "args": [
+                "arg0",
+                "arg1",
+                "arg2",
+                "arg3",
+                "arg4",
+                "arg5",
+                "arg6",
+                "arg7",
+                "arg8",
+                "arg9"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"S10\"><arg>arg0</arg><arg>arg1</arg><arg>arg2</arg><arg>arg3</arg><arg>arg4</arg><arg>arg5</arg><arg>arg6</arg><arg>arg7</arg><arg>arg8</arg><arg>arg9</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"S10\"><span class=\"arg\">arg0</span><span class=\"arg\">arg1</span><span class=\"arg\">arg2</span><span class=\"arg\">arg3</span><span class=\"arg\">arg4</span><span class=\"arg\">arg5</span><span class=\"arg\">arg6</span><span class=\"arg\">arg7</span><span class=\"arg\">arg8</span><span class=\"arg\">arg9</span></div>",
+            "json": "{\"tag\":\"S10\",\"args\":[\"arg0\",\"arg1\",\"arg2\",\"arg3\",\"arg4\",\"arg5\",\"arg6\",\"arg7\",\"arg8\",\"arg9\"]}",
+            "yaml": "tag: S10\nargs:\n  - arg0\n  - arg1\n  - arg2\n  - arg3\n  - arg4\n  - arg5\n  - arg6\n  - arg7\n  - arg8\n  - arg9\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "S11",
+            "args": [
+                "arg0",
+                "arg1",
+                "arg2",
+                "arg3",
+                "arg4",
+                "arg5",
+                "arg6",
+                "arg7",
+                "arg8",
+                "arg9",
+                "arg10"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"S11\"><arg>arg0</arg><arg>arg1</arg><arg>arg2</arg><arg>arg3</arg><arg>arg4</arg><arg>arg5</arg><arg>arg6</arg><arg>arg7</arg><arg>arg8</arg><arg>arg9</arg><arg>arg10</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"S11\"><span class=\"arg\">arg0</span><span class=\"arg\">arg1</span><span class=\"arg\">arg2</span><span class=\"arg\">arg3</span><span class=\"arg\">arg4</span><span class=\"arg\">arg5</span><span class=\"arg\">arg6</span><span class=\"arg\">arg7</span><span class=\"arg\">arg8</span><span class=\"arg\">arg9</span><span class=\"arg\">arg10</span></div>",
+            "json": "{\"tag\":\"S11\",\"args\":[\"arg0\",\"arg1\",\"arg2\",\"arg3\",\"arg4\",\"arg5\",\"arg6\",\"arg7\",\"arg8\",\"arg9\",\"arg10\"]}",
+            "yaml": "tag: S11\nargs:\n  - arg0\n  - arg1\n  - arg2\n  - arg3\n  - arg4\n  - arg5\n  - arg6\n  - arg7\n  - arg8\n  - arg9\n  - arg10\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "S12",
+            "args": [
+                "arg0",
+                "arg1",
+                "arg2",
+                "arg3",
+                "arg4",
+                "arg5",
+                "arg6",
+                "arg7",
+                "arg8",
+                "arg9",
+                "arg10",
+                "arg11"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"S12\"><arg>arg0</arg><arg>arg1</arg><arg>arg2</arg><arg>arg3</arg><arg>arg4</arg><arg>arg5</arg><arg>arg6</arg><arg>arg7</arg><arg>arg8</arg><arg>arg9</arg><arg>arg10</arg><arg>arg11</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"S12\"><span class=\"arg\">arg0</span><span class=\"arg\">arg1</span><span class=\"arg\">arg2</span><span class=\"arg\">arg3</span><span class=\"arg\">arg4</span><span class=\"arg\">arg5</span><span class=\"arg\">arg6</span><span class=\"arg\">arg7</span><span class=\"arg\">arg8</span><span class=\"arg\">arg9</span><span class=\"arg\">arg10</span><span class=\"arg\">arg11</span></div>",
+            "json": "{\"tag\":\"S12\",\"args\":[\"arg0\",\"arg1\",\"arg2\",\"arg3\",\"arg4\",\"arg5\",\"arg6\",\"arg7\",\"arg8\",\"arg9\",\"arg10\",\"arg11\"]}",
+            "yaml": "tag: S12\nargs:\n  - arg0\n  - arg1\n  - arg2\n  - arg3\n  - arg4\n  - arg5\n  - arg6\n  - arg7\n  - arg8\n  - arg9\n  - arg10\n  - arg11\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "SP1",
+            "args": [
+                "a&b"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"SP1\"><arg>a&amp;b</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"SP1\"><span class=\"arg\">a&amp;b</span></div>",
+            "json": "{\"tag\":\"SP1\",\"args\":[\"a&b\"]}",
+            "yaml": "tag: SP1\nargs:\n  - a&b\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "SP2",
+            "args": [
+                "a&b",
+                "c<d>"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"SP2\"><arg>a&amp;b</arg><arg>c&lt;d&gt;</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"SP2\"><span class=\"arg\">a&amp;b</span><span class=\"arg\">c&lt;d&gt;</span></div>",
+            "json": "{\"tag\":\"SP2\",\"args\":[\"a&b\",\"c<d>\"]}",
+            "yaml": "tag: SP2\nargs:\n  - a&b\n  - c<d>\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "SP3",
+            "args": [
+                "a&b",
+                "c<d>",
+                "q\"z"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"SP3\"><arg>a&amp;b</arg><arg>c&lt;d&gt;</arg><arg>q\"z</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"SP3\"><span class=\"arg\">a&amp;b</span><span class=\"arg\">c&lt;d&gt;</span><span class=\"arg\">q&quot;z</span></div>",
+            "json": "{\"tag\":\"SP3\",\"args\":[\"a&b\",\"c<d>\",\"q\\\"z\"]}",
+            "yaml": "tag: SP3\nargs:\n  - a&b\n  - c<d>\n  - q\"z\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "SP4",
+            "args": [
+                "a&b",
+                "c<d>",
+                "q\"z",
+                "p'r"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"SP4\"><arg>a&amp;b</arg><arg>c&lt;d&gt;</arg><arg>q\"z</arg><arg>p'r</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"SP4\"><span class=\"arg\">a&amp;b</span><span class=\"arg\">c&lt;d&gt;</span><span class=\"arg\">q&quot;z</span><span class=\"arg\">p&#039;r</span></div>",
+            "json": "{\"tag\":\"SP4\",\"args\":[\"a&b\",\"c<d>\",\"q\\\"z\",\"p'r\"]}",
+            "yaml": "tag: SP4\nargs:\n  - a&b\n  - c<d>\n  - q\"z\n  - p'r\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "SP5",
+            "args": [
+                "a&b",
+                "c<d>",
+                "q\"z",
+                "p'r",
+                "<<<t>>>"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"SP5\"><arg>a&amp;b</arg><arg>c&lt;d&gt;</arg><arg>q\"z</arg><arg>p'r</arg><arg>&lt;&lt;&lt;t&gt;&gt;&gt;</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"SP5\"><span class=\"arg\">a&amp;b</span><span class=\"arg\">c&lt;d&gt;</span><span class=\"arg\">q&quot;z</span><span class=\"arg\">p&#039;r</span><span class=\"arg\">&lt;&lt;&lt;t&gt;&gt;&gt;</span></div>",
+            "json": "{\"tag\":\"SP5\",\"args\":[\"a&b\",\"c<d>\",\"q\\\"z\",\"p'r\",\"<<<t>>>\"]}",
+            "yaml": "tag: SP5\nargs:\n  - a&b\n  - c<d>\n  - q\"z\n  - p'r\n  - <<<t>>>\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    },
+    {
+        "state": {
+            "name": "SP6",
+            "args": [
+                "a&b",
+                "c<d>",
+                "q\"z",
+                "p'r",
+                "<<<t>>>",
+                "x & y"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"SP6\"><arg>a&amp;b</arg><arg>c&lt;d&gt;</arg><arg>q\"z</arg><arg>p'r</arg><arg>&lt;&lt;&lt;t&gt;&gt;&gt;</arg><arg>x &amp; y</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"SP6\"><span class=\"arg\">a&amp;b</span><span class=\"arg\">c&lt;d&gt;</span><span class=\"arg\">q&quot;z</span><span class=\"arg\">p&#039;r</span><span class=\"arg\">&lt;&lt;&lt;t&gt;&gt;&gt;</span><span class=\"arg\">x &amp; y</span></div>",
+            "json": "{\"tag\":\"SP6\",\"args\":[\"a&b\",\"c<d>\",\"q\\\"z\",\"p'r\",\"<<<t>>>\",\"x & y\"]}",
+            "yaml": "tag: SP6\nargs:\n  - a&b\n  - c<d>\n  - q\"z\n  - p'r\n  - <<<t>>>\n  - x & y\n"
+        },
+        "roundtrips": {
+            "xml": true,
+            "html": true,
+            "json": true,
+            "yaml": true
+        }
+    }
+]

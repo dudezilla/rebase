@@ -1,0 +1,12 @@
+dev/harness/php/
+dev/harness/*.sqlite
+dev/harness/sess_*
+dev/harness/server.log
+dev/tests/vendor/
+dev/tests/.phpunit.cache/
+dev/tests/*.sqlite
+dev/coverage/_*.instrumented.php
+dev/attack/node_modules/
+dev/bugs/.oldcode/
+dev/bugs/vendor/
+*.sqlite

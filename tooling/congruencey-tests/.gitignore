@@ -1,0 +1,4 @@
+vendor/
+.phpunit.cache/
+*.sqlite
+artifacts/junit.xml

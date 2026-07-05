@@ -1,0 +1,93 @@
+{
+  "project": "congruency-tournament",
+  "version": "2.0010",
+  "tag": "version-2.0010",
+  "generated": "2026-07-04T20:29:58",
+  "note": "Initial project-wide versioning. Every module and submodule is tagged version-2.0010; see each repo's tag for the exact commit.",
+  "modules": [
+    {
+      "name": "vendor/congruency",
+      "path": "/home/notificationsforsteven/congruency-bugs/vendor/congruency",
+      "is_submodule": true,
+      "parent": "congruency-bugs",
+      "url": "https://github.com/dudezilla/congruency.git",
+      "branch": "main",
+      "commit": "2d584ffea427ced412db2b78f025624b8d0a5262",
+      "tag": "version-2.0010",
+      "tagged": false,
+      "tag_commit": null
+    },
+    {
+      "name": "congruency-bugs",
+      "path": "/home/notificationsforsteven/congruency-bugs",
+      "is_submodule": false,
+      "parent": null,
+      "url": null,
+      "branch": "master",
+      "commit": "381498b4c829c60e8b494cd94b7a138f96c376cf",
+      "tag": "version-2.0010",
+      "tagged": false,
+      "tag_commit": null
+    },
+    {
+      "name": "congruency",
+      "path": "/home/notificationsforsteven/congruency",
+      "is_submodule": false,
+      "parent": null,
+      "url": null,
+      "branch": "from-checkout-3",
+      "commit": "ff1295562fa42368d54539e03f68c4319ebdc656",
+      "tag": "version-2.0010",
+      "tagged": true,
+      "tag_commit": "84940ab8a2b10ea050e5c64907903d9dd2edf6b7"
+    },
+    {
+      "name": "congruency-harness",
+      "path": "/home/notificationsforsteven/congruency-harness",
+      "is_submodule": false,
+      "parent": null,
+      "url": null,
+      "branch": "master",
+      "commit": "8ca9ba014aaed3ada6bb0c02fa63cf629fb59cc0",
+      "tag": "version-2.0010",
+      "tagged": false,
+      "tag_commit": null
+    },
+    {
+      "name": "congruency-tests",
+      "path": "/home/notificationsforsteven/congruency-tests",
+      "is_submodule": false,
+      "parent": null,
+      "url": null,
+      "branch": "master",
+      "commit": "d8fba0196b642a8661c2c03a5ed6917c3cea4013",
+      "tag": "version-2.0010",
+      "tagged": false,
+      "tag_commit": null
+    },
+    {
+      "name": "coverage",
+      "path": "/home/notificationsforsteven/coverage",
+      "is_submodule": false,
+      "parent": null,
+      "url": null,
+      "branch": "master",
+      "commit": "8e26e533348661c185674d08735e05c31ca18e11",
+      "tag": "version-2.0010",
+      "tagged": false,
+      "tag_commit": null
+    },
+    {
+      "name": "pwdriver",
+      "path": "/home/notificationsforsteven/pwdriver",
+      "is_submodule": false,
+      "parent": null,
+      "url": null,
+      "branch": "master",
+      "commit": "c9ae39628e1196a7156e32033b8b92c50c8cf1cd",
+      "tag": "version-2.0010",
+      "tagged": false,
+      "tag_commit": null
+    }
+  ]
+}

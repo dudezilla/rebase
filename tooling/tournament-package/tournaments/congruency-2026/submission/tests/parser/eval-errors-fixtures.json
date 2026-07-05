@@ -1,0 +1,145 @@
+[
+  {
+    "label": "unknown-op",
+    "kind": "expr",
+    "node": {
+      "op": "nope",
+      "args": []
+    },
+    "error": "OutOfBoundsException"
+  },
+  {
+    "label": "unknown-op-nested",
+    "kind": "expr",
+    "node": {
+      "op": "add",
+      "args": [
+        {
+          "op": "int",
+          "value": 1
+        },
+        {
+          "op": "zzz",
+          "args": []
+        }
+      ]
+    },
+    "error": "OutOfBoundsException"
+  },
+  {
+    "label": "unbound-var",
+    "kind": "program",
+    "program": {
+      "defs": {},
+      "main": {
+        "op": "var",
+        "name": "z"
+      }
+    },
+    "error": "OutOfBoundsException"
+  },
+  {
+    "label": "unbound-var-in-body",
+    "kind": "program",
+    "program": {
+      "defs": {
+        "f": {
+          "params": [
+            "a"
+          ],
+          "body": {
+            "op": "var",
+            "name": "b"
+          }
+        }
+      },
+      "main": {
+        "op": "call",
+        "name": "f",
+        "args": [
+          {
+            "op": "int",
+            "value": 1
+          }
+        ]
+      }
+    },
+    "error": "OutOfBoundsException"
+  },
+  {
+    "label": "undefined-fn",
+    "kind": "program",
+    "program": {
+      "defs": {},
+      "main": {
+        "op": "call",
+        "name": "ghost",
+        "args": []
+      }
+    },
+    "error": "OutOfBoundsException"
+  },
+  {
+    "label": "div-zero",
+    "kind": "expr",
+    "node": {
+      "op": "div",
+      "args": [
+        {
+          "op": "int",
+          "value": 1
+        },
+        {
+          "op": "int",
+          "value": 0
+        }
+      ]
+    },
+    "error": "DivisionByZeroError"
+  },
+  {
+    "label": "mod-zero",
+    "kind": "expr",
+    "node": {
+      "op": "mod",
+      "args": [
+        {
+          "op": "int",
+          "value": 1
+        },
+        {
+          "op": "int",
+          "value": 0
+        }
+      ]
+    },
+    "error": "DivisionByZeroError"
+  },
+  {
+    "label": "div-zero-computed",
+    "kind": "expr",
+    "node": {
+      "op": "div",
+      "args": [
+        {
+          "op": "int",
+          "value": 6
+        },
+        {
+          "op": "sub",
+          "args": [
+            {
+              "op": "int",
+              "value": 3
+            },
+            {
+              "op": "int",
+              "value": 3
+            }
+          ]
+        }
+      ]
+    },
+    "error": "DivisionByZeroError"
+  }
+]

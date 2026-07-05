@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Serve the congruency home.
+#
+# DEFAULT STATE (tournament winner): the evolved tag-engine showcase — a modern,
+# server-side, zero-JavaScript front-end rendered by the winning submission's own engine.
+#   ./serve             start the winning showcase on :8899   (the new default home)
+#   ./serve --legacy    start the original resurrected CMS instead (seeds the demo DB)
+#   ./serve --legacy --no-seed   legacy CMS without reseeding
+#
+# The default target is the state submitted in the winning instance; override its
+# location with CONGRUENCEY_SHOWCASE=/path/to/showcase/router.php if it moves.
+set -euo pipefail
+here="$(cd "$(dirname "$0")" && pwd)"
+PHP="${CONGRUENCEY_PHP:-$here/php/php}"
+PORT="${PORT:-8899}"
+
+# Winning submission's showcase front-end (the new default configuration).
+SHOWCASE="${CONGRUENCEY_SHOWCASE:-/home/notificationsforsteven/congruency/2a2e4f8c142eafaac061fe1cebc3c93cf27849b3/showcase/router.php}"
+
+if [ ! -x "$PHP" ]; then
+  echo "No PHP at $PHP. Set CONGRUENCEY_PHP=/path/to/php (PHP 8)." >&2
+  exit 127
+fi
+
+if [ "${1:-}" = "--legacy" ]; then
+  shift
+  if [ "${1:-}" != "--no-seed" ]; then
+    "$PHP" "$here/seed.php"
+  fi
+  echo "serving LEGACY congruency CMS http://0.0.0.0:$PORT/?page=catalog   (Ctrl-C to stop)"
+  echo "pages: catalog | about | bugs | forms"
+  exec "$PHP" -S "0.0.0.0:$PORT" "$here/router.php"
+fi
+
+# --- default: the winning showcase -------------------------------------------------
+if [ ! -f "$SHOWCASE" ]; then
+  echo "Winning showcase not found at: $SHOWCASE" >&2
+  echo "Set CONGRUENCEY_SHOWCASE=/path/to/showcase/router.php, or run ./serve --legacy." >&2
+  exit 66
+fi
+echo "serving congruency home (winning showcase) http://0.0.0.0:$PORT/   (Ctrl-C to stop)"
+echo "pages: home | formats | compute | flow | corpus | about   ·   legacy CMS: ./serve --legacy"
+exec "$PHP" -S "0.0.0.0:$PORT" "$SHOWCASE"

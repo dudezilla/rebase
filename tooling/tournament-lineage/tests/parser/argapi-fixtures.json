@@ -1,0 +1,222 @@
+[
+    {
+        "call": "Foo(a)(b)(c)",
+        "getArguments": [
+            "c",
+            "b",
+            "a"
+        ],
+        "top": "a",
+        "pop_sequence": [
+            "a",
+            "b",
+            "c"
+        ]
+    },
+    {
+        "call": "X(one)(two)",
+        "getArguments": [
+            "two",
+            "one"
+        ],
+        "top": "one",
+        "pop_sequence": [
+            "one",
+            "two"
+        ]
+    },
+    {
+        "call": "Bare",
+        "getArguments": [],
+        "top": false,
+        "pop_sequence": []
+    },
+    {
+        "call": "P(only)",
+        "getArguments": [
+            "only"
+        ],
+        "top": "only",
+        "pop_sequence": [
+            "only"
+        ]
+    },
+    {
+        "call": "E()",
+        "getArguments": [
+            ""
+        ],
+        "top": "",
+        "pop_sequence": [
+            ""
+        ]
+    },
+    {
+        "call": "Multi(a)(b)(c)(d)(e)",
+        "getArguments": [
+            "e",
+            "d",
+            "c",
+            "b",
+            "a"
+        ],
+        "top": "a",
+        "pop_sequence": [
+            "a",
+            "b",
+            "c",
+            "d",
+            "e"
+        ]
+    },
+    {
+        "call": "Nums(1)(2)(3)",
+        "getArguments": [
+            "3",
+            "2",
+            "1"
+        ],
+        "top": "1",
+        "pop_sequence": [
+            "1",
+            "2",
+            "3"
+        ]
+    },
+    {
+        "call": "Seven(a)(b)(c)(d)(e)(f)(g)",
+        "getArguments": [
+            "g",
+            "f",
+            "e",
+            "d",
+            "c",
+            "b",
+            "a"
+        ],
+        "top": "a",
+        "pop_sequence": [
+            "a",
+            "b",
+            "c",
+            "d",
+            "e",
+            "f",
+            "g"
+        ]
+    },
+    {
+        "call": "MidEmpty(a)()(c)",
+        "getArguments": [
+            "c",
+            "",
+            "a"
+        ],
+        "top": "a",
+        "pop_sequence": [
+            "a",
+            "",
+            "c"
+        ]
+    },
+    {
+        "call": "AllEmpty()()()",
+        "getArguments": [
+            "",
+            "",
+            ""
+        ],
+        "top": "",
+        "pop_sequence": [
+            "",
+            "",
+            ""
+        ]
+    },
+    {
+        "call": "Under(a_b)(c_d)",
+        "getArguments": [
+            "c_d",
+            "a_b"
+        ],
+        "top": "a_b",
+        "pop_sequence": [
+            "a_b",
+            "c_d"
+        ]
+    },
+    {
+        "call": "Two(x)(y)",
+        "getArguments": [
+            "y",
+            "x"
+        ],
+        "top": "x",
+        "pop_sequence": [
+            "x",
+            "y"
+        ]
+    },
+    {
+        "call": "One(z)",
+        "getArguments": [
+            "z"
+        ],
+        "top": "z",
+        "pop_sequence": [
+            "z"
+        ]
+    },
+    {
+        "call": "Big(1)(2)(3)(4)(5)(6)(7)(8)",
+        "getArguments": [
+            "8",
+            "7",
+            "6",
+            "5",
+            "4",
+            "3",
+            "2",
+            "1"
+        ],
+        "top": "1",
+        "pop_sequence": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8"
+        ]
+    },
+    {
+        "call": "Dup(a)(a)(a)",
+        "getArguments": [
+            "a",
+            "a",
+            "a"
+        ],
+        "top": "a",
+        "pop_sequence": [
+            "a",
+            "a",
+            "a"
+        ]
+    },
+    {
+        "call": "Mixed(a1)(b_2)(C3)",
+        "getArguments": [
+            "C3",
+            "b_2",
+            "a1"
+        ],
+        "top": "a1",
+        "pop_sequence": [
+            "a1",
+            "b_2",
+            "C3"
+        ]
+    }
+]

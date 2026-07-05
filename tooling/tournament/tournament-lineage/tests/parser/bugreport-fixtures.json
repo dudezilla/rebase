@@ -1,0 +1,20 @@
+{
+    "bug_ids": [
+        "BUG-01",
+        "BUG-02",
+        "BUG-03",
+        "BUG-04",
+        "BUG-05",
+        "BUG-06",
+        "BUG-07",
+        "BUG-08"
+    ],
+    "severity_counts": {
+        "critical": 1,
+        "high": 3,
+        "medium": 3,
+        "low": 1
+    },
+    "length": 4601,
+    "has_script": false
+}

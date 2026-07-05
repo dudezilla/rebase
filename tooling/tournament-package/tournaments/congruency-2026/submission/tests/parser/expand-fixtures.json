@@ -1,0 +1,53 @@
+{
+  "templates": {
+    "Greeting": "Hello",
+    "Name": "World",
+    "Page": "<<<Greeting>>>, <<<Name>>>!",
+    "Wrap": "[<<<Page>>>]",
+    "Loop": "<<<Loop>>>",
+    "Ping": "pre <<<Pong>>>",
+    "Pong": "pre <<<Ping>>>",
+    "ChainA": "<<<ChainB>>>",
+    "ChainB": "<<<ChainC>>>",
+    "ChainC": "<<<ChainA>>>"
+  },
+  "cases": [
+    {
+      "document": "<<<Greeting>>>",
+      "expected": "Hello"
+    },
+    {
+      "document": "start <<<Name>>> end",
+      "expected": "start World end"
+    },
+    {
+      "document": "<<<Greeting>>> and <<<Name>>>",
+      "expected": "Hello and World"
+    },
+    {
+      "document": "<<<Page>>>",
+      "expected": "Hello, World!"
+    },
+    {
+      "document": "<<<Wrap>>>",
+      "expected": "[Hello, World!]"
+    },
+    {
+      "document": "no tags here",
+      "expected": "no tags here"
+    },
+    {
+      "document": "<<<Name>>><<<Name>>>",
+      "expected": "WorldWorld"
+    }
+  ],
+  "cycle": "<<<Loop>>>",
+  "unknown": "<<<Missing>>>",
+  "cycles": [
+    "<<<Loop>>>",
+    "<<<Ping>>>",
+    "<<<Pong>>>",
+    "<<<ChainA>>>",
+    "<<<ChainB>>>"
+  ]
+}

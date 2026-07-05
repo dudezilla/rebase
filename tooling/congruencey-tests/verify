@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Single mechanical entry point for the whole congruency verification effort.
+# Runs every suite and exits 0 iff all pass. Emits artifacts/junit.xml.
+set -uo pipefail
+ROOT=/home/notificationsforsteven
+PHP="$ROOT/congruency-harness/php/php"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+pass=0; fail=0
+step() { local name="$1"; shift; echo; echo "### $name"; if "$@"; then echo ">> PASS: $name"; pass=$((pass+1)); else echo ">> FAIL: $name"; fail=$((fail+1)); fi; }
+
+# Ensure the app server is up and freshly seeded (attacks + live checks need it).
+if ! curl -sf -o /dev/null "http://127.0.0.1:8899/?page=catalog"; then
+  echo "starting harness server on :8899 ..."
+  ( cd "$ROOT/congruency-harness" && nohup ./php/php -S 0.0.0.0:8899 router.php >/dev/null 2>&1 & )
+  sleep 1
+fi
+"$PHP" "$ROOT/congruency-harness/seed.php" >/dev/null
+
+# Populate the adversarial baseline (drives a real headless browser).
+if [ -f "$ROOT/pwdriver/attack.js" ] && command -v node >/dev/null 2>&1; then
+  ( cd "$ROOT/pwdriver" && node attack.js >/dev/null 2>&1 ) || echo "  (attack loop unavailable — AttackBaselineTest will skip)"
+fi
+
+step "PHPUnit: fixes / validators / sort / attack baseline" "$PHP" "$HERE/vendor/bin/phpunit"
+step "Bug catalog: 15 reproductions still reproduce"        "$ROOT/congruency-bugs/run"
+step "Branch coverage: ValidateFields 100%"                 "$PHP" "$ROOT/coverage/branch_test.php"
+step "Branch coverage: dead-branch detection (1/2)"         "$PHP" "$ROOT/coverage/branch_test2.php"
+
+echo
+echo "================================================"
+echo "  $pass suites passed, $fail failed"
+echo "  machine-readable: $HERE/artifacts/junit.xml"
+echo "================================================"
+exit $fail

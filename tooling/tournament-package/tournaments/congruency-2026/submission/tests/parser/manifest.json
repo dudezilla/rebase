@@ -1,0 +1,258 @@
+{
+  "corpus": "congruency tag parser",
+  "entry_base": "2a2e4f8c142eafaac061fe1cebc3c93cf27849b3",
+  "kinds": [
+    "parse",
+    "format",
+    "pipeline",
+    "eval",
+    "program",
+    "registry",
+    "flow",
+    "flow-fixtures",
+    "scan",
+    "expand",
+    "compute",
+    "render-document",
+    "escape",
+    "matrix",
+    "collection",
+    "gitstore",
+    "argapi",
+    "interop",
+    "variant",
+    "eval-error",
+    "compute-sweep",
+    "realtag",
+    "handler",
+    "bugreport",
+    "registry-index",
+    "flow-reach",
+    "format-sweep",
+    "blob",
+    "build",
+    "program-sweep",
+    "escape-sweep",
+    "compute-error",
+    "registry-scan",
+    "build-scan"
+  ],
+  "datasets": [
+    {
+      "id": "parse",
+      "file": "parse-fixtures.json",
+      "kind": "parse",
+      "generator": "generate_fixtures.php"
+    },
+    {
+      "id": "edge",
+      "file": "edge-fixtures.json",
+      "kind": "parse",
+      "generator": "generate_edge.php"
+    },
+    {
+      "id": "format",
+      "file": "format-fixtures.json",
+      "kind": "format"
+    },
+    {
+      "id": "integration",
+      "file": "integration-fixtures.json",
+      "kind": "pipeline",
+      "generator": "generate_integration.php"
+    },
+    {
+      "id": "eval",
+      "file": "eval-fixtures.json",
+      "kind": "eval"
+    },
+    {
+      "id": "programs",
+      "file": "eval-programs.json",
+      "kind": "program"
+    },
+    {
+      "id": "registry",
+      "file": "tag-registry.json",
+      "kind": "registry",
+      "generator": "generate_registry.php"
+    },
+    {
+      "id": "flow",
+      "file": "form-flow.json",
+      "kind": "flow"
+    },
+    {
+      "id": "flow-cases",
+      "file": "flow-fixtures.json",
+      "kind": "flow-fixtures"
+    },
+    {
+      "id": "scan",
+      "file": "scan-fixtures.json",
+      "kind": "scan",
+      "generator": "generate_scan.php"
+    },
+    {
+      "id": "expand",
+      "file": "expand-fixtures.json",
+      "kind": "expand"
+    },
+    {
+      "id": "compute",
+      "file": "compute-fixtures.json",
+      "kind": "compute"
+    },
+    {
+      "id": "render-doc",
+      "file": "render-document-fixtures.json",
+      "kind": "render-document"
+    },
+    {
+      "id": "escape",
+      "file": "escape-fixtures.json",
+      "kind": "escape",
+      "generator": "generate_escape.php"
+    },
+    {
+      "id": "matrix",
+      "file": "matrix-fixtures.json",
+      "kind": "matrix",
+      "generator": "generate_matrix.php"
+    },
+    {
+      "id": "systematic",
+      "file": "systematic-fixtures.json",
+      "kind": "parse",
+      "generator": "generate_systematic.php"
+    },
+    {
+      "id": "collection",
+      "file": "collection-fixtures.json",
+      "kind": "collection",
+      "generator": "generate_collection.php"
+    },
+    {
+      "id": "gitstore",
+      "file": "git-store-fixtures.json",
+      "kind": "gitstore"
+    },
+    {
+      "id": "argapi",
+      "file": "argapi-fixtures.json",
+      "kind": "argapi",
+      "generator": "generate_argapi.php"
+    },
+    {
+      "id": "interop",
+      "file": "interop-fixtures.json",
+      "kind": "interop"
+    },
+    {
+      "id": "sweep",
+      "file": "sweep-fixtures.json",
+      "kind": "parse",
+      "generator": "generate_sweep.php"
+    },
+    {
+      "id": "variant",
+      "file": "variant-fixtures.json",
+      "kind": "variant",
+      "generator": "generate_variant.php"
+    },
+    {
+      "id": "eval-errors",
+      "file": "eval-errors-fixtures.json",
+      "kind": "eval-error"
+    },
+    {
+      "id": "compute-sweep",
+      "file": "compute-sweep-fixtures.json",
+      "kind": "compute-sweep",
+      "generator": "generate_compute_sweep.php"
+    },
+    {
+      "id": "realtag",
+      "file": "realtag-fixtures.json",
+      "kind": "realtag",
+      "generator": "generate_realtag.php"
+    },
+    {
+      "id": "handler",
+      "file": "handler-fixtures.json",
+      "kind": "handler",
+      "generator": "generate_handler.php"
+    },
+    {
+      "id": "bugreport",
+      "file": "bugreport-fixtures.json",
+      "kind": "bugreport",
+      "generator": "generate_bugreport.php"
+    },
+    {
+      "id": "registry-index",
+      "file": "registry-index-fixtures.json",
+      "kind": "registry-index",
+      "generator": "generate_registry_index.php"
+    },
+    {
+      "id": "flow-reach",
+      "file": "flow-reach-fixtures.json",
+      "kind": "flow-reach",
+      "generator": "generate_flow_reach.php"
+    },
+    {
+      "id": "format-sweep",
+      "file": "format-sweep-fixtures.json",
+      "kind": "format-sweep",
+      "generator": "generate_format_sweep.php"
+    },
+    {
+      "id": "blob",
+      "file": "blob-fixtures.json",
+      "kind": "blob",
+      "generator": "generate_blob.php"
+    },
+    {
+      "id": "build",
+      "file": "build-fixtures.json",
+      "kind": "build",
+      "generator": "generate_build.php"
+    },
+    {
+      "id": "program-sweep",
+      "file": "program-sweep-fixtures.json",
+      "kind": "program-sweep",
+      "generator": "generate_program_sweep.php"
+    },
+    {
+      "id": "parsegrid",
+      "file": "parsegrid-fixtures.json",
+      "kind": "parse",
+      "generator": "generate_parsegrid.php"
+    },
+    {
+      "id": "escape-sweep",
+      "file": "escape-sweep-fixtures.json",
+      "kind": "escape-sweep",
+      "generator": "generate_escape_sweep.php"
+    },
+    {
+      "id": "compute-errors",
+      "file": "compute-errors-fixtures.json",
+      "kind": "compute-error"
+    },
+    {
+      "id": "registry-scan",
+      "file": "registry-scan-fixtures.json",
+      "kind": "registry-scan",
+      "generator": "generate_registry_scan.php"
+    },
+    {
+      "id": "build-scan",
+      "file": "build-scan-fixtures.json",
+      "kind": "build-scan",
+      "generator": "generate_build_scan.php"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "name": "mcp-coupler",
+  "version": "1.0.0",
+  "description": "A coupling device (aggregator/multiplexer) for any number of MCP servers. Fronts N downstream MCP servers as one, with namespaced tools.",
+  "type": "commonjs",
+  "main": "coupler.js",
+  "bin": { "mcp-coupler": "coupler.js" },
+  "private": true
+}

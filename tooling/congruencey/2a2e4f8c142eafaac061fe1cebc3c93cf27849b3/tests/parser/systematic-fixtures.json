@@ -1,0 +1,411 @@
+[
+    {
+        "input": "<<<Sweep>>>",
+        "full_tag": "Sweep",
+        "function_name": "Sweep",
+        "arguments": [],
+        "arg_count": 0
+    },
+    {
+        "input": "<<<Sweep(a0)>>>",
+        "full_tag": "Sweep(a0)",
+        "function_name": "Sweep",
+        "arguments": [
+            "a0"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<Sweep(a0)(a1)>>>",
+        "full_tag": "Sweep(a0)(a1)",
+        "function_name": "Sweep",
+        "arguments": [
+            "a1",
+            "a0"
+        ],
+        "arg_count": 2
+    },
+    {
+        "input": "<<<Sweep(a0)(a1)(a2)>>>",
+        "full_tag": "Sweep(a0)(a1)(a2)",
+        "function_name": "Sweep",
+        "arguments": [
+            "a2",
+            "a1",
+            "a0"
+        ],
+        "arg_count": 3
+    },
+    {
+        "input": "<<<Sweep(a0)(a1)(a2)(a3)>>>",
+        "full_tag": "Sweep(a0)(a1)(a2)(a3)",
+        "function_name": "Sweep",
+        "arguments": [
+            "a3",
+            "a2",
+            "a1",
+            "a0"
+        ],
+        "arg_count": 4
+    },
+    {
+        "input": "<<<Sweep(a0)(a1)(a2)(a3)(a4)>>>",
+        "full_tag": "Sweep(a0)(a1)(a2)(a3)(a4)",
+        "function_name": "Sweep",
+        "arguments": [
+            "a4",
+            "a3",
+            "a2",
+            "a1",
+            "a0"
+        ],
+        "arg_count": 5
+    },
+    {
+        "input": "<<<Sweep(a0)(a1)(a2)(a3)(a4)(a5)>>>",
+        "full_tag": "Sweep(a0)(a1)(a2)(a3)(a4)(a5)",
+        "function_name": "Sweep",
+        "arguments": [
+            "a5",
+            "a4",
+            "a3",
+            "a2",
+            "a1",
+            "a0"
+        ],
+        "arg_count": 6
+    },
+    {
+        "input": "<<<Sweep(a0)(a1)(a2)(a3)(a4)(a5)(a6)>>>",
+        "full_tag": "Sweep(a0)(a1)(a2)(a3)(a4)(a5)(a6)",
+        "function_name": "Sweep",
+        "arguments": [
+            "a6",
+            "a5",
+            "a4",
+            "a3",
+            "a2",
+            "a1",
+            "a0"
+        ],
+        "arg_count": 7
+    },
+    {
+        "input": "<<<Sweep(a0)(a1)(a2)(a3)(a4)(a5)(a6)(a7)>>>",
+        "full_tag": "Sweep(a0)(a1)(a2)(a3)(a4)(a5)(a6)(a7)",
+        "function_name": "Sweep",
+        "arguments": [
+            "a7",
+            "a6",
+            "a5",
+            "a4",
+            "a3",
+            "a2",
+            "a1",
+            "a0"
+        ],
+        "arg_count": 8
+    },
+    {
+        "input": "<<<A(v)>>>",
+        "full_tag": "A(v)",
+        "function_name": "A",
+        "arguments": [
+            "v"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<ab(v)>>>",
+        "full_tag": "ab(v)",
+        "function_name": "ab",
+        "arguments": [
+            "v"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<Abc(v)>>>",
+        "full_tag": "Abc(v)",
+        "function_name": "Abc",
+        "arguments": [
+            "v"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<a_b(v)>>>",
+        "full_tag": "a_b(v)",
+        "function_name": "a_b",
+        "arguments": [
+            "v"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<LongCamelCaseName(v)>>>",
+        "full_tag": "LongCamelCaseName(v)",
+        "function_name": "LongCamelCaseName",
+        "arguments": [
+            "v"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<x1y2(v)>>>",
+        "full_tag": "x1y2(v)",
+        "function_name": "x1y2",
+        "arguments": [
+            "v"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<_lead(v)>>>",
+        "full_tag": "_lead(v)",
+        "function_name": "_lead",
+        "arguments": [
+            "v"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<trail_(v)>>>",
+        "full_tag": "trail_(v)",
+        "function_name": "trail_",
+        "arguments": [
+            "v"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<U_P_P_E_R(v)>>>",
+        "full_tag": "U_P_P_E_R(v)",
+        "function_name": "U_P_P_E_R",
+        "arguments": [
+            "v"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<Foo >>>",
+        "full_tag": "Foo ",
+        "function_name": "Foo ",
+        "arguments": [],
+        "arg_count": 0
+    },
+    {
+        "input": "<<< Foo>>>",
+        "full_tag": " Foo",
+        "function_name": " Foo",
+        "arguments": [],
+        "arg_count": 0
+    },
+    {
+        "input": "<<<Foo (a)>>>",
+        "full_tag": "Foo (a)",
+        "function_name": "Foo ",
+        "arguments": [
+            "a"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<Foo( a )>>>",
+        "full_tag": "Foo( a )",
+        "function_name": "Foo",
+        "arguments": [],
+        "arg_count": 0
+    },
+    {
+        "input": "<<<Foo(a) >>>",
+        "full_tag": "Foo(a) ",
+        "function_name": "Foo",
+        "arguments": [
+            "a"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<Big(x0)(x1)(x2)(x3)(x4)(x5)(x6)(x7)(x8)(x9)>>>",
+        "full_tag": "Big(x0)(x1)(x2)(x3)(x4)(x5)(x6)(x7)(x8)(x9)",
+        "function_name": "Big",
+        "arguments": [
+            "x9",
+            "x8",
+            "x7",
+            "x6",
+            "x5",
+            "x4",
+            "x3",
+            "x2",
+            "x1",
+            "x0"
+        ],
+        "arg_count": 10
+    },
+    {
+        "input": "<<<Big(x0)(x1)(x2)(x3)(x4)(x5)(x6)(x7)(x8)(x9)(x10)(x11)(x12)(x13)(x14)>>>",
+        "full_tag": "Big(x0)(x1)(x2)(x3)(x4)(x5)(x6)(x7)(x8)(x9)(x10)(x11)(x12)(x13)(x14)",
+        "function_name": "Big",
+        "arguments": [
+            "x14",
+            "x13",
+            "x12",
+            "x11",
+            "x10",
+            "x9",
+            "x8",
+            "x7",
+            "x6",
+            "x5",
+            "x4",
+            "x3",
+            "x2",
+            "x1",
+            "x0"
+        ],
+        "arg_count": 15
+    },
+    {
+        "input": "<<<Big(x0)(x1)(x2)(x3)(x4)(x5)(x6)(x7)(x8)(x9)(x10)(x11)(x12)(x13)(x14)(x15)(x16)(x17)(x18)(x19)>>>",
+        "full_tag": "Big(x0)(x1)(x2)(x3)(x4)(x5)(x6)(x7)(x8)(x9)(x10)(x11)(x12)(x13)(x14)(x15)(x16)(x17)(x18)(x19)",
+        "function_name": "Big",
+        "arguments": [
+            "x19",
+            "x18",
+            "x17",
+            "x16",
+            "x15",
+            "x14",
+            "x13",
+            "x12",
+            "x11",
+            "x10",
+            "x9",
+            "x8",
+            "x7",
+            "x6",
+            "x5",
+            "x4",
+            "x3",
+            "x2",
+            "x1",
+            "x0"
+        ],
+        "arg_count": 20
+    },
+    {
+        "input": "<<<Big(x0)(x1)(x2)(x3)(x4)(x5)(x6)(x7)(x8)(x9)(x10)(x11)(x12)(x13)(x14)(x15)(x16)(x17)(x18)(x19)(x20)(x21)(x22)(x23)(x24)(x25)(x26)(x27)(x28)(x29)>>>",
+        "full_tag": "Big(x0)(x1)(x2)(x3)(x4)(x5)(x6)(x7)(x8)(x9)(x10)(x11)(x12)(x13)(x14)(x15)(x16)(x17)(x18)(x19)(x20)(x21)(x22)(x23)(x24)(x25)(x26)(x27)(x28)(x29)",
+        "function_name": "Big",
+        "arguments": [
+            "x29",
+            "x28",
+            "x27",
+            "x26",
+            "x25",
+            "x24",
+            "x23",
+            "x22",
+            "x21",
+            "x20",
+            "x19",
+            "x18",
+            "x17",
+            "x16",
+            "x15",
+            "x14",
+            "x13",
+            "x12",
+            "x11",
+            "x10",
+            "x9",
+            "x8",
+            "x7",
+            "x6",
+            "x5",
+            "x4",
+            "x3",
+            "x2",
+            "x1",
+            "x0"
+        ],
+        "arg_count": 30
+    },
+    {
+        "input": "<<<Big(x0)(x1)(x2)(x3)(x4)(x5)(x6)(x7)(x8)(x9)(x10)(x11)(x12)(x13)(x14)(x15)(x16)(x17)(x18)(x19)(x20)(x21)(x22)(x23)(x24)(x25)(x26)(x27)(x28)(x29)(x30)(x31)(x32)(x33)(x34)(x35)(x36)(x37)(x38)(x39)>>>",
+        "full_tag": "Big(x0)(x1)(x2)(x3)(x4)(x5)(x6)(x7)(x8)(x9)(x10)(x11)(x12)(x13)(x14)(x15)(x16)(x17)(x18)(x19)(x20)(x21)(x22)(x23)(x24)(x25)(x26)(x27)(x28)(x29)(x30)(x31)(x32)(x33)(x34)(x35)(x36)(x37)(x38)(x39)",
+        "function_name": "Big",
+        "arguments": [
+            "x39",
+            "x38",
+            "x37",
+            "x36",
+            "x35",
+            "x34",
+            "x33",
+            "x32",
+            "x31",
+            "x30",
+            "x29",
+            "x28",
+            "x27",
+            "x26",
+            "x25",
+            "x24",
+            "x23",
+            "x22",
+            "x21",
+            "x20",
+            "x19",
+            "x18",
+            "x17",
+            "x16",
+            "x15",
+            "x14",
+            "x13",
+            "x12",
+            "x11",
+            "x10",
+            "x9",
+            "x8",
+            "x7",
+            "x6",
+            "x5",
+            "x4",
+            "x3",
+            "x2",
+            "x1",
+            "x0"
+        ],
+        "arg_count": 40
+    },
+    {
+        "input": "<<<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa(v)>>>",
+        "full_tag": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa(v)",
+        "function_name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "arguments": [
+            "v"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ(v)>>>",
+        "full_tag": "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ(v)",
+        "function_name": "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ",
+        "arguments": [
+            "v"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_(v)>>>",
+        "full_tag": "n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_(v)",
+        "function_name": "n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_n_",
+        "arguments": [
+            "v"
+        ],
+        "arg_count": 1
+    }
+]

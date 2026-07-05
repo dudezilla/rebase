@@ -1,0 +1,1025 @@
+[
+    {
+        "name": "A",
+        "source_args": [],
+        "tag": "<<<A>>>",
+        "parsed_name": "A",
+        "parsed_args": []
+    },
+    {
+        "name": "Foo",
+        "source_args": [
+            "a"
+        ],
+        "tag": "<<<Foo(a)>>>",
+        "parsed_name": "Foo",
+        "parsed_args": [
+            "a"
+        ]
+    },
+    {
+        "name": "Item",
+        "source_args": [
+            "a",
+            "b"
+        ],
+        "tag": "<<<Item(a)(b)>>>",
+        "parsed_name": "Item",
+        "parsed_args": [
+            "b",
+            "a"
+        ]
+    },
+    {
+        "name": "Login",
+        "source_args": [
+            "user",
+            "pass"
+        ],
+        "tag": "<<<Login(user)(pass)>>>",
+        "parsed_name": "Login",
+        "parsed_args": [
+            "pass",
+            "user"
+        ]
+    },
+    {
+        "name": "Pair",
+        "source_args": [
+            "x",
+            "y",
+            "z"
+        ],
+        "tag": "<<<Pair(x)(y)(z)>>>",
+        "parsed_name": "Pair",
+        "parsed_args": [
+            "z",
+            "y",
+            "x"
+        ]
+    },
+    {
+        "name": "Nums",
+        "source_args": [
+            "1",
+            "2",
+            "3"
+        ],
+        "tag": "<<<Nums(1)(2)(3)>>>",
+        "parsed_name": "Nums",
+        "parsed_args": [
+            "3",
+            "2",
+            "1"
+        ]
+    },
+    {
+        "name": "Und",
+        "source_args": [
+            "a_b",
+            "c_d"
+        ],
+        "tag": "<<<Und(a_b)(c_d)>>>",
+        "parsed_name": "Und",
+        "parsed_args": [
+            "c_d",
+            "a_b"
+        ]
+    },
+    {
+        "name": "Solo",
+        "source_args": [
+            "only"
+        ],
+        "tag": "<<<Solo(only)>>>",
+        "parsed_name": "Solo",
+        "parsed_args": [
+            "only"
+        ]
+    },
+    {
+        "name": "Five",
+        "source_args": [
+            "a",
+            "b",
+            "c",
+            "d",
+            "e"
+        ],
+        "tag": "<<<Five(a)(b)(c)(d)(e)>>>",
+        "parsed_name": "Five",
+        "parsed_args": [
+            "e",
+            "d",
+            "c",
+            "b",
+            "a"
+        ]
+    },
+    {
+        "name": "A",
+        "source_args": [],
+        "tag": "<<<A>>>",
+        "parsed_name": "A",
+        "parsed_args": []
+    },
+    {
+        "name": "A",
+        "source_args": [
+            "w0"
+        ],
+        "tag": "<<<A(w0)>>>",
+        "parsed_name": "A",
+        "parsed_args": [
+            "w0"
+        ]
+    },
+    {
+        "name": "A",
+        "source_args": [
+            "w0",
+            "w1"
+        ],
+        "tag": "<<<A(w0)(w1)>>>",
+        "parsed_name": "A",
+        "parsed_args": [
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "A",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2"
+        ],
+        "tag": "<<<A(w0)(w1)(w2)>>>",
+        "parsed_name": "A",
+        "parsed_args": [
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "A",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3"
+        ],
+        "tag": "<<<A(w0)(w1)(w2)(w3)>>>",
+        "parsed_name": "A",
+        "parsed_args": [
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "A",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4"
+        ],
+        "tag": "<<<A(w0)(w1)(w2)(w3)(w4)>>>",
+        "parsed_name": "A",
+        "parsed_args": [
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "A",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5"
+        ],
+        "tag": "<<<A(w0)(w1)(w2)(w3)(w4)(w5)>>>",
+        "parsed_name": "A",
+        "parsed_args": [
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "A",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5",
+            "w6"
+        ],
+        "tag": "<<<A(w0)(w1)(w2)(w3)(w4)(w5)(w6)>>>",
+        "parsed_name": "A",
+        "parsed_args": [
+            "w6",
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "A",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5",
+            "w6",
+            "w7"
+        ],
+        "tag": "<<<A(w0)(w1)(w2)(w3)(w4)(w5)(w6)(w7)>>>",
+        "parsed_name": "A",
+        "parsed_args": [
+            "w7",
+            "w6",
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Foo",
+        "source_args": [],
+        "tag": "<<<Foo>>>",
+        "parsed_name": "Foo",
+        "parsed_args": []
+    },
+    {
+        "name": "Foo",
+        "source_args": [
+            "w0"
+        ],
+        "tag": "<<<Foo(w0)>>>",
+        "parsed_name": "Foo",
+        "parsed_args": [
+            "w0"
+        ]
+    },
+    {
+        "name": "Foo",
+        "source_args": [
+            "w0",
+            "w1"
+        ],
+        "tag": "<<<Foo(w0)(w1)>>>",
+        "parsed_name": "Foo",
+        "parsed_args": [
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Foo",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2"
+        ],
+        "tag": "<<<Foo(w0)(w1)(w2)>>>",
+        "parsed_name": "Foo",
+        "parsed_args": [
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Foo",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3"
+        ],
+        "tag": "<<<Foo(w0)(w1)(w2)(w3)>>>",
+        "parsed_name": "Foo",
+        "parsed_args": [
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Foo",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4"
+        ],
+        "tag": "<<<Foo(w0)(w1)(w2)(w3)(w4)>>>",
+        "parsed_name": "Foo",
+        "parsed_args": [
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Foo",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5"
+        ],
+        "tag": "<<<Foo(w0)(w1)(w2)(w3)(w4)(w5)>>>",
+        "parsed_name": "Foo",
+        "parsed_args": [
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Foo",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5",
+            "w6"
+        ],
+        "tag": "<<<Foo(w0)(w1)(w2)(w3)(w4)(w5)(w6)>>>",
+        "parsed_name": "Foo",
+        "parsed_args": [
+            "w6",
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Foo",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5",
+            "w6",
+            "w7"
+        ],
+        "tag": "<<<Foo(w0)(w1)(w2)(w3)(w4)(w5)(w6)(w7)>>>",
+        "parsed_name": "Foo",
+        "parsed_args": [
+            "w7",
+            "w6",
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Item",
+        "source_args": [],
+        "tag": "<<<Item>>>",
+        "parsed_name": "Item",
+        "parsed_args": []
+    },
+    {
+        "name": "Item",
+        "source_args": [
+            "w0"
+        ],
+        "tag": "<<<Item(w0)>>>",
+        "parsed_name": "Item",
+        "parsed_args": [
+            "w0"
+        ]
+    },
+    {
+        "name": "Item",
+        "source_args": [
+            "w0",
+            "w1"
+        ],
+        "tag": "<<<Item(w0)(w1)>>>",
+        "parsed_name": "Item",
+        "parsed_args": [
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Item",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2"
+        ],
+        "tag": "<<<Item(w0)(w1)(w2)>>>",
+        "parsed_name": "Item",
+        "parsed_args": [
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Item",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3"
+        ],
+        "tag": "<<<Item(w0)(w1)(w2)(w3)>>>",
+        "parsed_name": "Item",
+        "parsed_args": [
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Item",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4"
+        ],
+        "tag": "<<<Item(w0)(w1)(w2)(w3)(w4)>>>",
+        "parsed_name": "Item",
+        "parsed_args": [
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Item",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5"
+        ],
+        "tag": "<<<Item(w0)(w1)(w2)(w3)(w4)(w5)>>>",
+        "parsed_name": "Item",
+        "parsed_args": [
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Item",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5",
+            "w6"
+        ],
+        "tag": "<<<Item(w0)(w1)(w2)(w3)(w4)(w5)(w6)>>>",
+        "parsed_name": "Item",
+        "parsed_args": [
+            "w6",
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Item",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5",
+            "w6",
+            "w7"
+        ],
+        "tag": "<<<Item(w0)(w1)(w2)(w3)(w4)(w5)(w6)(w7)>>>",
+        "parsed_name": "Item",
+        "parsed_args": [
+            "w7",
+            "w6",
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Bee",
+        "source_args": [],
+        "tag": "<<<Bee>>>",
+        "parsed_name": "Bee",
+        "parsed_args": []
+    },
+    {
+        "name": "Bee",
+        "source_args": [
+            "w0"
+        ],
+        "tag": "<<<Bee(w0)>>>",
+        "parsed_name": "Bee",
+        "parsed_args": [
+            "w0"
+        ]
+    },
+    {
+        "name": "Bee",
+        "source_args": [
+            "w0",
+            "w1"
+        ],
+        "tag": "<<<Bee(w0)(w1)>>>",
+        "parsed_name": "Bee",
+        "parsed_args": [
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Bee",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2"
+        ],
+        "tag": "<<<Bee(w0)(w1)(w2)>>>",
+        "parsed_name": "Bee",
+        "parsed_args": [
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Bee",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3"
+        ],
+        "tag": "<<<Bee(w0)(w1)(w2)(w3)>>>",
+        "parsed_name": "Bee",
+        "parsed_args": [
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Bee",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4"
+        ],
+        "tag": "<<<Bee(w0)(w1)(w2)(w3)(w4)>>>",
+        "parsed_name": "Bee",
+        "parsed_args": [
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Bee",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5"
+        ],
+        "tag": "<<<Bee(w0)(w1)(w2)(w3)(w4)(w5)>>>",
+        "parsed_name": "Bee",
+        "parsed_args": [
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Bee",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5",
+            "w6"
+        ],
+        "tag": "<<<Bee(w0)(w1)(w2)(w3)(w4)(w5)(w6)>>>",
+        "parsed_name": "Bee",
+        "parsed_args": [
+            "w6",
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Bee",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5",
+            "w6",
+            "w7"
+        ],
+        "tag": "<<<Bee(w0)(w1)(w2)(w3)(w4)(w5)(w6)(w7)>>>",
+        "parsed_name": "Bee",
+        "parsed_args": [
+            "w7",
+            "w6",
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Under_Score",
+        "source_args": [],
+        "tag": "<<<Under_Score>>>",
+        "parsed_name": "Under_Score",
+        "parsed_args": []
+    },
+    {
+        "name": "Under_Score",
+        "source_args": [
+            "w0"
+        ],
+        "tag": "<<<Under_Score(w0)>>>",
+        "parsed_name": "Under_Score",
+        "parsed_args": [
+            "w0"
+        ]
+    },
+    {
+        "name": "Under_Score",
+        "source_args": [
+            "w0",
+            "w1"
+        ],
+        "tag": "<<<Under_Score(w0)(w1)>>>",
+        "parsed_name": "Under_Score",
+        "parsed_args": [
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Under_Score",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2"
+        ],
+        "tag": "<<<Under_Score(w0)(w1)(w2)>>>",
+        "parsed_name": "Under_Score",
+        "parsed_args": [
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Under_Score",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3"
+        ],
+        "tag": "<<<Under_Score(w0)(w1)(w2)(w3)>>>",
+        "parsed_name": "Under_Score",
+        "parsed_args": [
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Under_Score",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4"
+        ],
+        "tag": "<<<Under_Score(w0)(w1)(w2)(w3)(w4)>>>",
+        "parsed_name": "Under_Score",
+        "parsed_args": [
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Under_Score",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5"
+        ],
+        "tag": "<<<Under_Score(w0)(w1)(w2)(w3)(w4)(w5)>>>",
+        "parsed_name": "Under_Score",
+        "parsed_args": [
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Under_Score",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5",
+            "w6"
+        ],
+        "tag": "<<<Under_Score(w0)(w1)(w2)(w3)(w4)(w5)(w6)>>>",
+        "parsed_name": "Under_Score",
+        "parsed_args": [
+            "w6",
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Under_Score",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5",
+            "w6",
+            "w7"
+        ],
+        "tag": "<<<Under_Score(w0)(w1)(w2)(w3)(w4)(w5)(w6)(w7)>>>",
+        "parsed_name": "Under_Score",
+        "parsed_args": [
+            "w7",
+            "w6",
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Xy",
+        "source_args": [],
+        "tag": "<<<Xy>>>",
+        "parsed_name": "Xy",
+        "parsed_args": []
+    },
+    {
+        "name": "Xy",
+        "source_args": [
+            "w0"
+        ],
+        "tag": "<<<Xy(w0)>>>",
+        "parsed_name": "Xy",
+        "parsed_args": [
+            "w0"
+        ]
+    },
+    {
+        "name": "Xy",
+        "source_args": [
+            "w0",
+            "w1"
+        ],
+        "tag": "<<<Xy(w0)(w1)>>>",
+        "parsed_name": "Xy",
+        "parsed_args": [
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Xy",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2"
+        ],
+        "tag": "<<<Xy(w0)(w1)(w2)>>>",
+        "parsed_name": "Xy",
+        "parsed_args": [
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Xy",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3"
+        ],
+        "tag": "<<<Xy(w0)(w1)(w2)(w3)>>>",
+        "parsed_name": "Xy",
+        "parsed_args": [
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Xy",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4"
+        ],
+        "tag": "<<<Xy(w0)(w1)(w2)(w3)(w4)>>>",
+        "parsed_name": "Xy",
+        "parsed_args": [
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Xy",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5"
+        ],
+        "tag": "<<<Xy(w0)(w1)(w2)(w3)(w4)(w5)>>>",
+        "parsed_name": "Xy",
+        "parsed_args": [
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Xy",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5",
+            "w6"
+        ],
+        "tag": "<<<Xy(w0)(w1)(w2)(w3)(w4)(w5)(w6)>>>",
+        "parsed_name": "Xy",
+        "parsed_args": [
+            "w6",
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    },
+    {
+        "name": "Xy",
+        "source_args": [
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5",
+            "w6",
+            "w7"
+        ],
+        "tag": "<<<Xy(w0)(w1)(w2)(w3)(w4)(w5)(w6)(w7)>>>",
+        "parsed_name": "Xy",
+        "parsed_args": [
+            "w7",
+            "w6",
+            "w5",
+            "w4",
+            "w3",
+            "w2",
+            "w1",
+            "w0"
+        ]
+    }
+]

@@ -1,0 +1,140 @@
+{
+    "templates": {
+        "Greeting": "Hi",
+        "Name": "Sam",
+        "Total": "<<<add(1)(1)>>>",
+        "Header": "== <<<Greeting>>> ==",
+        "Footer": "-- bye <<<Name>>> --",
+        "Nav": "[<<<Name>>>|home]",
+        "Deep1": "[<<<Deep2>>>]",
+        "Deep2": "{<<<Greeting>>>-<<<Name>>>}",
+        "Sum2": "<<<add(2)(2)>>>"
+    },
+    "cases": [
+        {
+            "document": "plain content",
+            "expected": "plain content"
+        },
+        {
+            "document": "sum is <<<add(2)(3)>>>",
+            "expected": "sum is 5"
+        },
+        {
+            "document": "<<<Greeting>>>, <<<Name>>>!",
+            "expected": "Hi, Sam!"
+        },
+        {
+            "document": "<<<Greeting>>>, <<<Name>>>! You have <<<mul(3)(4)>>> pts",
+            "expected": "Hi, Sam! You have 12 pts"
+        },
+        {
+            "document": "<<<sub(10)(3)>>> and <<<Name>>>",
+            "expected": "7 and Sam"
+        },
+        {
+            "document": "<<<neg(5)>>>",
+            "expected": "-5"
+        },
+        {
+            "document": "template->compute: <<<Total>>>",
+            "expected": "template->compute: 2"
+        },
+        {
+            "document": "<<<add(2)(3)>>><<<mul(2)(2)>>>",
+            "expected": "54"
+        },
+        {
+            "document": "<<<Header>>>\nbody total=<<<add(10)(20)(30)>>>\n<<<Footer>>>",
+            "expected": "== Hi ==\nbody total=60\n-- bye Sam --"
+        },
+        {
+            "document": "<<<Nav>>> then <<<Total>>> then product=<<<mul(6)(7)>>>",
+            "expected": "[Sam|home] then 2 then product=42"
+        },
+        {
+            "document": "counts: <<<inc(1)>>> <<<inc(2)>>> <<<inc(3)>>>",
+            "expected": "counts: 2 3 4"
+        },
+        {
+            "document": "greet+header <<<Greeting>>> :: <<<Header>>>",
+            "expected": "greet+header Hi :: == Hi =="
+        },
+        {
+            "document": "prices max=<<<max(3)(9)(5)>>> min=<<<min(3)(9)(5)>>> pow=<<<pow(2)(6)>>>",
+            "expected": "prices max=9 min=3 pow=64"
+        },
+        {
+            "document": "<<<Greeting>>>, <<<Name>>>! <<<Greeting>>>, <<<Name>>>!",
+            "expected": "Hi, Sam! Hi, Sam!"
+        },
+        {
+            "document": "nested calc <<<sub(100)(1)(1)>>> and greet <<<Header>>>",
+            "expected": "nested calc 98 and greet == Hi =="
+        },
+        {
+            "document": "tripled <<<Name>>><<<Name>>><<<Name>>>",
+            "expected": "tripled SamSamSam"
+        },
+        {
+            "document": "pick <<<if(1)(10)(20)>>>",
+            "expected": "pick 10"
+        },
+        {
+            "document": "pick <<<if(0)(10)(20)>>>",
+            "expected": "pick 20"
+        },
+        {
+            "document": "seq yields <<<seq(3)(4)(5)>>>",
+            "expected": "seq yields 5"
+        },
+        {
+            "document": "cond <<<if(1)(100)(200)>>> and greet <<<Greeting>>>",
+            "expected": "cond 100 and greet Hi"
+        },
+        {
+            "document": "<<<seq(1)(2)(3)>>> then total <<<Total>>>",
+            "expected": "3 then total 2"
+        },
+        {
+            "document": "combo <<<if(1)(50)(99)>>> + <<<add(1)(2)>>> = mixed",
+            "expected": "combo 50 + 3 = mixed"
+        },
+        {
+            "document": "<<<Greeting>>>, <<<Name>>>! branch=<<<if(0)(7)(8)>>>",
+            "expected": "Hi, Sam! branch=8"
+        },
+        {
+            "document": "deep: <<<Deep1>>>",
+            "expected": "deep: <<<Deep1>>>"
+        },
+        {
+            "document": "<<<Deep1>>> and <<<Deep1>>>",
+            "expected": "<<<Deep1>>> and <<<Deep1>>>"
+        },
+        {
+            "document": "nums <<<Sum2>>> + <<<add(10)(20)>>>",
+            "expected": "nums <<<Sum2>>> + 30"
+        },
+        {
+            "document": "<<<if(1)(0)(1)>>> vs <<<if(0)(0)(1)>>>",
+            "expected": "0 vs 1"
+        },
+        {
+            "document": "greeting=<<<Greeting>>> deep=<<<Deep2>>> calc=<<<mul(6)(7)>>>",
+            "expected": "greeting=Hi deep=<<<Deep2>>> calc=42"
+        },
+        {
+            "document": "<<<Header>>> body <<<Deep1>>> <<<Footer>>>",
+            "expected": "== Hi == body <<<Deep1>>> -- bye Sam --"
+        },
+        {
+            "document": "repeated <<<Sum2>>><<<Sum2>>><<<Sum2>>>",
+            "expected": "repeated <<<Sum2>>><<<Sum2>>><<<Sum2>>>"
+        },
+        {
+            "document": "branch2 <<<if(1)(50)(99)>>> then deep <<<Deep1>>> end",
+            "expected": "branch2 50 then deep <<<Deep1>>> end"
+        }
+    ],
+    "unresolved": "<<<Mystery>>>"
+}

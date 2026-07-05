@@ -1,0 +1,156 @@
+{
+    "etc": [
+        {
+            "input": "<<<Foo(a_b)>>>",
+            "name": "Foo",
+            "argc": 1
+        },
+        {
+            "input": "<<<und_name(x)>>>",
+            "name": "und_name",
+            "argc": 1
+        },
+        {
+            "input": "<<<Foo(a)(b_c)>>>",
+            "name": "Foo",
+            "argc": 2
+        },
+        {
+            "input": "<<<plain(abc)>>>",
+            "name": "plain",
+            "argc": 1
+        },
+        {
+            "input": "<<<Num(1_2)>>>",
+            "name": "Num",
+            "argc": 1
+        },
+        {
+            "input": "<<<Foo(a1)>>>",
+            "name": "Foo",
+            "argc": 1
+        },
+        {
+            "input": "<<<a_b_c(d)>>>",
+            "name": "a_b_c",
+            "argc": 1
+        },
+        {
+            "input": "<<<_lead(x)>>>",
+            "name": "_lead",
+            "argc": 1
+        },
+        {
+            "input": "<<<trail_(y)>>>",
+            "name": "trail_",
+            "argc": 1
+        },
+        {
+            "input": "<<<Mid_Name(a)(b)>>>",
+            "name": "Mid_Name",
+            "argc": 2
+        },
+        {
+            "input": "<<<Tag(x_y_z)>>>",
+            "name": "Tag",
+            "argc": 1
+        },
+        {
+            "input": "<<<UP_PER(A_B)>>>",
+            "name": "UP_PER",
+            "argc": 1
+        },
+        {
+            "input": "<<<n(o_ne)(t_wo)>>>",
+            "name": "n",
+            "argc": 2
+        },
+        {
+            "input": "<<<simple(abc)(def)>>>",
+            "name": "simple",
+            "argc": 2
+        },
+        {
+            "input": "<<<w9(a)(b_1)>>>",
+            "name": "w9",
+            "argc": 2
+        }
+    ],
+    "www": [
+        {
+            "input": "<<<Foo(a_b)>>>",
+            "name": "Foo",
+            "argc": 0
+        },
+        {
+            "input": "<<<und_name(x)>>>",
+            "name": "und",
+            "argc": 1
+        },
+        {
+            "input": "<<<Foo(a)(b_c)>>>",
+            "name": "Foo",
+            "argc": 1
+        },
+        {
+            "input": "<<<plain(abc)>>>",
+            "name": "plain",
+            "argc": 1
+        },
+        {
+            "input": "<<<Num(1_2)>>>",
+            "name": "Num",
+            "argc": 0
+        },
+        {
+            "input": "<<<Foo(a1)>>>",
+            "name": "Foo",
+            "argc": 1
+        },
+        {
+            "input": "<<<a_b_c(d)>>>",
+            "name": "a",
+            "argc": 1
+        },
+        {
+            "input": "<<<_lead(x)>>>",
+            "name": "lead",
+            "argc": 1
+        },
+        {
+            "input": "<<<trail_(y)>>>",
+            "name": "trail",
+            "argc": 1
+        },
+        {
+            "input": "<<<Mid_Name(a)(b)>>>",
+            "name": "Mid",
+            "argc": 2
+        },
+        {
+            "input": "<<<Tag(x_y_z)>>>",
+            "name": "Tag",
+            "argc": 0
+        },
+        {
+            "input": "<<<UP_PER(A_B)>>>",
+            "name": "UP",
+            "argc": 0
+        },
+        {
+            "input": "<<<n(o_ne)(t_wo)>>>",
+            "name": "n",
+            "argc": 0
+        },
+        {
+            "input": "<<<simple(abc)(def)>>>",
+            "name": "simple",
+            "argc": 2
+        },
+        {
+            "input": "<<<w9(a)(b_1)>>>",
+            "name": "w9",
+            "argc": 1
+        }
+    ]
+}

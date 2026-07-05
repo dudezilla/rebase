@@ -1,0 +1,7 @@
+We can checkout here. We have a current folder containing our current source. 
+We might have another set of unique code (tournaments)
+Point current will be what is tracked. - Everything else is tooling to change current. (git-ignore)
+Each version - can have state
+	We needed to ship minimum spec for state just to do something usefull.
+	For now just compress our database files (and include them here) When we checkout - we can install the database.
+		-with an optional paramter- 

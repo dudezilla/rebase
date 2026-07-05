@@ -1,0 +1,2 @@
+When the context drifted we started to notice files appear all throughout the code base - there could be half a dozen versions of the software checked out at random locations.
+Find them - tracking them throgh git hashes - and check place them here.

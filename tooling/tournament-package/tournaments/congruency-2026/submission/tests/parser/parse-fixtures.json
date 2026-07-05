@@ -1,0 +1,387 @@
+[
+    {
+        "input": "<<<Foo>>>",
+        "full_tag": "Foo",
+        "function_name": "Foo",
+        "arguments": [],
+        "arg_count": 0
+    },
+    {
+        "input": "<<<Title>>>",
+        "full_tag": "Title",
+        "function_name": "Title",
+        "arguments": [],
+        "arg_count": 0
+    },
+    {
+        "input": "<<<Body>>>",
+        "full_tag": "Body",
+        "function_name": "Body",
+        "arguments": [],
+        "arg_count": 0
+    },
+    {
+        "input": "<<<Content>>>",
+        "full_tag": "Content",
+        "function_name": "Content",
+        "arguments": [],
+        "arg_count": 0
+    },
+    {
+        "input": "<<<Logout>>>",
+        "full_tag": "Logout",
+        "function_name": "Logout",
+        "arguments": [],
+        "arg_count": 0
+    },
+    {
+        "input": "<<<x>>>",
+        "full_tag": "x",
+        "function_name": "x",
+        "arguments": [],
+        "arg_count": 0
+    },
+    {
+        "input": "<<<Z9>>>",
+        "full_tag": "Z9",
+        "function_name": "Z9",
+        "arguments": [],
+        "arg_count": 0
+    },
+    {
+        "input": "<<<Foo(bar)>>>",
+        "full_tag": "Foo(bar)",
+        "function_name": "Foo",
+        "arguments": [
+            "bar"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<Body(content)>>>",
+        "full_tag": "Body(content)",
+        "function_name": "Body",
+        "arguments": [
+            "content"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<Login(user)>>>",
+        "full_tag": "Login(user)",
+        "function_name": "Login",
+        "arguments": [
+            "user"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<price_maker(item_1)>>>",
+        "full_tag": "price_maker(item_1)",
+        "function_name": "price_maker",
+        "arguments": [
+            "item_1"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<Foo(bar)(baz)>>>",
+        "full_tag": "Foo(bar)(baz)",
+        "function_name": "Foo",
+        "arguments": [
+            "baz",
+            "bar"
+        ],
+        "arg_count": 2
+    },
+    {
+        "input": "<<<Login(user)(pass)>>>",
+        "full_tag": "Login(user)(pass)",
+        "function_name": "Login",
+        "arguments": [
+            "pass",
+            "user"
+        ],
+        "arg_count": 2
+    },
+    {
+        "input": "<<<pair(a)(b)>>>",
+        "full_tag": "pair(a)(b)",
+        "function_name": "pair",
+        "arguments": [
+            "b",
+            "a"
+        ],
+        "arg_count": 2
+    },
+    {
+        "input": "<<<ItemList(catalog)(page)(admin)>>>",
+        "full_tag": "ItemList(catalog)(page)(admin)",
+        "function_name": "ItemList",
+        "arguments": [
+            "admin",
+            "page",
+            "catalog"
+        ],
+        "arg_count": 3
+    },
+    {
+        "input": "<<<three(a)(b)(c)>>>",
+        "full_tag": "three(a)(b)(c)",
+        "function_name": "three",
+        "arguments": [
+            "c",
+            "b",
+            "a"
+        ],
+        "arg_count": 3
+    },
+    {
+        "input": "<<<A(1)(2)(3)(4)(5)>>>",
+        "full_tag": "A(1)(2)(3)(4)(5)",
+        "function_name": "A",
+        "arguments": [
+            "5",
+            "4",
+            "3",
+            "2",
+            "1"
+        ],
+        "arg_count": 5
+    },
+    {
+        "input": "<<<many(a)(b)(c)(d)(e)(f)>>>",
+        "full_tag": "many(a)(b)(c)(d)(e)(f)",
+        "function_name": "many",
+        "arguments": [
+            "f",
+            "e",
+            "d",
+            "c",
+            "b",
+            "a"
+        ],
+        "arg_count": 6
+    },
+    {
+        "input": "<<<Show()>>>",
+        "full_tag": "Show()",
+        "function_name": "Show",
+        "arguments": [
+            ""
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<empties()()>>>",
+        "full_tag": "empties()()",
+        "function_name": "empties",
+        "arguments": [
+            "",
+            ""
+        ],
+        "arg_count": 2
+    },
+    {
+        "input": "<<<mid(a)()(c)>>>",
+        "full_tag": "mid(a)()(c)",
+        "function_name": "mid",
+        "arguments": [
+            "c",
+            "",
+            "a"
+        ],
+        "arg_count": 3
+    },
+    {
+        "input": "<<<digits(123)(456)>>>",
+        "full_tag": "digits(123)(456)",
+        "function_name": "digits",
+        "arguments": [
+            "456",
+            "123"
+        ],
+        "arg_count": 2
+    },
+    {
+        "input": "<<<under_score(one_two)(three_four)>>>",
+        "full_tag": "under_score(one_two)(three_four)",
+        "function_name": "under_score",
+        "arguments": [
+            "three_four",
+            "one_two"
+        ],
+        "arg_count": 2
+    },
+    {
+        "input": "<<<Mixed(a1)(b_2)(C3)>>>",
+        "full_tag": "Mixed(a1)(b_2)(C3)",
+        "function_name": "Mixed",
+        "arguments": [
+            "C3",
+            "b_2",
+            "a1"
+        ],
+        "arg_count": 3
+    },
+    {
+        "input": "<<<longNameHere(payload)>>>",
+        "full_tag": "longNameHere(payload)",
+        "function_name": "longNameHere",
+        "arguments": [
+            "payload"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<tag_1(x)>>>",
+        "full_tag": "tag_1(x)",
+        "function_name": "tag_1",
+        "arguments": [
+            "x"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<UPPER(LOW)>>>",
+        "full_tag": "UPPER(LOW)",
+        "function_name": "UPPER",
+        "arguments": [
+            "LOW"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<n0(a)(b)(c)(d)>>>",
+        "full_tag": "n0(a)(b)(c)(d)",
+        "function_name": "n0",
+        "arguments": [
+            "d",
+            "c",
+            "b",
+            "a"
+        ],
+        "arg_count": 4
+    },
+    {
+        "input": "<<<numname9(a)>>>",
+        "full_tag": "numname9(a)",
+        "function_name": "numname9",
+        "arguments": [
+            "a"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<Cat(one)(two)(three)(four)(five)(six)(seven)>>>",
+        "full_tag": "Cat(one)(two)(three)(four)(five)(six)(seven)",
+        "function_name": "Cat",
+        "arguments": [
+            "seven",
+            "six",
+            "five",
+            "four",
+            "three",
+            "two",
+            "one"
+        ],
+        "arg_count": 7
+    },
+    {
+        "input": "<<<mixCase(AbC)(dEf)>>>",
+        "full_tag": "mixCase(AbC)(dEf)",
+        "function_name": "mixCase",
+        "arguments": [
+            "dEf",
+            "AbC"
+        ],
+        "arg_count": 2
+    },
+    {
+        "input": "<<<z(_leading)>>>",
+        "full_tag": "z(_leading)",
+        "function_name": "z",
+        "arguments": [
+            "_leading"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<trailer(end_)>>>",
+        "full_tag": "trailer(end_)",
+        "function_name": "trailer",
+        "arguments": [
+            "end_"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<solo()>>>",
+        "full_tag": "solo()",
+        "function_name": "solo",
+        "arguments": [
+            ""
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<two_empty()()>>>",
+        "full_tag": "two_empty()()",
+        "function_name": "two_empty",
+        "arguments": [
+            "",
+            ""
+        ],
+        "arg_count": 2
+    },
+    {
+        "input": "<<<w(a_b_c_d)>>>",
+        "full_tag": "w(a_b_c_d)",
+        "function_name": "w",
+        "arguments": [
+            "a_b_c_d"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<Order(cart)(user)(confirm)>>>",
+        "full_tag": "Order(cart)(user)(confirm)",
+        "function_name": "Order",
+        "arguments": [
+            "confirm",
+            "user",
+            "cart"
+        ],
+        "arg_count": 3
+    },
+    {
+        "input": "<<<Catalog(root)>>>",
+        "full_tag": "Catalog(root)",
+        "function_name": "Catalog",
+        "arguments": [
+            "root"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<n(0)>>>",
+        "full_tag": "n(0)",
+        "function_name": "n",
+        "arguments": [
+            "0"
+        ],
+        "arg_count": 1
+    },
+    {
+        "input": "<<<big(11)(22)(33)(44)>>>",
+        "full_tag": "big(11)(22)(33)(44)",
+        "function_name": "big",
+        "arguments": [
+            "44",
+            "33",
+            "22",
+            "11"
+        ],
+        "arg_count": 4
+    }
+]

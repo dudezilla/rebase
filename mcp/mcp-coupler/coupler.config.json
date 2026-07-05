@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "congruency": {
+      "command": "node",
+      "args": ["/home/notificationsforsteven/congruency-mcp/server.js"],
+      "env": { "CONGRUENCY_ROOT": "/home/notificationsforsteven" }
+    }
+  }
+}

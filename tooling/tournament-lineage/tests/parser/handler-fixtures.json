@@ -1,0 +1,38 @@
+[
+    {
+        "document": "<<<TestTagA(3)>>>",
+        "expected": "<br><hr>TestTagA Has been Called with value 3  <br><hr>TestTagA Has been Called with value 2  <br><hr>TestTagA Has been Called with value 1  <br><hr>TestTagA Has been Called with value 0 The base case.   "
+    },
+    {
+        "document": "start <<<TestTagA(1)>>> end",
+        "expected": "start <br><hr>TestTagA Has been Called with value 1  <br><hr>TestTagA Has been Called with value 0 The base case.  end"
+    },
+    {
+        "document": "mix <<<add(2)(3)>>> and <<<TestTagA(0)>>>",
+        "expected": "mix 5 and <br><hr>TestTagA Has been Called with value 0 The base case."
+    },
+    {
+        "document": "<<<Greeting>>>, <<<Name>>>! then <<<TestTagA(2)>>>",
+        "expected": "Hi, Sam! then <br><hr>TestTagA Has been Called with value 2  <br><hr>TestTagA Has been Called with value 1  <br><hr>TestTagA Has been Called with value 0 The base case.  "
+    },
+    {
+        "document": "two tags <<<TestTagA(1)>>> | <<<TestTagA(2)>>>",
+        "expected": "two tags <br><hr>TestTagA Has been Called with value 1  <br><hr>TestTagA Has been Called with value 0 The base case.  | <br><hr>TestTagA Has been Called with value 2  <br><hr>TestTagA Has been Called with value 1  <br><hr>TestTagA Has been Called with value 0 The base case.  "
+    },
+    {
+        "document": "cond=<<<if(1)(100)(200)>>> greet=<<<Greeting>>> tag=<<<TestTagA(1)>>>",
+        "expected": "cond=100 greet=Hi tag=<br><hr>TestTagA Has been Called with value 1  <br><hr>TestTagA Has been Called with value 0 The base case. "
+    },
+    {
+        "document": "seq=<<<seq(5)(6)(7)>>> name=<<<Name>>>",
+        "expected": "seq=7 name=Sam"
+    },
+    {
+        "document": "branch <<<if(0)(1)(2)>>> then <<<TestTagA(0)>>>",
+        "expected": "branch 2 then <br><hr>TestTagA Has been Called with value 0 The base case."
+    },
+    {
+        "document": "all: <<<Greeting>>> <<<add(4)(5)>>> <<<if(1)(9)(0)>>> <<<TestTagA(2)>>> <<<Name>>>",
+        "expected": "all: Hi 9 9 <br><hr>TestTagA Has been Called with value 2  <br><hr>TestTagA Has been Called with value 1  <br><hr>TestTagA Has been Called with value 0 The base case.   Sam"
+    }
+]

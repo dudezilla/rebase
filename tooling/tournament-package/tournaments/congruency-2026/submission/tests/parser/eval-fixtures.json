@@ -1,0 +1,3338 @@
+[
+    {
+        "name": "literal",
+        "expr": {
+            "op": "int",
+            "value": 7
+        },
+        "expected": 7
+    },
+    {
+        "name": "add2",
+        "expr": {
+            "op": "add",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 2
+                },
+                {
+                    "op": "int",
+                    "value": 3
+                }
+            ]
+        },
+        "expected": 5
+    },
+    {
+        "name": "add3",
+        "expr": {
+            "op": "add",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 1
+                },
+                {
+                    "op": "int",
+                    "value": 2
+                },
+                {
+                    "op": "int",
+                    "value": 4
+                }
+            ]
+        },
+        "expected": 7
+    },
+    {
+        "name": "sub",
+        "expr": {
+            "op": "sub",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 10
+                },
+                {
+                    "op": "int",
+                    "value": 3
+                },
+                {
+                    "op": "int",
+                    "value": 2
+                }
+            ]
+        },
+        "expected": 5
+    },
+    {
+        "name": "mul",
+        "expr": {
+            "op": "mul",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 3
+                },
+                {
+                    "op": "int",
+                    "value": 4
+                }
+            ]
+        },
+        "expected": 12
+    },
+    {
+        "name": "neg",
+        "expr": {
+            "op": "neg",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 9
+                }
+            ]
+        },
+        "expected": -9
+    },
+    {
+        "name": "nested",
+        "expr": {
+            "op": "add",
+            "args": [
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "op": "int",
+                    "value": 4
+                }
+            ]
+        },
+        "expected": 10
+    },
+    {
+        "name": "eq-true",
+        "expr": {
+            "op": "eq",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 5
+                },
+                {
+                    "op": "int",
+                    "value": 5
+                }
+            ]
+        },
+        "expected": 1
+    },
+    {
+        "name": "eq-false",
+        "expr": {
+            "op": "eq",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 5
+                },
+                {
+                    "op": "int",
+                    "value": 6
+                }
+            ]
+        },
+        "expected": 0
+    },
+    {
+        "name": "if-then",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 1
+                },
+                {
+                    "op": "int",
+                    "value": 11
+                },
+                {
+                    "op": "int",
+                    "value": 22
+                }
+            ]
+        },
+        "expected": 11
+    },
+    {
+        "name": "if-else",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 0
+                },
+                {
+                    "op": "int",
+                    "value": 11
+                },
+                {
+                    "op": "int",
+                    "value": 22
+                }
+            ]
+        },
+        "expected": 22
+    },
+    {
+        "name": "if-computed",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "eq",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                },
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "int",
+                    "value": 99
+                }
+            ]
+        },
+        "expected": 2
+    },
+    {
+        "name": "seq",
+        "expr": {
+            "op": "seq",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 1
+                },
+                {
+                    "op": "int",
+                    "value": 2
+                },
+                {
+                    "op": "int",
+                    "value": 3
+                }
+            ]
+        },
+        "expected": 3
+    },
+    {
+        "name": "lt-true",
+        "expr": {
+            "op": "lt",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 3
+                },
+                {
+                    "op": "int",
+                    "value": 8
+                }
+            ]
+        },
+        "expected": 1
+    },
+    {
+        "name": "lt-false",
+        "expr": {
+            "op": "lt",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 8
+                },
+                {
+                    "op": "int",
+                    "value": 3
+                }
+            ]
+        },
+        "expected": 0
+    },
+    {
+        "name": "deep",
+        "expr": {
+            "op": "sub",
+            "args": [
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "add",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 1
+                                },
+                                {
+                                    "op": "int",
+                                    "value": 2
+                                }
+                            ]
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "op": "int",
+                    "value": 4
+                }
+            ]
+        },
+        "expected": 5
+    },
+    {
+        "name": "div-floor",
+        "expr": {
+            "op": "div",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 20
+                },
+                {
+                    "op": "int",
+                    "value": 6
+                }
+            ]
+        },
+        "expected": 3
+    },
+    {
+        "name": "mod-basic",
+        "expr": {
+            "op": "mod",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 17
+                },
+                {
+                    "op": "int",
+                    "value": 5
+                }
+            ]
+        },
+        "expected": 2
+    },
+    {
+        "name": "lt-equal",
+        "expr": {
+            "op": "lt",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 5
+                },
+                {
+                    "op": "int",
+                    "value": 5
+                }
+            ]
+        },
+        "expected": 0
+    },
+    {
+        "name": "add-single",
+        "expr": {
+            "op": "add",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 5
+                }
+            ]
+        },
+        "expected": 5
+    },
+    {
+        "name": "mul-single",
+        "expr": {
+            "op": "mul",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 7
+                }
+            ]
+        },
+        "expected": 7
+    },
+    {
+        "name": "neg-neg",
+        "expr": {
+            "op": "neg",
+            "args": [
+                {
+                    "op": "neg",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 4
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 4
+    },
+    {
+        "name": "seq5",
+        "expr": {
+            "op": "seq",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 1
+                },
+                {
+                    "op": "int",
+                    "value": 2
+                },
+                {
+                    "op": "int",
+                    "value": 3
+                },
+                {
+                    "op": "int",
+                    "value": 4
+                },
+                {
+                    "op": "int",
+                    "value": 9
+                }
+            ]
+        },
+        "expected": 9
+    },
+    {
+        "name": "mul-big",
+        "expr": {
+            "op": "mul",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 12
+                },
+                {
+                    "op": "int",
+                    "value": 12
+                }
+            ]
+        },
+        "expected": 144
+    },
+    {
+        "name": "eq-computed",
+        "expr": {
+            "op": "eq",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                },
+                {
+                    "op": "int",
+                    "value": 4
+                }
+            ]
+        },
+        "expected": 1
+    },
+    {
+        "name": "deep-mix",
+        "expr": {
+            "op": "add",
+            "args": [
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 10
+                        },
+                        {
+                            "op": "int",
+                            "value": 4
+                        }
+                    ]
+                },
+                {
+                    "op": "div",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 9
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 15
+    },
+    {
+        "name": "if-nested",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "lt",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                },
+                {
+                    "op": "if",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 0
+                        },
+                        {
+                            "op": "int",
+                            "value": 7
+                        },
+                        {
+                            "op": "int",
+                            "value": 8
+                        }
+                    ]
+                },
+                {
+                    "op": "int",
+                    "value": 9
+                }
+            ]
+        },
+        "expected": 8
+    },
+    {
+        "name": "mod-zero",
+        "expr": {
+            "op": "mod",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 10
+                },
+                {
+                    "op": "int",
+                    "value": 5
+                }
+            ]
+        },
+        "expected": 0
+    },
+    {
+        "name": "max3",
+        "expr": {
+            "op": "max",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 3
+                },
+                {
+                    "op": "int",
+                    "value": 7
+                },
+                {
+                    "op": "int",
+                    "value": 5
+                }
+            ]
+        },
+        "expected": 7
+    },
+    {
+        "name": "min3",
+        "expr": {
+            "op": "min",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 3
+                },
+                {
+                    "op": "int",
+                    "value": 7
+                },
+                {
+                    "op": "int",
+                    "value": 5
+                }
+            ]
+        },
+        "expected": 3
+    },
+    {
+        "name": "abs-neg",
+        "expr": {
+            "op": "abs",
+            "args": [
+                {
+                    "op": "neg",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 9
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 9
+    },
+    {
+        "name": "abs-pos",
+        "expr": {
+            "op": "abs",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 4
+                }
+            ]
+        },
+        "expected": 4
+    },
+    {
+        "name": "pow2-8",
+        "expr": {
+            "op": "pow",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 2
+                },
+                {
+                    "op": "int",
+                    "value": 8
+                }
+            ]
+        },
+        "expected": 256
+    },
+    {
+        "name": "pow5-3",
+        "expr": {
+            "op": "pow",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 5
+                },
+                {
+                    "op": "int",
+                    "value": 3
+                }
+            ]
+        },
+        "expected": 125
+    },
+    {
+        "name": "inc",
+        "expr": {
+            "op": "inc",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 41
+                }
+            ]
+        },
+        "expected": 42
+    },
+    {
+        "name": "dec",
+        "expr": {
+            "op": "dec",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 1
+                }
+            ]
+        },
+        "expected": 0
+    },
+    {
+        "name": "max-nested",
+        "expr": {
+            "op": "max",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                },
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                },
+                {
+                    "op": "int",
+                    "value": 3
+                }
+            ]
+        },
+        "expected": 4
+    },
+    {
+        "name": "deep-arith-1",
+        "expr": {
+            "op": "add",
+            "args": [
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 4
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 20
+                        },
+                        {
+                            "op": "int",
+                            "value": 5
+                        }
+                    ]
+                },
+                {
+                    "op": "div",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 30
+                        },
+                        {
+                            "op": "int",
+                            "value": 6
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 32
+    },
+    {
+        "name": "deep-arith-2",
+        "expr": {
+            "op": "mul",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 10
+                        },
+                        {
+                            "op": "int",
+                            "value": 4
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 36
+    },
+    {
+        "name": "nested-if-1",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "lt",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 5
+                        }
+                    ]
+                },
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 100
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 101
+    },
+    {
+        "name": "nested-if-2",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "eq",
+                    "args": [
+                        {
+                            "op": "mod",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 17
+                                },
+                                {
+                                    "op": "int",
+                                    "value": 5
+                                }
+                            ]
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                },
+                {
+                    "op": "pow",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 5
+                        }
+                    ]
+                },
+                {
+                    "op": "int",
+                    "value": 0
+                }
+            ]
+        },
+        "expected": 32
+    },
+    {
+        "name": "minmax-1",
+        "expr": {
+            "op": "max",
+            "args": [
+                {
+                    "op": "min",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 9
+                        },
+                        {
+                            "op": "int",
+                            "value": 4
+                        }
+                    ]
+                },
+                {
+                    "op": "min",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 7
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                },
+                {
+                    "op": "int",
+                    "value": 5
+                }
+            ]
+        },
+        "expected": 5
+    },
+    {
+        "name": "minmax-2",
+        "expr": {
+            "op": "min",
+            "args": [
+                {
+                    "op": "max",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 8
+                        }
+                    ]
+                },
+                {
+                    "op": "max",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 6
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 6
+    },
+    {
+        "name": "pow-chain",
+        "expr": {
+            "op": "pow",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 8
+    },
+    {
+        "name": "mod-nest",
+        "expr": {
+            "op": "mod",
+            "args": [
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 7
+                        },
+                        {
+                            "op": "int",
+                            "value": 9
+                        }
+                    ]
+                },
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 4
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 3
+    },
+    {
+        "name": "abs-neg-nest",
+        "expr": {
+            "op": "abs",
+            "args": [
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 10
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 7
+    },
+    {
+        "name": "seq-nest",
+        "expr": {
+            "op": "seq",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "op": "pow",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 4
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 16
+    },
+    {
+        "name": "eq-deep",
+        "expr": {
+            "op": "eq",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 8
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 1
+    },
+    {
+        "name": "big-tree",
+        "expr": {
+            "op": "add",
+            "args": [
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "add",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 1
+                                },
+                                {
+                                    "op": "int",
+                                    "value": 2
+                                }
+                            ]
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "op": "div",
+                    "args": [
+                        {
+                            "op": "sub",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 20
+                                },
+                                {
+                                    "op": "int",
+                                    "value": 2
+                                }
+                            ]
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "op": "mod",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 19
+                        },
+                        {
+                            "op": "int",
+                            "value": 4
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 18
+    },
+    {
+        "name": "inc-dec-nest",
+        "expr": {
+            "op": "inc",
+            "args": [
+                {
+                    "op": "dec",
+                    "args": [
+                        {
+                            "op": "inc",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 41
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 42
+    },
+    {
+        "name": "cond-compute",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "lt",
+                    "args": [
+                        {
+                            "op": "add",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 2
+                                },
+                                {
+                                    "op": "int",
+                                    "value": 2
+                                }
+                            ]
+                        },
+                        {
+                            "op": "mul",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 2
+                                },
+                                {
+                                    "op": "int",
+                                    "value": 3
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "op": "max",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 10
+                        },
+                        {
+                            "op": "int",
+                            "value": 20
+                        }
+                    ]
+                },
+                {
+                    "op": "min",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 10
+                        },
+                        {
+                            "op": "int",
+                            "value": 20
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 20
+    },
+    {
+        "name": "ternary-mix",
+        "expr": {
+            "op": "add",
+            "args": [
+                {
+                    "op": "max",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "op": "min",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 4
+                        },
+                        {
+                            "op": "int",
+                            "value": 5
+                        },
+                        {
+                            "op": "int",
+                            "value": 6
+                        }
+                    ]
+                },
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 11
+    },
+    {
+        "name": "lazy-then",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 1
+                },
+                {
+                    "op": "int",
+                    "value": 42
+                },
+                {
+                    "op": "div",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 42
+    },
+    {
+        "name": "lazy-else",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 0
+                },
+                {
+                    "op": "div",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                },
+                {
+                    "op": "int",
+                    "value": 42
+                }
+            ]
+        },
+        "expected": 42
+    },
+    {
+        "name": "lazy-cond-true",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "lt",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                },
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 6
+                        },
+                        {
+                            "op": "int",
+                            "value": 7
+                        }
+                    ]
+                },
+                {
+                    "op": "mod",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 42
+    },
+    {
+        "name": "lazy-nested",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 1
+                },
+                {
+                    "op": "if",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 0
+                        },
+                        {
+                            "op": "div",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 1
+                                },
+                                {
+                                    "op": "int",
+                                    "value": 0
+                                }
+                            ]
+                        },
+                        {
+                            "op": "int",
+                            "value": 5
+                        }
+                    ]
+                },
+                {
+                    "op": "div",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 5
+    },
+    {
+        "name": "lazy-deep-else",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "eq",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                },
+                {
+                    "op": "int",
+                    "value": 7
+                },
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "div",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 1
+                                },
+                                {
+                                    "op": "int",
+                                    "value": 0
+                                }
+                            ]
+                        },
+                        {
+                            "op": "mod",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 1
+                                },
+                                {
+                                    "op": "int",
+                                    "value": 0
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 7
+    },
+    {
+        "name": "lazy-both-guard",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "int",
+                    "value": 1
+                },
+                {
+                    "op": "if",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 9
+                        },
+                        {
+                            "op": "div",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 1
+                                },
+                                {
+                                    "op": "int",
+                                    "value": 0
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "op": "mod",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 9
+    },
+    {
+        "name": "deep2-t1",
+        "expr": {
+            "op": "add",
+            "args": [
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "op": "div",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 20
+                        },
+                        {
+                            "op": "int",
+                            "value": 4
+                        }
+                    ]
+                },
+                {
+                    "op": "mod",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 17
+                        },
+                        {
+                            "op": "int",
+                            "value": 6
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 16
+    },
+    {
+        "name": "deep2-t2",
+        "expr": {
+            "op": "max",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                },
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 10
+                        },
+                        {
+                            "op": "int",
+                            "value": 5
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 5
+    },
+    {
+        "name": "deep2-t3",
+        "expr": {
+            "op": "min",
+            "args": [
+                {
+                    "op": "pow",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 4
+                        },
+                        {
+                            "op": "int",
+                            "value": 4
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 8
+    },
+    {
+        "name": "deep2-t4",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "lt",
+                    "args": [
+                        {
+                            "op": "add",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 2
+                                },
+                                {
+                                    "op": "int",
+                                    "value": 3
+                                }
+                            ]
+                        },
+                        {
+                            "op": "int",
+                            "value": 6
+                        }
+                    ]
+                },
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 7
+                        },
+                        {
+                            "op": "int",
+                            "value": 7
+                        }
+                    ]
+                },
+                {
+                    "op": "int",
+                    "value": 0
+                }
+            ]
+        },
+        "expected": 49
+    },
+    {
+        "name": "deep2-t5",
+        "expr": {
+            "op": "abs",
+            "args": [
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "mul",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 2
+                                },
+                                {
+                                    "op": "int",
+                                    "value": 3
+                                }
+                            ]
+                        },
+                        {
+                            "op": "mul",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 4
+                                },
+                                {
+                                    "op": "int",
+                                    "value": 5
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 14
+    },
+    {
+        "name": "deep2-t6",
+        "expr": {
+            "op": "seq",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 9
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                },
+                {
+                    "op": "pow",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 9
+    },
+    {
+        "name": "deep2-t7",
+        "expr": {
+            "op": "mul",
+            "args": [
+                {
+                    "op": "inc",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 4
+                        }
+                    ]
+                },
+                {
+                    "op": "dec",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 6
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 25
+    },
+    {
+        "name": "deep2-t8",
+        "expr": {
+            "op": "div",
+            "args": [
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 6
+                        },
+                        {
+                            "op": "int",
+                            "value": 6
+                        }
+                    ]
+                },
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 9
+    },
+    {
+        "name": "deep2-t9",
+        "expr": {
+            "op": "eq",
+            "args": [
+                {
+                    "op": "mod",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 10
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 1
+    },
+    {
+        "name": "deep2-t10",
+        "expr": {
+            "op": "add",
+            "args": [
+                {
+                    "op": "if",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 5
+                        },
+                        {
+                            "op": "int",
+                            "value": 9
+                        }
+                    ]
+                },
+                {
+                    "op": "if",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 0
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 7
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 12
+    },
+    {
+        "name": "deep2-t11",
+        "expr": {
+            "op": "pow",
+            "args": [
+                {
+                    "op": "min",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "op": "max",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 4
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 16
+    },
+    {
+        "name": "deep2-t12",
+        "expr": {
+            "op": "sub",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 100
+                        },
+                        {
+                            "op": "int",
+                            "value": 50
+                        }
+                    ]
+                },
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 7
+                        },
+                        {
+                            "op": "int",
+                            "value": 11
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 73
+    },
+    {
+        "name": "deep2-t13",
+        "expr": {
+            "op": "max",
+            "args": [
+                {
+                    "op": "min",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 9
+                        },
+                        {
+                            "op": "int",
+                            "value": 4
+                        },
+                        {
+                            "op": "int",
+                            "value": 6
+                        }
+                    ]
+                },
+                {
+                    "op": "min",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 8
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                },
+                {
+                    "op": "mul",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 5
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 5
+    },
+    {
+        "name": "deep2-t14",
+        "expr": {
+            "op": "neg",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "mul",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 2
+                                },
+                                {
+                                    "op": "int",
+                                    "value": 3
+                                }
+                            ]
+                        },
+                        {
+                            "op": "int",
+                            "value": 4
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": -10
+    },
+    {
+        "name": "deep2-t15",
+        "expr": {
+            "op": "mod",
+            "args": [
+                {
+                    "op": "pow",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 10
+                        }
+                    ]
+                },
+                {
+                    "op": "int",
+                    "value": 7
+                }
+            ]
+        },
+        "expected": 2
+    },
+    {
+        "name": "deep2-t16",
+        "expr": {
+            "op": "div",
+            "args": [
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 100
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 2
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 33
+    },
+    {
+        "name": "deep2-t17",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "eq",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 4
+                        }
+                    ]
+                },
+                {
+                    "op": "int",
+                    "value": 0
+                }
+            ]
+        },
+        "expected": 7
+    },
+    {
+        "name": "deep2-t18",
+        "expr": {
+            "op": "add",
+            "args": [
+                {
+                    "op": "abs",
+                    "args": [
+                        {
+                            "op": "neg",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 8
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "op": "inc",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 9
+                        }
+                    ]
+                },
+                {
+                    "op": "dec",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 18
+    },
+    {
+        "name": "deep2-t19",
+        "expr": {
+            "op": "mul",
+            "args": [
+                {
+                    "op": "max",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "min",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 5
+                        },
+                        {
+                            "op": "int",
+                            "value": 4
+                        },
+                        {
+                            "op": "int",
+                            "value": 6
+                        }
+                    ]
+                },
+                {
+                    "op": "int",
+                    "value": 2
+                }
+            ]
+        },
+        "expected": 24
+    },
+    {
+        "name": "deep2-t20",
+        "expr": {
+            "op": "if",
+            "args": [
+                {
+                    "op": "lt",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 5
+                        },
+                        {
+                            "op": "int",
+                            "value": 3
+                        }
+                    ]
+                },
+                {
+                    "op": "int",
+                    "value": 99
+                },
+                {
+                    "op": "mod",
+                    "args": [
+                        {
+                            "op": "mul",
+                            "args": [
+                                {
+                                    "op": "int",
+                                    "value": 8
+                                },
+                                {
+                                    "op": "int",
+                                    "value": 9
+                                }
+                            ]
+                        },
+                        {
+                            "op": "int",
+                            "value": 10
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 2
+    },
+    {
+        "name": "g3-add-0-0",
+        "expr": {
+            "op": "add",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 8
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 12
+    },
+    {
+        "name": "g3-add-0-1",
+        "expr": {
+            "op": "add",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 12
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 4
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 17
+    },
+    {
+        "name": "g3-add-0-2",
+        "expr": {
+            "op": "add",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 5
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 8
+    },
+    {
+        "name": "g3-sub-1-0",
+        "expr": {
+            "op": "sub",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 8
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 6
+    },
+    {
+        "name": "g3-sub-1-1",
+        "expr": {
+            "op": "sub",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 12
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 4
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 9
+    },
+    {
+        "name": "g3-sub-1-2",
+        "expr": {
+            "op": "sub",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 5
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 4
+    },
+    {
+        "name": "g3-mul-2-0",
+        "expr": {
+            "op": "mul",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 8
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 27
+    },
+    {
+        "name": "g3-mul-2-1",
+        "expr": {
+            "op": "mul",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 12
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 4
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 52
+    },
+    {
+        "name": "g3-mul-2-2",
+        "expr": {
+            "op": "mul",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 5
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 12
+    },
+    {
+        "name": "g3-div-3-0",
+        "expr": {
+            "op": "div",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 8
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 3
+    },
+    {
+        "name": "g3-div-3-1",
+        "expr": {
+            "op": "div",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 12
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 4
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 3
+    },
+    {
+        "name": "g3-div-3-2",
+        "expr": {
+            "op": "div",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 5
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 3
+    },
+    {
+        "name": "g3-mod-4-0",
+        "expr": {
+            "op": "mod",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 8
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 0
+    },
+    {
+        "name": "g3-mod-4-1",
+        "expr": {
+            "op": "mod",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 12
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 4
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 1
+    },
+    {
+        "name": "g3-mod-4-2",
+        "expr": {
+            "op": "mod",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 5
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 0
+    },
+    {
+        "name": "g3-max-5-0",
+        "expr": {
+            "op": "max",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 8
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 9
+    },
+    {
+        "name": "g3-max-5-1",
+        "expr": {
+            "op": "max",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 12
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 4
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 13
+    },
+    {
+        "name": "g3-max-5-2",
+        "expr": {
+            "op": "max",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 5
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 6
+    },
+    {
+        "name": "g3-min-6-0",
+        "expr": {
+            "op": "min",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 8
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 3
+    },
+    {
+        "name": "g3-min-6-1",
+        "expr": {
+            "op": "min",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 12
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 4
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 4
+    },
+    {
+        "name": "g3-min-6-2",
+        "expr": {
+            "op": "min",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 5
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 2
+    },
+    {
+        "name": "g3-pow-7-0",
+        "expr": {
+            "op": "pow",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 8
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 3
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 729
+    },
+    {
+        "name": "g3-pow-7-1",
+        "expr": {
+            "op": "pow",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 12
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 4
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 28561
+    },
+    {
+        "name": "g3-pow-7-2",
+        "expr": {
+            "op": "pow",
+            "args": [
+                {
+                    "op": "add",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 5
+                        },
+                        {
+                            "op": "int",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "op": "sub",
+                    "args": [
+                        {
+                            "op": "int",
+                            "value": 2
+                        },
+                        {
+                            "op": "int",
+                            "value": 0
+                        }
+                    ]
+                }
+            ]
+        },
+        "expected": 36
+    }
+]

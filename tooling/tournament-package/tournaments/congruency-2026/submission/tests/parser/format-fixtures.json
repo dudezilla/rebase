@@ -1,0 +1,374 @@
+[
+    {
+        "state": {
+            "name": "Foo",
+            "args": [
+                "baz",
+                "bar"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"Foo\"><arg>baz</arg><arg>bar</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Foo\"><span class=\"arg\">baz</span><span class=\"arg\">bar</span></div>",
+            "json": "{\"tag\":\"Foo\",\"args\":[\"baz\",\"bar\"]}",
+            "yaml": "tag: Foo\nargs:\n  - baz\n  - bar\n"
+        }
+    },
+    {
+        "state": {
+            "name": "Title",
+            "args": []
+        },
+        "expected": {
+            "xml": "<tag name=\"Title\"></tag>",
+            "html": "<div class=\"tag\" data-name=\"Title\"></div>",
+            "json": "{\"tag\":\"Title\",\"args\":[]}",
+            "yaml": "tag: Title\nargs: []\n"
+        }
+    },
+    {
+        "state": {
+            "name": "Show",
+            "args": [
+                ""
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"Show\"><arg></arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Show\"><span class=\"arg\"></span></div>",
+            "json": "{\"tag\":\"Show\",\"args\":[\"\"]}",
+            "yaml": "tag: Show\nargs:\n  - ''\n"
+        }
+    },
+    {
+        "state": {
+            "name": "ItemList",
+            "args": [
+                "admin",
+                "page",
+                "catalog"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"ItemList\"><arg>admin</arg><arg>page</arg><arg>catalog</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"ItemList\"><span class=\"arg\">admin</span><span class=\"arg\">page</span><span class=\"arg\">catalog</span></div>",
+            "json": "{\"tag\":\"ItemList\",\"args\":[\"admin\",\"page\",\"catalog\"]}",
+            "yaml": "tag: ItemList\nargs:\n  - admin\n  - page\n  - catalog\n"
+        }
+    },
+    {
+        "state": {
+            "name": "Order",
+            "args": [
+                "confirm",
+                "user",
+                "cart"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"Order\"><arg>confirm</arg><arg>user</arg><arg>cart</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Order\"><span class=\"arg\">confirm</span><span class=\"arg\">user</span><span class=\"arg\">cart</span></div>",
+            "json": "{\"tag\":\"Order\",\"args\":[\"confirm\",\"user\",\"cart\"]}",
+            "yaml": "tag: Order\nargs:\n  - confirm\n  - user\n  - cart\n"
+        }
+    },
+    {
+        "state": {
+            "name": "Catalog",
+            "args": [
+                "root"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"Catalog\"><arg>root</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Catalog\"><span class=\"arg\">root</span></div>",
+            "json": "{\"tag\":\"Catalog\",\"args\":[\"root\"]}",
+            "yaml": "tag: Catalog\nargs:\n  - root\n"
+        }
+    },
+    {
+        "state": {
+            "name": "Zero",
+            "args": []
+        },
+        "expected": {
+            "xml": "<tag name=\"Zero\"></tag>",
+            "html": "<div class=\"tag\" data-name=\"Zero\"></div>",
+            "json": "{\"tag\":\"Zero\",\"args\":[]}",
+            "yaml": "tag: Zero\nargs: []\n"
+        }
+    },
+    {
+        "state": {
+            "name": "One",
+            "args": [
+                "a"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"One\"><arg>a</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"One\"><span class=\"arg\">a</span></div>",
+            "json": "{\"tag\":\"One\",\"args\":[\"a\"]}",
+            "yaml": "tag: One\nargs:\n  - a\n"
+        }
+    },
+    {
+        "state": {
+            "name": "Five",
+            "args": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"Five\"><arg>a</arg><arg>b</arg><arg>c</arg><arg>d</arg><arg>e</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Five\"><span class=\"arg\">a</span><span class=\"arg\">b</span><span class=\"arg\">c</span><span class=\"arg\">d</span><span class=\"arg\">e</span></div>",
+            "json": "{\"tag\":\"Five\",\"args\":[\"a\",\"b\",\"c\",\"d\",\"e\"]}",
+            "yaml": "tag: Five\nargs:\n  - a\n  - b\n  - c\n  - d\n  - e\n"
+        }
+    },
+    {
+        "state": {
+            "name": "Empties",
+            "args": [
+                "",
+                "",
+                ""
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"Empties\"><arg></arg><arg></arg><arg></arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Empties\"><span class=\"arg\"></span><span class=\"arg\"></span><span class=\"arg\"></span></div>",
+            "json": "{\"tag\":\"Empties\",\"args\":[\"\",\"\",\"\"]}",
+            "yaml": "tag: Empties\nargs:\n  - ''\n  - ''\n  - ''\n"
+        }
+    },
+    {
+        "state": {
+            "name": "Nums",
+            "args": [
+                "1",
+                "22",
+                "333"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"Nums\"><arg>1</arg><arg>22</arg><arg>333</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Nums\"><span class=\"arg\">1</span><span class=\"arg\">22</span><span class=\"arg\">333</span></div>",
+            "json": "{\"tag\":\"Nums\",\"args\":[\"1\",\"22\",\"333\"]}",
+            "yaml": "tag: Nums\nargs:\n  - 1\n  - 22\n  - 333\n"
+        }
+    },
+    {
+        "state": {
+            "name": "Under_Score",
+            "args": [
+                "a_b",
+                "c_d"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"Under_Score\"><arg>a_b</arg><arg>c_d</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Under_Score\"><span class=\"arg\">a_b</span><span class=\"arg\">c_d</span></div>",
+            "json": "{\"tag\":\"Under_Score\",\"args\":[\"a_b\",\"c_d\"]}",
+            "yaml": "tag: Under_Score\nargs:\n  - a_b\n  - c_d\n"
+        }
+    },
+    {
+        "state": {
+            "name": "AmpArgs",
+            "args": [
+                "a&b",
+                "c<d>e"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"AmpArgs\"><arg>a&amp;b</arg><arg>c&lt;d&gt;e</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"AmpArgs\"><span class=\"arg\">a&amp;b</span><span class=\"arg\">c&lt;d&gt;e</span></div>",
+            "json": "{\"tag\":\"AmpArgs\",\"args\":[\"a&b\",\"c<d>e\"]}",
+            "yaml": "tag: AmpArgs\nargs:\n  - a&b\n  - c<d>e\n"
+        }
+    },
+    {
+        "state": {
+            "name": "QuoteArgs",
+            "args": [
+                "say \"hi\"",
+                "it's"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"QuoteArgs\"><arg>say \"hi\"</arg><arg>it's</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"QuoteArgs\"><span class=\"arg\">say &quot;hi&quot;</span><span class=\"arg\">it&#039;s</span></div>",
+            "json": "{\"tag\":\"QuoteArgs\",\"args\":[\"say \\\"hi\\\"\",\"it's\"]}",
+            "yaml": "tag: QuoteArgs\nargs:\n  - say \"hi\"\n  - it's\n"
+        }
+    },
+    {
+        "state": {
+            "name": "Six",
+            "args": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "f"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"Six\"><arg>a</arg><arg>b</arg><arg>c</arg><arg>d</arg><arg>e</arg><arg>f</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Six\"><span class=\"arg\">a</span><span class=\"arg\">b</span><span class=\"arg\">c</span><span class=\"arg\">d</span><span class=\"arg\">e</span><span class=\"arg\">f</span></div>",
+            "json": "{\"tag\":\"Six\",\"args\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}",
+            "yaml": "tag: Six\nargs:\n  - a\n  - b\n  - c\n  - d\n  - e\n  - f\n"
+        }
+    },
+    {
+        "state": {
+            "name": "MidBlank",
+            "args": [
+                "a",
+                "",
+                "c"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"MidBlank\"><arg>a</arg><arg></arg><arg>c</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"MidBlank\"><span class=\"arg\">a</span><span class=\"arg\"></span><span class=\"arg\">c</span></div>",
+            "json": "{\"tag\":\"MidBlank\",\"args\":[\"a\",\"\",\"c\"]}",
+            "yaml": "tag: MidBlank\nargs:\n  - a\n  - ''\n  - c\n"
+        }
+    },
+    {
+        "state": {
+            "name": "AllUnder",
+            "args": [
+                "a_1",
+                "b_2",
+                "c_3"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"AllUnder\"><arg>a_1</arg><arg>b_2</arg><arg>c_3</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"AllUnder\"><span class=\"arg\">a_1</span><span class=\"arg\">b_2</span><span class=\"arg\">c_3</span></div>",
+            "json": "{\"tag\":\"AllUnder\",\"args\":[\"a_1\",\"b_2\",\"c_3\"]}",
+            "yaml": "tag: AllUnder\nargs:\n  - a_1\n  - b_2\n  - c_3\n"
+        }
+    },
+    {
+        "state": {
+            "name": "Big",
+            "args": [
+                "100",
+                "200",
+                "300",
+                "400"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"Big\"><arg>100</arg><arg>200</arg><arg>300</arg><arg>400</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Big\"><span class=\"arg\">100</span><span class=\"arg\">200</span><span class=\"arg\">300</span><span class=\"arg\">400</span></div>",
+            "json": "{\"tag\":\"Big\",\"args\":[\"100\",\"200\",\"300\",\"400\"]}",
+            "yaml": "tag: Big\nargs:\n  - 100\n  - 200\n  - 300\n  - 400\n"
+        }
+    },
+    {
+        "state": {
+            "name": "Single",
+            "args": [
+                "x"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"Single\"><arg>x</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Single\"><span class=\"arg\">x</span></div>",
+            "json": "{\"tag\":\"Single\",\"args\":[\"x\"]}",
+            "yaml": "tag: Single\nargs:\n  - x\n"
+        }
+    },
+    {
+        "state": {
+            "name": "NineArgs",
+            "args": [
+                "a",
+                "b",
+                "c",
+                "d",
+                "e",
+                "f",
+                "g",
+                "h",
+                "i"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"NineArgs\"><arg>a</arg><arg>b</arg><arg>c</arg><arg>d</arg><arg>e</arg><arg>f</arg><arg>g</arg><arg>h</arg><arg>i</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"NineArgs\"><span class=\"arg\">a</span><span class=\"arg\">b</span><span class=\"arg\">c</span><span class=\"arg\">d</span><span class=\"arg\">e</span><span class=\"arg\">f</span><span class=\"arg\">g</span><span class=\"arg\">h</span><span class=\"arg\">i</span></div>",
+            "json": "{\"tag\":\"NineArgs\",\"args\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\",\"g\",\"h\",\"i\"]}",
+            "yaml": "tag: NineArgs\nargs:\n  - a\n  - b\n  - c\n  - d\n  - e\n  - f\n  - g\n  - h\n  - i\n"
+        }
+    },
+    {
+        "state": {
+            "name": "Nl",
+            "args": [
+                "line"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"Nl\"><arg>line</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Nl\"><span class=\"arg\">line</span></div>",
+            "json": "{\"tag\":\"Nl\",\"args\":[\"line\"]}",
+            "yaml": "tag: Nl\nargs:\n  - line\n"
+        }
+    },
+    {
+        "state": {
+            "name": "CaseMix",
+            "args": [
+                "AbC",
+                "dEf",
+                "GhI"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"CaseMix\"><arg>AbC</arg><arg>dEf</arg><arg>GhI</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"CaseMix\"><span class=\"arg\">AbC</span><span class=\"arg\">dEf</span><span class=\"arg\">GhI</span></div>",
+            "json": "{\"tag\":\"CaseMix\",\"args\":[\"AbC\",\"dEf\",\"GhI\"]}",
+            "yaml": "tag: CaseMix\nargs:\n  - AbC\n  - dEf\n  - GhI\n"
+        }
+    },
+    {
+        "state": {
+            "name": "Zeros",
+            "args": [
+                "0",
+                "00",
+                "000"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"Zeros\"><arg>0</arg><arg>00</arg><arg>000</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Zeros\"><span class=\"arg\">0</span><span class=\"arg\">00</span><span class=\"arg\">000</span></div>",
+            "json": "{\"tag\":\"Zeros\",\"args\":[\"0\",\"00\",\"000\"]}",
+            "yaml": "tag: Zeros\nargs:\n  - 0\n  - 00\n  - 000\n"
+        }
+    },
+    {
+        "state": {
+            "name": "Under_Name",
+            "args": [
+                "v"
+            ]
+        },
+        "expected": {
+            "xml": "<tag name=\"Under_Name\"><arg>v</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Under_Name\"><span class=\"arg\">v</span></div>",
+            "json": "{\"tag\":\"Under_Name\",\"args\":[\"v\"]}",
+            "yaml": "tag: Under_Name\nargs:\n  - v\n"
+        }
+    }
+]

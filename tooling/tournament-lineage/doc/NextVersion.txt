@@ -1,0 +1,38 @@
+Congruency Next Version
+----------------------------------------------
+
+Next Version number will be: 1
+
+
+Major Items:
+
+#1 Rewrite all DAO code
+
+	requirements
+
+		-1 standardized interface for all DAO classes is required, 
+		-a collection of compositions, an sql table class, and a mysql_connection object.
+		(a table can be selected within the collection using a program level constant)
+
+	-return rows in associative arrays, column name -> column value 
+	-DAO's will not return objects! Arrays of strings! rather than trying to mimick java beans.	
+
+#2 Include basic database.
+
+	requirements
+		-installation script.
+		-populated forms tables.
+		-blank welcome page.
+		
+
+
+Minor Items:
+
+#1 write a user interface for the logging system!
+
+	requirements
+		-write some 'exploration code'-be creative... see what can be achieved easily.
+
+
+
+		

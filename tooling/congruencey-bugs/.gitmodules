@@ -1,0 +1,3 @@
+[submodule "vendor/congruency"]
+	path = vendor/congruency
+	url = https://github.com/dudezilla/congruency.git
