@@ -23,13 +23,34 @@ HERE = os.path.dirname(os.path.abspath(__file__))       # the repo root — our 
 
 
 def find_versioning():
-    """Locate <entry>/versioning by discovery (relative to HERE; no hard-coded hash)."""
-    hits = glob.glob(os.path.join(HERE, "*", "versioning", "ops", "__init__.py"))
+    """Locate the versioning/ dir (holding ops/) by discovery, relative to HERE.
+
+    No hard-coded commit hash. Preference order:
+      1. the CURRENT checkout — checkouts/current/versioning (what the tree tracks);
+      2. versioning/ beside this file;
+      3. any <entry>/versioning one level down (legacy flat layout);
+      4. a bounded recursive search, shallowest match first, ignoring the tooling/
+         mirror so a stale copy under tooling/ is never picked over the live one.
+    """
+    def has_ops(v):
+        return os.path.isfile(os.path.join(v, "ops", "__init__.py"))
+
+    for v in (os.path.join(HERE, "checkouts", "current", "versioning"),
+              os.path.join(HERE, "versioning")):
+        if has_ops(v):
+            return v
+
+    one = sorted(glob.glob(os.path.join(HERE, "*", "versioning", "ops", "__init__.py")))
+    if one:
+        return os.path.dirname(os.path.dirname(one[0]))            # .../<entry>/versioning
+
+    hits = [h for h in glob.glob(os.path.join(HERE, "**", "versioning", "ops", "__init__.py"),
+                                 recursive=True)
+            if (os.sep + "tooling" + os.sep) not in h]
+    hits.sort(key=lambda p: p.count(os.sep))                        # shallowest wins
     if hits:
-        return os.path.dirname(os.path.dirname(hits[0]))            # .../<entry>/versioning
-    direct = os.path.join(HERE, "versioning", "ops", "__init__.py")  # or beside us
-    if os.path.isfile(direct):
-        return os.path.join(HERE, "versioning")
+        return os.path.dirname(os.path.dirname(hits[0]))
+
     raise SystemExit("ENTRY_POINT: could not find */versioning/ops under %s" % HERE)
 
 
