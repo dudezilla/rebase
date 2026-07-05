@@ -49,7 +49,9 @@ def load_registry():
 
 
 def bug_report(reg, exc, tb):
-    root = (reg or {}).get("__root__", HERE)
+    # Fallback root is the mono root (HERE's parent), never HERE itself — HERE is
+    # file-system-repair/, so joining the default rel path there would double it.
+    root = (reg or {}).get("__root__") or os.path.dirname(HERE)
     rel = (reg or {}).get("bug_reports", "file-system-repair/bug_reports.jsonl")
     path = os.path.join(root, rel)
     frames = traceback.extract_tb(exc.__traceback__)
