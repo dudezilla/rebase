@@ -69,5 +69,16 @@
     ],
     "serve_override": "repathed",
     "recorded": "2026-07-05T04:12:45"
+  },
+  {
+    "fix": "boot_www.py",
+    "target": "checkouts/current (www CMS)",
+    "purpose": "stand up CMS from new tree; verify HTTP 200",
+    "pages_200": [
+      "?page=catalog&fresh=1",
+      "?page=about",
+      "?page=catalog"
+    ],
+    "recorded": "2026-07-05T04:13:29"
   }
 ]
