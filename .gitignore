@@ -1,3 +1,4 @@
 /tooling/congruencey-harness/php/php
 /checkouts/current/state/congruency.sqlite
 /checkouts/current/state/seed.php
+/file-system-repair/bug_reports.jsonl

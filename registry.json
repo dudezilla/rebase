@@ -1,0 +1,22 @@
+{
+  "_comment": "Configuration registry for the congruencey package tooling. Every registry-gated tool (file-system-repair/*.py, and future package tools) walks UP the tree to find this file and throws if it cannot see it (see note-for-claude). It lives at the package/mono root; in the folded big-jazz layout that root is this repo, so paths.mono is '.'.",
+  "schema": 1,
+  "package": "congruencey",
+  "paths": {
+    "mono": ".",
+    "php": "tooling/congruencey-harness/php/php"
+  },
+  "bug_reports": "file-system-repair/bug_reports.jsonl",
+  "php_provision": {
+    "sources": [],
+    "download": {
+      "url": "https://dl.static-php.dev/static-php-cli/common/php-8.4.23-cli-linux-x86_64.tar.gz",
+      "member": "php"
+    }
+  },
+  "file_system_repair": {
+    "scan_root": ".",
+    "output": "file-system-repair/repo_snapshot.json",
+    "skip_dirs": [".git"]
+  }
+}

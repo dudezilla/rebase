@@ -12,28 +12,6 @@
     "recorded": "2026-07-05T04:06:55"
   },
   {
-    "fix": "install_state_db.py",
-    "target": "state/congruency.sqlite",
-    "purpose": "install SQL DB at new checkouts/state (uncompress recipe, gitignore artifact)",
-    "extracted": [
-      "congruency.sqlite",
-      "seed.php"
-    ],
-    "tables": [
-      "Document_Templates",
-      "Documents",
-      "Products",
-      "forms",
-      "orders",
-      "sqlite_sequence"
-    ],
-    "gitignored": [
-      "/checkouts/current/state/congruency.sqlite",
-      "/checkouts/current/state/seed.php"
-    ],
-    "recorded": "2026-07-05T04:07:58"
-  },
-  {
     "fix": "prove_git_store.py",
     "target": "git data-store + SQL state",
     "purpose": "prove git-primary store works (self-import green) and SQL loaded",
@@ -71,6 +49,25 @@
     "recorded": "2026-07-05T04:12:45"
   },
   {
+    "fix": "install_state_db.py",
+    "target": "state/congruency.sqlite",
+    "purpose": "install SQL DB at new checkouts/state (uncompress recipe, gitignore artifact)",
+    "extracted": [
+      "congruency.sqlite",
+      "seed.php"
+    ],
+    "tables": [
+      "Document_Templates",
+      "Documents",
+      "Products",
+      "forms",
+      "orders",
+      "sqlite_sequence"
+    ],
+    "gitignored": [],
+    "recorded": "2026-07-05T09:13:50"
+  },
+  {
     "fix": "boot_www.py",
     "target": "checkouts/current (www CMS)",
     "purpose": "stand up CMS from new tree; verify HTTP 200",
@@ -79,6 +76,6 @@
       "?page=about",
       "?page=catalog"
     ],
-    "recorded": "2026-07-05T04:13:29"
+    "recorded": "2026-07-05T09:13:51"
   }
 ]

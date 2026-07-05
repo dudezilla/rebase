@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """provision_php.py — new-tree reference-server recipe: provision the php runtime.
 
-Fixes bug: "no php binary in the new tree". The mono ships NO binaries (they don't belong
-in git); instead this python recipe places a php binary into
-<mono>/tooling/congruencey-harness/php/php from an available source, and ensures it is
-git-ignored. The recipe is committed; the binary is not.
+The mono ships NO binaries (they don't belong in git); instead this python recipe places a
+php binary into <mono>/<paths.php> (default tooling/congruencey-harness/php/php) from an
+available source, in order:
+
+  1. a local source path listed in registry php_provision.sources (or the legacy defaults);
+  2. otherwise a NETWORK FETCH of a static php-cli build (php_provision.download.url),
+     extracted in-python — no shell script.
+
+The recipe is committed; the binary is git-ignored. It verifies the result with `php -v`.
 
 python-only, registry-driven (throws if it can't see registry.json), auto-bug-report on
 exception.
@@ -15,15 +20,23 @@ import shutil
 import stat
 import subprocess
 import sys
+import tarfile
+import tempfile
 import traceback
+import urllib.request
 from datetime import datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEST_REL = os.path.join("tooling", "congruencey-harness", "php", "php")
-SOURCE_CANDIDATES = [
+DEFAULT_SOURCES = [
     "/home/notificationsforsteven/congruencey-harness/php/php",
     "/home/notificationsforsteven/b01/tooling/congruencey-harness/php/php",
 ]
+DEFAULT_DOWNLOAD = {
+    "url": "https://dl.static-php.dev/static-php-cli/common/php-8.4.23-cli-linux-x86_64.tar.gz",
+    "member": "php",
+}
+UA = "Mozilla/5.0 (X11; Linux x86_64) provision_php"
 
 
 def find_registry(start=HERE):
@@ -47,7 +60,9 @@ def load_registry():
 
 
 def bug_report(reg, exc, tb):
-    root = (reg or {}).get("__root__", HERE)
+    # Root is the registry root when known; else the mono root (HERE's parent, since HERE is
+    # file-system-repair/). Never HERE itself — that would double the default rel path.
+    root = (reg or {}).get("__root__") or os.path.dirname(HERE)
     path = os.path.join(root, (reg or {}).get("bug_reports", "file-system-repair/bug_reports.jsonl"))
     frames = traceback.extract_tb(exc.__traceback__)
     last = frames[-1] if frames else None
@@ -75,30 +90,74 @@ def ensure_gitignore(mono, rel):
     return gi
 
 
+def _download(url, dest_tmp):
+    """Fetch url -> dest_tmp. Try urllib with a browser UA (static-php.dev/Cloudflare 403s
+    the default python UA); fall back to curl if urllib is blocked. No shell script."""
+    req = urllib.request.Request(url, headers={"User-Agent": UA})
+    try:
+        with urllib.request.urlopen(req, timeout=240) as r, open(dest_tmp, "wb") as fh:
+            shutil.copyfileobj(r, fh)
+        if os.path.getsize(dest_tmp) > 0:
+            return "urllib"
+    except Exception:  # noqa: BLE001 — fall through to curl
+        pass
+    if shutil.which("curl"):
+        rc = subprocess.run(["curl", "-sL", "--max-time", "240", "-o", dest_tmp, url]).returncode
+        if rc == 0 and os.path.isfile(dest_tmp) and os.path.getsize(dest_tmp) > 0:
+            return "curl"
+    raise RuntimeError("could not download %s (urllib blocked and curl unavailable/failed)" % url)
+
+
+def _provision_from_download(dl, dest):
+    member = dl.get("member", "php")
+    with tempfile.TemporaryDirectory() as td:
+        arch = os.path.join(td, "php.tgz")
+        how = _download(dl["url"], arch)
+        with tarfile.open(arch) as t:
+            name = next((n for n in t.getnames() if os.path.basename(n) == member), None)
+            if not name:
+                raise RuntimeError("no %r member in %s" % (member, dl["url"]))
+            t.extract(name, td, filter="data")
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            shutil.copy2(os.path.join(td, name), dest)
+    return "downloaded (%s) from %s" % (how, dl["url"])
+
+
 def main():
     reg = load_registry()
     root = reg["__root__"]
-    mono = os.path.join(root, reg.get("paths", {}).get("mono", "b01"))
-
-    src = next((c for c in SOURCE_CANDIDATES if os.path.isfile(c)), None)
-    if not src:
-        raise FileNotFoundError("no php binary available to provision from: %s" % SOURCE_CANDIDATES)
-
-    dest = os.path.join(mono, DEST_REL)
+    mono = os.path.join(root, reg.get("paths", {}).get("mono", "."))
+    dest = os.path.join(mono, reg.get("paths", {}).get("php", DEST_REL))
     os.makedirs(os.path.dirname(dest), exist_ok=True)
-    shutil.copy2(src, dest)
+
+    cfg = reg.get("php_provision", {}) or {}
+    sources = cfg.get("sources", DEFAULT_SOURCES)
+    src = next((c for c in sources if os.path.isfile(c)), None)
+
+    if src and os.path.abspath(src) != os.path.abspath(dest):
+        shutil.copy2(src, dest)
+        how = "copied from %s" % src
+    elif src:
+        how = "already in place (%s)" % src
+    else:
+        how = _provision_from_download(cfg.get("download", DEFAULT_DOWNLOAD), dest)
+
     os.chmod(dest, os.stat(dest).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
-    gi = ensure_gitignore(mono, DEST_REL)
-    # stage the recipe + gitignore (the binary is ignored, not tracked)
+    ver = subprocess.run([dest, "-v"], capture_output=True, text=True)
+    if ver.returncode != 0:
+        raise RuntimeError("provisioned php does not run: %s" % (ver.stderr or ver.stdout).strip())
+
+    rel = os.path.relpath(dest, mono)
+    ensure_gitignore(mono, rel)
     subprocess.run(["git", "add", ".gitignore", "file-system-repair/provision_php.py"],
                    cwd=mono, capture_output=True, text=True)
 
     result = {
-        "mono": mono, "provisioned_from": src, "php": os.path.relpath(dest, mono),
+        "mono": mono, "php": rel, "how": how,
+        "php_version": (ver.stdout or "").splitlines()[0] if ver.stdout else "?",
         "php_size_bytes": os.path.getsize(dest),
-        "gitignored": "/" + DEST_REL.replace(os.sep, "/"),
-        "committed_artifacts": ["file-system-repair/provision_php.py", ".gitignore"],
+        "gitignored": "/" + rel.replace(os.sep, "/"),
     }
     print(json.dumps(result, indent=2))
     return result
@@ -108,7 +167,7 @@ if __name__ == "__main__":
     _reg = None
     try:
         _reg = load_registry()
-    except Exception:
+    except Exception:  # noqa: BLE001
         pass
     try:
         main()
