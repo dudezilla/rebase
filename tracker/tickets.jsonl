@@ -1,0 +1,21 @@
+{"kind": "new", "id": 1, "type": "build", "description": "Migrate mysql_* connector to native PDO through the abstract DB class", "ts": "2026-07-06T01:07:48"}
+{"kind": "status", "id": 1, "status": "open", "note": "filed", "ts": "2026-07-06T01:07:48"}
+{"kind": "new", "id": 2, "type": "test", "description": "Test-deploy lifecycle: on/off/redeploy verified end-to-end", "ts": "2026-07-06T01:07:48"}
+{"kind": "status", "id": 2, "status": "open", "note": "filed", "ts": "2026-07-06T01:07:48"}
+{"kind": "new", "id": 3, "type": "build", "description": "Dev-server config outside the install folder (~/config/congruency.json) + one-command start", "ts": "2026-07-06T01:07:49"}
+{"kind": "status", "id": 3, "status": "open", "note": "filed", "ts": "2026-07-06T01:07:49"}
+{"kind": "new", "id": 4, "type": "documentation", "description": "Update README files for config-as-data + PDO + external config", "ts": "2026-07-06T01:07:49"}
+{"kind": "status", "id": 4, "status": "open", "note": "filed", "ts": "2026-07-06T01:07:49"}
+{"kind": "new", "id": 5, "type": "build", "description": "Auto-stamp the GPL short-notice header on new code (automatic)", "ts": "2026-07-06T01:07:49"}
+{"kind": "status", "id": 5, "status": "open", "note": "filed", "ts": "2026-07-06T01:07:49"}
+{"kind": "new", "id": 6, "type": "rfc-investigation", "description": "Dead-code audit by extending the min-spec stub to demonstrate features (forms w/ validation)", "ts": "2026-07-06T01:07:49"}
+{"kind": "status", "id": 6, "status": "open", "note": "filed", "ts": "2026-07-06T01:07:49"}
+{"kind": "new", "id": 7, "type": "build", "description": "Project ticket tracker: append-only ledger, REST + human view, auto IDs, status-tracked", "ts": "2026-07-06T01:07:49"}
+{"kind": "status", "id": 7, "status": "open", "note": "filed", "ts": "2026-07-06T01:07:49"}
+{"kind": "new", "id": 8, "type": "design", "description": "Port the ticket tracker into jazz", "ts": "2026-07-06T01:07:49"}
+{"kind": "status", "id": 8, "status": "open", "note": "filed", "ts": "2026-07-06T01:07:49"}
+{"kind": "status", "id": 7, "status": "active", "note": "building it now", "ts": "2026-07-06T01:07:49"}
+{"kind": "new", "id": 9, "type": "bug", "description": "REST-filed: sample bug via POST", "ts": "2026-07-06T01:08:11"}
+{"kind": "status", "id": 9, "status": "open", "note": "filed", "ts": "2026-07-06T01:08:11"}
+{"kind": "status", "id": 9, "status": "active", "note": "triaging", "ts": "2026-07-06T01:08:11"}
+{"kind": "status", "id": 9, "status": "dropped", "note": "test artifact from REST demo", "ts": "2026-07-06T01:09:16"}
