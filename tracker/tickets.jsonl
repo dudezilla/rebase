@@ -19,3 +19,10 @@
 {"kind": "status", "id": 9, "status": "open", "note": "filed", "ts": "2026-07-06T01:08:11"}
 {"kind": "status", "id": 9, "status": "active", "note": "triaging", "ts": "2026-07-06T01:08:11"}
 {"kind": "status", "id": 9, "status": "dropped", "note": "test artifact from REST demo", "ts": "2026-07-06T01:09:16"}
+{"kind": "new", "id": 10, "type": "build", "description": "DB store + signals table + dead-man's switch (tracker/store.py) \u2014 migrate ledger->db, reconcile, notify", "ts": "2026-07-06T01:41:05"}
+{"kind": "status", "id": 10, "status": "open", "note": "filed", "ts": "2026-07-06T01:41:05"}
+{"kind": "new", "id": 11, "type": "build", "description": "Signals MCP: background runner (sync + check_deadman on a tick), catch-any-exception -> signal, expose signal queries", "ts": "2026-07-06T01:41:05"}
+{"kind": "status", "id": 11, "status": "open", "note": "filed", "ts": "2026-07-06T01:41:05"}
+{"kind": "new", "id": 12, "type": "spec", "description": "Migrate the tracker (ledger + signals + dead-man) into jazz", "ts": "2026-07-06T01:41:05"}
+{"kind": "status", "id": 12, "status": "open", "note": "filed", "ts": "2026-07-06T01:41:05"}
+{"kind": "status", "id": 10, "status": "active", "note": "store built + demonstrated", "ts": "2026-07-06T01:41:06"}
