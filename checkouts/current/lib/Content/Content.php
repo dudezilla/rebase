@@ -34,9 +34,11 @@ if(!class_exists("Content")){
 	}
 	
 	public static function sql_assoc_array($array_data){
-		$content = new Content();		
-		$content->set_content( $array_data[ ContentDAO::FIELD_NAME_CONTENT] );
-		$content->set_description( $array_data[ ContentDAO::FIELD_NAME_DESCRIPTION] );
+		$content = new Content();
+		if (is_array($array_data)) {   // bug #108: lookupContent returns null on a miss — don't deref null
+			$content->set_content( isset($array_data[ContentDAO::FIELD_NAME_CONTENT]) ? $array_data[ContentDAO::FIELD_NAME_CONTENT] : null );
+			$content->set_description( isset($array_data[ContentDAO::FIELD_NAME_DESCRIPTION]) ? $array_data[ContentDAO::FIELD_NAME_DESCRIPTION] : null );
+		}
 		return $content;
 	}
 	

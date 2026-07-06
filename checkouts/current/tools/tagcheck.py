@@ -12,7 +12,9 @@ half of the tag-test harness; predicted results (as `bet` tickets) come next.
 import argparse, json, re, sys, time, urllib.request, urllib.error
 
 ERR = ("Fatal error", "Parse error", "Uncaught", "PHP Fatal", "Stack trace",
-       "error:", "cy-form-error")
+       "error:", "cy-form-error",
+       # non-fatal PHP diagnostics too (bug #108: a null-deref Warning slipped past a fatals-only check)
+       "Warning:", "Deprecated:", "Notice:", "Trying to access", "array offset on null")
 
 
 def get(url):
