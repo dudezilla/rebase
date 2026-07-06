@@ -1,0 +1,47 @@
+{
+  "MYSQL_SERVER": "localhost",
+  "SERVER_LOGIN": "db_uers",
+  "SERVER_PASSWORD": "xxxx",
+
+  "MYSQL_AUTH_DATABASE": "CONGRUENCY_USER",
+  "AUTHENTICATOR_LOGIN": "authenticator",
+  "AUTHENTICATOR_PASSWORD": "auth995",
+
+  "MYSQL_CONT_DATABASE": "CONGRUENCY_DOCUMENT",
+  "CONTENT_LOGIN": "content",
+  "CONTENT_PASSWORD": "cont995",
+
+  "MYSQL_STORE_DATABASE": "CONGRUENCY_STORE",
+  "STORE_LOGIN": "store",
+  "STORE_PASSWORD": "store995",
+
+  "MYSQL_ORDER_DATABASE": "CONGRUENCY_ORDER",
+  "ORDER_LOGIN": "orderer",
+  "ORDER_PASSWORD": "order995",
+
+  "MYSQL_FORM_DATABASE": "CONGRUENCY_FORM",
+  "FORM_LOGIN": "forms",
+  "FORM_PASSWORD": "form995",
+
+  "SLASH": "/",
+  "WORKING_PAGE": "WORKING_PAGE",
+
+  "KEY_PREFIX": "<<<",
+  "KEY_SUFFIX": ">>>",
+  "TAG_KEY_PREFIX": "/<<<",
+  "TAG_KEY_SUFFIX": "\\>>>/",
+  "FUNCTION_NAME": "[a-zA-Z]+",
+  "FUNCTION_ARGUMENTS": "(\\([A-Za-z0-9]*\\))*",
+  "FUNCTION_ARGUMENT": "/\\([A-Za-z0-9]*\\)/",
+  "GET_TAG_IDENTIFIER": "/([a-zA-Z0-9]+\\s?(?=\\(\\s?[a-zA-Z0-9]*\\s?\\)))|(\\s?[a-zA-Z0-9]+\\s?)/",
+
+  "ORDER_SUBJECT_HEADER": "PAW: You have a new order",
+  "EMAIL_RECIPIANTS": "admin@example.com",
+
+  "USELOG_DEBUG": true,
+  "USELOG_DATABASE": true,
+  "USELOG_SECURITY": true,
+  "LOGUSER_SERVER": "localhost",
+  "LOGUSER_LOGIN": "logUser",
+  "LOGUSER_PASSWORD": "logloglog"
+}

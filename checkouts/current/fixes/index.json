@@ -218,5 +218,11 @@
     "target": "checkouts/current/fixes/modernize_license.py",
     "purpose": "fix #19: redact the personal address/contact search-needle literals from the cleanup script (grep-invisible, runtime-identical)",
     "recorded": "2026-07-06T00:01:34"
+  },
+  {
+    "fix": "retire_constants.py",
+    "target": "boot/configure.php + constants.default.json (retire Constants_patched.php + config_loader.php)",
+    "purpose": "build #20: config-as-data \u2014 one loop over JSON constants + computed derived; delete the two old PHP config files",
+    "recorded": "2026-07-06T00:23:25"
   }
 ]

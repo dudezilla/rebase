@@ -29,3 +29,12 @@ demo products/order-wizard). Add your pages/catalog/features on top.
 
 See `DEPENDENCIES.md` for runtime deps + process changes, and `checkouts/current/ARCHITECTURE.md` for the
 CMS internals.
+
+
+## Configuration is data (`configure.php` + `constants.default.json`)
+The CMS constants are DATA: `boot/constants.default.json` holds the defaults; `install.json` (a flat map
+`{ "CONSTANT_NAME": value, ... }`) overrides any of them. `boot/configure.php` loops over the merged data
+and `define()`s each constant, then computes the derived path constants (`ABS_PATH`, `TAGS_DIR`, `LIB`,
+`BIN`, `ETC`, `CLASS_LOADER_HEADER`, …). There is no `Constants_patched.php` any more. A minimal install:
+    { "CONGRUENCY_SQLITE": "/srv/site/state/congruency.sqlite", "CONGRUENCY_PORT": 8080 }
+Every key in `constants.default.json` is overridable; see `install.example.json`.
