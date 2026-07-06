@@ -57,7 +57,15 @@ if(!class_exists("RadioSelect")){
 			}else if(($subElCount == count($this->options))&& !$this->isChecked){
 				return $this->getTabIndex();
 			}
-		}		
+		}
+
+		protected function extraToArray(){                       // #45
+			return array('options' => $this->options, 'isChecked' => $this->isChecked);
+		}
+		protected function extraFromArray($extra){               // #45
+			$this->options   = isset($extra['options'])   ? $extra['options']   : NULL;
+			$this->isChecked = isset($extra['isChecked']) ? $extra['isChecked'] : NULL;
+		}
  	}
 
 }
