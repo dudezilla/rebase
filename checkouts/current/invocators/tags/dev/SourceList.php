@@ -38,12 +38,31 @@ if (!class_exists("SourceList")) {
                 if (!defined('CONGRUENCY_SQLITE')) { return "<p>SourceList: no DB.</p>"; }
                 $db = new PDO('sqlite:' . CONGRUENCY_SQLITE);
                 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $flag = (isset($_POST['flag']) && isset($_POST['flag_hash'])) ? $this->doFlag($db) : "";
                 $hash = isset($_GET['file']) ? trim((string) $_GET['file']) : '';
-                if ($hash !== '') { return $this->view($db, $hash); }
-                return $this->index($db);
+                if ($hash !== '') { return $flag . $this->view($db, $hash); }
+                return $flag . $this->index($db);
             } catch (\Throwable $e) {
                 return "<div class='cy-form-error'>SourceList error: " . self::esc($e->getMessage()) . "</div>";
             }
+        }
+
+        /* Flag a source blob for follow-up: opens a `refactor` ticket in the backlog with the blob hash,
+           path and an optional note. (Reachable while the browser is ungated during shakeout.) */
+        private function doFlag($db) {
+            $hash = trim((string) $_POST['flag_hash']);
+            $path = isset($_POST['flag_path']) ? trim((string) $_POST['flag_path']) : '';
+            $note = isset($_POST['flag_note']) ? trim((string) $_POST['flag_note']) : '';
+            $now  = microtime(true);
+            $title = "Source flag: " . $path;
+            $body  = ($note !== '' ? $note . "\n\n" : "") . "flagged source blob " . substr($hash, 0, 12) . " \u{00b7} " . $path;
+            $meta  = json_encode(array('source' => 'source-flag', 'path' => $path, 'hash' => $hash, 'note' => $note));
+            $st = $db->prepare("INSERT INTO tickets (ts,updated,component,title,severity,status,body,meta) VALUES (?,?,?,?,?,'OPEN',?,?)");
+            $st->execute(array($now, $now, 'refactor', $title, 'low', $body, $meta));
+            $id = (int) $db->lastInsertId();
+            return "<div style='border:1px solid #1a7a3a;border-left:5px solid #1a7a3a;background:#f3fbf5;padding:.5rem .8rem;margin:.5rem 0'>"
+                 . "&#9873; Flagged for follow-up &mdash; <strong>ticket #" . $id . "</strong> (" . self::esc($path)
+                 . "). <a href='?page=tickets'>see the backlog &rarr;</a></div>\n";
         }
 
         private function index($db) {
@@ -117,7 +136,13 @@ if (!class_exists("SourceList")) {
             }
             $code .= "</pre>\n";
 
-            return $head . $refhtml . $verhtml . $code;
+            $flagForm = "<form method='POST' style='margin:.5rem 0;font-size:.9rem'>"
+                . "<input type='hidden' name='flag_hash' value='" . self::esc($hash) . "'>"
+                . "<input type='hidden' name='flag_path' value='" . self::esc($path) . "'>"
+                . "<input type='text' name='flag_note' placeholder='why flag this? (optional)' style='width:55%'> "
+                . "<input type='submit' name='flag' value='&#9873; flag for follow-up'></form>\n";
+
+            return $head . $refhtml . $verhtml . $flagForm . $code;
         }
     }
 }

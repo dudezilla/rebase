@@ -57,7 +57,8 @@ walks the git tree and UPSERTs each file **content-addressed by git blob hash** 
 `code_blobs(hash,lang,bytes,body)` + `code_refs(hash,path,commit_sha,is_current)`, and the matching
 `doc_blobs`/`doc_refs`. Blobs dedupe by hash; the `*_refs` are the **reverse lookup** (hash → path@commit,
 and path → its version history); `is_current=1` marks the running-source version. Two tags render it:
-`<<<SourceList>>>` (index + `?file=<hash>` view — escaped `<pre>` + line numbers + version history) and
+`<<<SourceList>>>` (index + `?file=<hash>` view — escaped `<pre>` + line numbers + version history + a
+**flag-for-follow-up** form that opens a `refactor` ticket for the blob) and
 `<<<DocList>>>` (index + `?doc=<hash>` view — a small **escape-first markdown subset**, so `<<<Tag>>>`
 examples in docs stay literal). Scope = the app PHP + the python tooling + docs + `main:deploy.py`/`install.py`;
 frozen/vendored trees excluded. The four archive tables (and the `Login_Password`/privilege tables) are
