@@ -135,5 +135,11 @@
     "target": "versioning/README.md, fixes/README.md",
     "purpose": "doc: the ratchet apparatus (versioner + fixes/patch ledger)",
     "recorded": "2026-07-05T19:39:52"
+  },
+  {
+    "fix": "doc_cms_architecture.py",
+    "target": "checkouts/current/ARCHITECTURE.md",
+    "purpose": "doc: the 2006 CMS internals (boot/tag-engine/POM/DAO/modules/forms/classloader)",
+    "recorded": "2026-07-05T19:41:46"
   }
 ]
