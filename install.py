@@ -2,18 +2,17 @@
 """install.py — the ratchet installer (lives on `main`, the forward-only ratchet).
 
 `main` carries no source tree — only this installer. Running it:
-  1. checks out a crank branch (bNN) in place (one source tree at a time),
+  1. checks out the `source` version tag `version-<X>` (detached — materializes source@X),
   2. provisions the php runtime,
-  3. installs the crank's per-crank STATE from the `state` side-branch (auto-creating it
-     via make_state.py if the branch has none yet),
+  3. installs the matching STATE from the `state` branch (state-<X> tag, else newest <=X, else HEAD),
   4. stands the CMS up and verifies,
 recording telemetry per step and catching any bug thrown (Variant-A bug-report + jazz ticket).
 
-Self-contained (stdlib only): on `main` there is no registry or tooling until the crank is
-checked out, so this script embeds its own bug-report + best-effort jazz telemetry and drives
-the crank's registry-gated tools by subprocess.
+Self-contained (stdlib only): on `main` there is no registry or tooling until the source version
+is checked out, so this script embeds its own bug-report + best-effort jazz telemetry and drives
+the source's registry-gated tools by subprocess.
 
-    python3 install.py [--branch bNN] [--refresh-state] [--no-verify] [--return-to-main]
+    python3 install.py --version X [--no-verify] [--return-to-main]
 """
 import argparse
 import json
@@ -123,27 +122,23 @@ def step(name, fn):
 # --------------------------------------------------------------------------- #
 # crank resolution + steps                                                    #
 # --------------------------------------------------------------------------- #
-def _is_crank(name):
-    return len(name) == 3 and name[0] == "b" and name[1:].isdigit()
+def _vkey(v):
+    try:
+        return tuple(int(x) for x in v.split("."))
+    except Exception:  # noqa: BLE001
+        return None
 
 
-def resolve_branch(explicit):
-    if explicit:
-        return explicit
-    out = git("for-each-ref", "--format=%(refname:short)", "refs/heads", "refs/remotes/origin").stdout
-    cranks = sorted({b.split("/")[-1] for b in out.split() if _is_crank(b.split("/")[-1])})
-    if not cranks:
-        raise RuntimeError("no crank branch (bNN) found")
-    return cranks[-1]
-
-
-def do_checkout(branch):
-    # untracked (??) leftovers are fine for a branch switch; only tracked modifications block.
+def do_checkout_version(version):
+    # untracked (??) leftovers are fine; only tracked modifications block a checkout.
     dirty = [l for l in git("status", "--porcelain").stdout.splitlines() if not l.startswith("??")]
     if dirty:
-        raise RuntimeError("tree has uncommitted tracked changes; refusing to checkout %s" % branch)
-    run(["git", "checkout", branch], "git checkout %s" % branch)
-    return branch
+        raise RuntimeError("tree has uncommitted tracked changes; refusing to checkout")
+    tag = "version-%s" % version
+    if git("rev-parse", "-q", "--verify", tag).returncode != 0:
+        raise RuntimeError("no such source version tag: %s" % tag)
+    run(["git", "checkout", tag], "git checkout %s" % tag)   # detached -> materializes source@version
+    return tag
 
 
 def do_provision_php():
@@ -155,19 +150,25 @@ def _state_spec():
     return json.load(open(p)) if os.path.isfile(p) else {}
 
 
-def do_state(crank, refresh):
-    spec = _state_spec()
-    side = spec.get("side_branch", "state")
-    expect = set(spec.get("expect_tables", []))
-    ref = "%s:%s/database.tar.xz" % (side, crank)
+def _resolve_state_ref(version):
+    """State for a source version: state-<version> tag, else newest state-<Y<=version>, else the
+    state-branch HEAD (state:database.tar.xz)."""
+    side = _state_spec().get("side_branch", "state")
+    if git("rev-parse", "-q", "--verify", "state-%s" % version).returncode == 0:
+        return "state-%s:database.tar.xz" % version
+    tgt = _vkey(version)
+    cands = [(k, t) for t in git("tag", "-l", "state-*").stdout.split()
+             for k in [_vkey(t[len("state-"):])] if k and tgt and k <= tgt]
+    if cands:
+        return "%s:database.tar.xz" % sorted(cands)[-1][1]
+    if git("cat-file", "-e", "%s:database.tar.xz" % side).returncode == 0:
+        return "%s:database.tar.xz" % side
+    raise RuntimeError("no state found for version %s" % version)
 
-    have = git("cat-file", "-e", ref).returncode == 0
-    if refresh or not have:
-        run(["python3", os.path.join(HERE, "checkouts", "current", "tools", "make_state.py"),
-             "--crank", crank], "make_state")
-        have = git("cat-file", "-e", ref).returncode == 0
-    if not have:
-        raise RuntimeError("state %s unavailable after make_state" % ref)
+
+def do_state(version):
+    expect = set(_state_spec().get("expect_tables", []))
+    ref = _resolve_state_ref(version)
 
     # Materialize state from the side-branch tarball into the gitignored artifacts only
     # (never touch tracked files -> the working tree stays clean).
@@ -209,20 +210,20 @@ def do_verify():
 
 
 def main():
-    ap = argparse.ArgumentParser(description="ratchet installer: check out a crank + stand it up")
-    ap.add_argument("--branch", default=None, help="crank branch bNN (default: highest)")
-    ap.add_argument("--refresh-state", action="store_true", help="re-create the crank's state even if present")
+    ap = argparse.ArgumentParser(description="ratchet installer: check out a source version + stand it up")
+    ap.add_argument("--version", required=True, help="source version to install, e.g. 4.059")
     ap.add_argument("--no-verify", action="store_true", help="skip the final multi-suite verify")
     ap.add_argument("--return-to-main", action="store_true", help="git checkout main when done")
     a = ap.parse_args()
 
     start = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
-    branch = resolve_branch(a.branch)
-    print("ratchet install: %s -> crank %s" % (start, branch))
+    version = a.version
+    tag = "version-%s" % version
+    print("ratchet install: %s -> source %s" % (start, tag))
 
-    step("checkout %s" % branch, lambda: do_checkout(branch))
+    step("checkout %s" % tag, lambda: do_checkout_version(version))
     step("provision php", do_provision_php)
-    step("install state", lambda: do_state(branch, a.refresh_state))
+    step("install state", lambda: do_state(version))
     if a.no_verify:
         step("stand up", do_standup)               # serve.py --verify: HTTP 200, no tracked writes
     else:
@@ -231,8 +232,8 @@ def main():
         step("return to main", lambda: run(["git", "checkout", "main"], "git checkout main"))
 
     if T:
-        T.emit("install", status="ok", crank=branch)
-    print("\n== ratchet install OK — crank %s stood up ==" % branch)
+        T.emit("install", status="ok", version=version)
+    print("\n== ratchet install OK — source %s stood up ==" % tag)
     return 0
 
 
