@@ -129,5 +129,11 @@
     "target": "bugs/README.md",
     "purpose": "doc: bugs/ is the file-drift catalog (vs the other bug/ticket surfaces)",
     "recorded": "2026-07-05T19:38:41"
+  },
+  {
+    "fix": "doc_apparatus.py",
+    "target": "versioning/README.md, fixes/README.md",
+    "purpose": "doc: the ratchet apparatus (versioner + fixes/patch ledger)",
+    "recorded": "2026-07-05T19:39:52"
   }
 ]
