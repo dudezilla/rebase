@@ -123,5 +123,11 @@
     "target": "README.md",
     "purpose": "doc: root README \u2014 structure overview + 3-branch model",
     "recorded": "2026-07-05T19:37:23"
+  },
+  {
+    "fix": "doc_bugs.py",
+    "target": "bugs/README.md",
+    "purpose": "doc: bugs/ is the file-drift catalog (vs the other bug/ticket surfaces)",
+    "recorded": "2026-07-05T19:38:41"
   }
 ]
