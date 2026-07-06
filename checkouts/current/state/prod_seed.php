@@ -1,0 +1,59 @@
+<?php
+/* prod_seed.php — build a FRESH PRODUCTION STUB database.
+
+   A functional but empty starter site in the current Georgia styling: a landing/intro (keyed
+   `catalog`, the Controller default) + the mandatory `invalid` 404 fallback. Empty store tables
+   (Products/Categories/Store_Content_Blocks) for forward-compat. NO dev content (no bug pages,
+   no BugDemo/BugReport, no SQLi products, no order-wizard demo rows).
+
+   DB path: $CONGRUENCY_SQLITE env, else __DIR__/congruency.sqlite. A new deploy calls this once.
+   Distinct from state/seed.php (the demo/dev DB used by install.py / the ratchet).
+*/
+$db = getenv('CONGRUENCY_SQLITE');
+if (!$db) {
+    $db = __DIR__ . '/congruency.sqlite';
+}
+@unlink($db);
+$pdo = new PDO('sqlite:' . $db);
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+$pdo->exec("CREATE TABLE Document_Templates (TemplateID INTEGER PRIMARY KEY, Content TEXT)");
+$pdo->exec("CREATE TABLE Documents (DocumentID TEXT PRIMARY KEY, TemplateID INTEGER, Title TEXT, Description TEXT, ContentID INTEGER)");
+// empty store tables so the store DAOs never fatal if the storefront is wired later
+$pdo->exec("CREATE TABLE Products (`key` INTEGER, category INTEGER, name TEXT, description TEXT, page TEXT, picture TEXT)");
+$pdo->exec("CREATE TABLE Categories (`key` INTEGER, name TEXT, description TEXT)");
+$pdo->exec("CREATE TABLE Store_Content_Blocks (ContentID INTEGER, Content TEXT)");
+
+// --- current styling (verbatim from the demo) + a production nav (dev links dropped) ---
+$nav = '<nav style="margin:0 0 1.5rem;padding-bottom:.75rem;border-bottom:1px solid #ccc">'
+     . '<a href="?page=catalog">home</a></nav>';
+$style = 'body{font-family:Georgia,serif;max-width:640px;margin:3rem auto;padding:0 1rem;'
+       . 'line-height:1.6;color:#222;background:#f7f4ee}a{color:#8a5a1a}'
+       . 'h1{font-weight:normal}code{background:#eae5d8;padding:1px 4px}';
+
+function page($nav, $style, $body) {
+    // TitleTag (from Documents.Title) is the only tag; body HTML is inlined.
+    return "<!DOCTYPE html>\n<html>\n<head>\n<<<TitleTag>>>\n<style>$style</style>\n</head>\n"
+         . "<body>\n$nav\n$body\n</body>\n</html>\n";
+}
+
+$home = page($nav, $style,
+    '<h1>Welcome</h1>'
+  . '<p>This is a fresh Congruency site. Add your pages, catalog, and features here.</p>'
+  . '<p>It is rendered server-side by the congruency <code>&lt;&lt;&lt;tag&gt;&gt;&gt;</code> engine; '
+  . 'the <code>&lt;title&gt;</code> above was produced by <code>TitleTag</code> from this page&rsquo;s title.</p>');
+
+$notfound = page($nav, $style,
+    '<h1>Page not found</h1><p>That page does not exist. <a href="?page=catalog">Return home</a>.</p>');
+
+$tpl = $pdo->prepare("INSERT INTO Document_Templates (TemplateID, Content) VALUES (?, ?)");
+$tpl->execute(array(1, $home));
+$tpl->execute(array(99, $notfound));
+
+$doc = $pdo->prepare("INSERT INTO Documents (DocumentID, TemplateID, Title, Description, ContentID) VALUES (?,?,?,?,?)");
+$doc->execute(array('catalog', 1, 'Welcome', 'home', 0));     // landing (Controller default page)
+$doc->execute(array('invalid', 99, 'Page not found', '404', 0));  // mandatory 404 fallback
+
+echo json_encode(array("ok" => true, "db" => $db,
+                       "documents" => array("catalog", "invalid"),
+                       "tables" => array("Document_Templates", "Documents", "Products", "Categories", "Store_Content_Blocks")));

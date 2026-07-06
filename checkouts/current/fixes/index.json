@@ -182,5 +182,11 @@
     "target": "checkouts/current/boot/config_loader.php + router.php",
     "purpose": "build #13: JSON install.json -> CMS CONSTANTS via config_loader (DB path etc.); router requires it first",
     "recorded": "2026-07-05T20:34:16"
+  },
+  {
+    "fix": "install_prod_seed.py",
+    "target": "checkouts/current/state/prod_seed.php",
+    "purpose": "build #14: fresh production stub DB (intro landing + 404, empty store tables, no dev content)",
+    "recorded": "2026-07-05T20:37:12"
   }
 ]
