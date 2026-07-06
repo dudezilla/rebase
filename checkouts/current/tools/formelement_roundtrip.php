@@ -20,6 +20,7 @@ require $B . 'Lib/FormElementUtils.php';
 require $B . 'Lib/AbstractFormElement.php';
 require $B . 'BasicElements/RadioSelect.php';
 require $B . 'BasicElements/TextBox.php';
+require $B . 'BasicElements/TextField.php';
 
 $pass = 0; $fail = 0;
 function check($name, $ok) {
@@ -49,6 +50,14 @@ $t->setOrder(2); $t->setTabIndex(2);
 $b = roundtrip($t);
 check('TextBox round-trips (class/id/comment/order via base)',
       $b instanceof TextBox && $b->getId() === 'description' && $b->getCompareValue() == 2);
+
+// --- TextField (no element-specific state; base fields only) ---
+$tf = new TextField();
+$tf->setId('email'); $tf->setSelectionComment('Email:'); $tf->setRequired(true);
+$tf->setOrder(3); $tf->setTabIndex(3);
+$b = roundtrip($tf);
+check('TextField round-trips (class/id/required/order via base)',
+      $b instanceof TextField && $b->getId() === 'email' && $b->getRequired() === true && $b->getCompareValue() == 3);
 
 echo "formelement round-trip: $pass passed, $fail failed\n";
 exit($fail === 0 ? 0 : 1);
