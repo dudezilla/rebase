@@ -30,11 +30,10 @@ if(!class_exists("CatalogDAO")){
 				$selectString = "SELECT * FROM Categories";
 				$resultSet = $this->dataConnection->query($selectString);
 				if($resultSet){
-					$rows = mysql_num_rows($resultSet);
-					while($rows-- > 0){
-						array_push($result,mysql_fetch_assoc($resultSet));
+					foreach($resultSet->rows as $__row){   // #25 native (was mysql_num_rows/while/fetch_assoc)
+						array_push($result,$__row);
 					}
-					mysql_free_result($resultSet);							
+					/* #25: PDO result, no free */							
 				}
 			return $result;	
 		}
@@ -47,11 +46,10 @@ if(!class_exists("CatalogDAO")){
 				$selectString = "SELECT * FROM Products where category=$itemKey";
 				$resultSet = $this->dataConnection->query($selectString);
 				if($resultSet){
-					$rows = mysql_num_rows($resultSet);
-					while($rows-- > 0){
-						array_push($result,mysql_fetch_assoc($resultSet));
+					foreach($resultSet->rows as $__row){   // #25 native (was mysql_num_rows/while/fetch_assoc)
+						array_push($result,$__row);
 					}
-					mysql_free_result($resultSet);							
+					/* #25: PDO result, no free */							
 				}
 			}
 			return $result;	
@@ -63,12 +61,11 @@ if(!class_exists("CatalogDAO")){
 			$selectString = "SELECT * FROM Products";
 			$resultSet = $this->dataConnection->query($selectString);
 			if($resultSet){
-				$rows = mysql_num_rows($resultSet);
-				while($rows-- > 0){
-					$record = mysql_fetch_assoc($resultSet);
+				foreach($resultSet->rows as $__row){   // #25 native (was mysql_num_rows/while/fetch_assoc)
+					$record = $__row;
 					$result[$record['key']] = $record;
 				}
-				mysql_free_result($resultSet);									
+				/* #25: PDO result, no free */									
 			}
 			return $result;	
 		}
@@ -85,12 +82,11 @@ if(!class_exists("CatalogDAO")){
 				$selectString = "SELECT Content FROM Store_Content_Blocks WHERE productID=$itemKey ORDER BY display_order";
 				$resultSet = $this->dataConnection->query($selectString);
 				if($resultSet){
-					$rows = mysql_num_rows($resultSet);
-					while($rows-- > 0){
-						$row = mysql_fetch_assoc($resultSet);
+					foreach($resultSet->rows as $__row){   // #25 native (was mysql_num_rows/while/fetch_assoc)
+						$row = $__row;
 						$result .= $row['Content'];
 					}
-					mysql_free_result($resultSet);							
+					/* #25: PDO result, no free */							
 				}
 			}
 			return $result;	
@@ -104,12 +100,11 @@ if(!class_exists("CatalogDAO")){
 				$selectString = "SELECT Content FROM Store_Content_Blocks WHERE categoryID=$itemKey ORDER BY display_order";
 				$resultSet = $this->dataConnection->query($selectString);
 				if($resultSet){
-					$rows = mysql_num_rows($resultSet);
-					while($rows-- > 0){
-						$row = mysql_fetch_assoc($resultSet);
+					foreach($resultSet->rows as $__row){   // #25 native (was mysql_num_rows/while/fetch_assoc)
+						$row = $__row;
 						$result .= $row['Content'];
 					}
-					mysql_free_result($resultSet);							
+					/* #25: PDO result, no free */							
 				}
 			}
 			return $result;	
