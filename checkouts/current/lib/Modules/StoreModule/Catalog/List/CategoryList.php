@@ -13,7 +13,7 @@ if(!class_exists("CategoryList")){
 		}
 
 		public function __toString(){
-			$listing = NULL;
+			$listing = '';
 			for($index=0, $fill=count($this->allCategories); $index < $fill; $index++){
 				$category = $this->allCategories[$index];
 				$listing .= $category->catalog_string() . "<br /><br />";

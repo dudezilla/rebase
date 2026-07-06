@@ -37,7 +37,7 @@ if(!class_exists("CommandRegistry")){
 		}
 
 		public function __toString(){
-			$resultString = NULL;
+			$resultString = '';
 			foreach($this->registeredClasses as $className){
 				$resultString .= "Command's class name: " . $className . "\n<br>";
 			}

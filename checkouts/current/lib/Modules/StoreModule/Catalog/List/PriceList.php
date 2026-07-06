@@ -15,7 +15,7 @@ See the LICENSE file in the project root for full license terms.
 			$this->catalogList = $this->catalogDAO->select_all_products();
 		}
 		
-		public function __toString(){
+		public function __toString(){ return '';   // #60-class: always return a string
 			
 		}
 		

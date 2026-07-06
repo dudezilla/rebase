@@ -12,7 +12,7 @@ if(!class_exists("PriceDAO")){
 			$this->dataConnection->open();	
 		}
 
-		public function __toString(){
+		public function __toString(){ return '';   // #60-class: always return a string
 			
 		}
 

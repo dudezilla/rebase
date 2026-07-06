@@ -18,7 +18,7 @@ if(!class_exists("AbstractDAO")){
 		abstract public function updateRow($rowData);
 		abstract public function getBean($row);
 		
-		public function __toString(){
+		public function __toString(){ return '';   // #60-class: always return a string
 		//interpret the resultSet.	
 		}
 

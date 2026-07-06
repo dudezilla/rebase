@@ -59,7 +59,7 @@ if(!class_exists("ClassLoader")){
 
 
 		public function __toString(){
-			$filesAvailable = NULL;
+			$filesAvailable = '';
 			if(!empty($this->fileList)){
 				foreach ($this->fileList as $file=>$path){
 					$filesAvailable .= "File: " . $file . "      Path: " . $path . "\n<br>";	

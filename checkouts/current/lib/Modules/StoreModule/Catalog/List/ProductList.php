@@ -15,7 +15,7 @@ if (!class_exists("ProductList")){
 		}
 
 		public function __toString(){
-			$listing = NULL;
+			$listing = '';
 			foreach($this->products as $product){
 				$listing .= $product->catalog_string() . "<br /><br />";
 			}
