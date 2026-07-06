@@ -24,6 +24,31 @@ cd tests/parser
 One command. **No database, no web server, zero JavaScript.** Prints
 `parser corpus: N/N assertions passed`.
 
+## Run the live CMS
+
+The 2006 CMS itself is resurrected and served (zero-JavaScript, server-rendered through the
+`<<<tag>>>` engine):
+
+```bash
+python3 tools/serve.py            # http://127.0.0.1:8899/?page=catalog
+```
+
+- **Config is data** — `boot/constants.default.json` (defaults) merged with `install.json`
+  (overrides, e.g. `CONGRUENCY_SQLITE`). `install.json` may live outside the install folder via
+  the `$CONGRUENCY_CONFIG` env var. The unified DB is `~/.jazz/congruency.sqlite`.
+- **Pages** — `?page=` `catalog · about · bugs · tickets · memories · pages · tags`. Navigation is
+  generated from the `Documents` table by `<<<SiteMap>>>`.
+- **Tickets & tags** — a full ticket tracker (`<<<TicketList>>>` + a native-forms submission flow),
+  a memory log (`<<<MemoryList>>>`, the gate/MCP tool-use log), a page index (`<<<PageList>>>`), a
+  tag gallery (`<<<TagList>>>`), and category tagging (`Page_Categories` + `<<<CategoryPages>>>`).
+- **REST** — generic CRUD over every table: `GET/POST/PUT/DELETE ?api=<table>` (paginated,
+  allowlisted, column-validated).
+- **Tooling** — `tools/crawl.py` (broken-link spider), `tools/tagcheck.py` (tag-render harness),
+  `tools/gpl_stamp.py` (GPL-header check/stamp).
+
+**Full write-up: [`doc/CMS_ADDITIONS.md`](doc/CMS_ADDITIONS.md).** _(The `mysql_*`→PDO migration is
+tracked as an open ticket.)_
+
 ## Layout
 
 ```
