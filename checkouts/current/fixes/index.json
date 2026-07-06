@@ -83,5 +83,11 @@
     "target": "checkouts/current/tools/make_state.py",
     "purpose": "bug #3: reproducible database.tar.xz + idempotent state commit (de-churn state branch)",
     "recorded": "2026-07-05T18:35:20"
+  },
+  {
+    "fix": "fix_provision_php_idempotent.py",
+    "target": "file-system-repair/provision_php.py",
+    "purpose": "bug #4: provision_php idempotent \u2014 skip re-download when a working php is already at dest",
+    "recorded": "2026-07-05T18:37:01"
   }
 ]

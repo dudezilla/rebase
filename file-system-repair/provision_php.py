@@ -130,19 +130,22 @@ def main():
     dest = os.path.join(mono, reg.get("paths", {}).get("php", DEST_REL))
     os.makedirs(os.path.dirname(dest), exist_ok=True)
 
-    cfg = reg.get("php_provision", {}) or {}
-    sources = cfg.get("sources", DEFAULT_SOURCES)
-    src = next((c for c in sources if os.path.isfile(c)), None)
-
-    if src and os.path.abspath(src) != os.path.abspath(dest):
-        shutil.copy2(src, dest)
-        how = "copied from %s" % src
-    elif src:
-        how = "already in place (%s)" % src
+    # idempotent (bug #4): a WORKING php already at dest -> skip re-acquisition (the
+    # network-fetch fallback below still runs on a genuinely fresh clone).
+    if os.path.isfile(dest) and subprocess.run([dest, "-v"], capture_output=True).returncode == 0:
+        how = "already provisioned (%s)" % os.path.relpath(dest, mono)
     else:
-        how = _provision_from_download(cfg.get("download", DEFAULT_DOWNLOAD), dest)
-
-    os.chmod(dest, os.stat(dest).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+        cfg = reg.get("php_provision", {}) or {}
+        sources = cfg.get("sources", DEFAULT_SOURCES)
+        src = next((c for c in sources if os.path.isfile(c)), None)
+        if src and os.path.abspath(src) != os.path.abspath(dest):
+            shutil.copy2(src, dest)
+            how = "copied from %s" % src
+        elif src:
+            how = "already in place (%s)" % src
+        else:
+            how = _provision_from_download(cfg.get("download", DEFAULT_DOWNLOAD), dest)
+        os.chmod(dest, os.stat(dest).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
     ver = subprocess.run([dest, "-v"], capture_output=True, text=True)
     if ver.returncode != 0:
