@@ -1,9 +1,0 @@
-{
-  "name": "congruency-mcp",
-  "version": "1.0.0",
-  "description": "MCP server exposing the resurrected congruency CMS toolchain: verify suite, bug catalog, and attack telemetry.",
-  "type": "commonjs",
-  "main": "server.js",
-  "bin": { "congruency-mcp": "server.js" },
-  "private": true
-}

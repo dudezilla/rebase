@@ -22,8 +22,6 @@ The repo is three single branches — a crank is a **commit + `version-4.05x` ta
 | `checkouts/current/` | the CMS (`lib/ www/ boot/ bin/`) + the ratchet apparatus (`versioning/ fixes/ tools/ state/`) |
 | `checkouts/state/` | a compressed-DB store (legacy; the `state` branch is now authoritative) |
 | `tooling/` | test / harness / coverage / ops / bug-catalog tooling |
-| `file-system-repair/` | one-time mono tools (`build_inventory`, `assemble_mono_base`) — slated for removal |
-| `mcp/` | superseded **Node** MCP snapshot (the live MCP is the Python `~/.MCP` stack) — slated for removal |
 | `bugs/` | the content-addressed drift map |
 | `logs/` | runtime bug-report sink (`bug_reports.jsonl`, git-ignored) |
 

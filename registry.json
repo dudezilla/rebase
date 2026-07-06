@@ -13,10 +13,5 @@
       "url": "https://dl.static-php.dev/static-php-cli/common/php-8.4.23-cli-linux-x86_64.tar.gz",
       "member": "php"
     }
-  },
-  "file_system_repair": {
-    "scan_root": ".",
-    "output": "file-system-repair/repo_snapshot.json",
-    "skip_dirs": [".git"]
   }
 }

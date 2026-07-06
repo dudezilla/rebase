@@ -147,5 +147,16 @@
     "target": "tooling/README.md",
     "purpose": "doc: tooling/ top-level index (tests/harness/bugs/coverage/ops/pwdriver/tournament)",
     "recorded": "2026-07-05T19:43:02"
+  },
+  {
+    "fix": "phase3_cleanup.py",
+    "target": "file-system-repair, mcp, checkouts/state",
+    "purpose": "phase 3 (#10): remove vestigial file-system-repair/ + mcp/ + bare checkouts/state/; drop dead registry block",
+    "removed": [
+      "file-system-repair",
+      "mcp",
+      "checkouts/state"
+    ],
+    "recorded": "2026-07-05T19:49:13"
   }
 ]
