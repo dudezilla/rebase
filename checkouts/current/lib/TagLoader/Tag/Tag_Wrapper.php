@@ -60,13 +60,14 @@ See the LICENSE file in the project root for full license terms.
 			return $tags;
 		}
 						
-		public static function execute_all_tags($tag_wrapper){
+		public static function execute_all_tags($tag_wrapper, $depth = 0){
 			$result_string = $tag_wrapper->tag->get_document(); //The tag is processed. 
+			if ($depth >= 64) { return $result_string; }   // BUG-06: bound tag-render recursion (real nesting <=~6); leave nested tags literal
 			$document_string = $result_string;
 			$tIA = $tag_wrapper->identify_tag($document_string);
 			foreach($tIA as $tag_invocation){
 				$child_tag = $tag_wrapper->add_child($tag_invocation);
-				$result_substring = self::execute_all_tags($child_tag); 
+				$result_substring = self::execute_all_tags($child_tag, $depth + 1);
 				$result_string = self::replace_tag($result_string,$result_substring,$tag_invocation);
 			}
 			return $result_string;
