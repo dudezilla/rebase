@@ -1,8 +1,0 @@
-{
-  "versions": [
-    { "state": { "name": "Doc", "args": ["v1"] },        "msg": "create doc" },
-    { "state": { "name": "Doc", "args": ["v1","edit"] }, "msg": "edit doc" },
-    { "state": { "name": "Doc", "args": ["v3","final"] },"msg": "finalize doc" }
-  ],
-  "expected_history": 3
-}

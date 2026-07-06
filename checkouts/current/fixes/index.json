@@ -158,5 +158,11 @@
       "checkouts/state"
     ],
     "recorded": "2026-07-05T19:49:13"
+  },
+  {
+    "fix": "tournament_dedup.py",
+    "target": "tooling/tournament/ (removed), tooling/README.md",
+    "purpose": "dedup: remove nested-duplicate tooling/tournament/ (keeps top-level tournament-package/ + -lineage/)",
+    "recorded": "2026-07-05T19:53:59"
   }
 ]

@@ -1,8 +1,0 @@
-Congruency 
------------------------------------------------------------
-
-This is the first public release of Congruency.
-Version Number: 0
-Release date: December 18 2006.
-Released under GPL v2
-
