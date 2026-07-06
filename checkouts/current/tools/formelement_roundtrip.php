@@ -23,6 +23,7 @@ require $B . 'BasicElements/TextBox.php';
 require $B . 'BasicElements/TextField.php';
 require $B . 'BasicElements/BigTextBox.php';
 require $B . 'BasicElements/DbSelect.php';
+require $B . 'BasicElements/Checkbox.php';
 
 // DbSelect is DB-backed; point CONGRUENCY_SQLITE at the install DB so its options load
 $__cfg = dirname(__DIR__) . '/install.json';
@@ -83,6 +84,13 @@ $b = roundtrip($ds);
 check('DbSelect round-trips (class/id; options re-derived from elementString)',
       $b instanceof DbSelect && $b->getId() === 'pageId' && $b->getOptions() == $ds->getOptions()
       && count($ds->getOptions()) > 0);
+
+// --- Checkbox (no element-specific state; base fields only) ---
+$cb = new Checkbox();
+$cb->setId('urgent'); $cb->setSelectionComment('Urgent?'); $cb->setOrder(6); $cb->setTabIndex(6);
+$b = roundtrip($cb);
+check('Checkbox round-trips (class/id/order via base)',
+      $b instanceof Checkbox && $b->getId() === 'urgent' && $b->getCompareValue() == 6);
 
 echo "formelement round-trip: $pass passed, $fail failed\n";
 exit($fail === 0 ? 0 : 1);
