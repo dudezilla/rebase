@@ -10,7 +10,7 @@ if (!class_exists('DataConnection')){
 		private $database;
 		private $user;
 		private $password;		
-		private $link;
+		private $pdo;
 		
 		
 		public static function CreateConnection($server,$database,$login,$password){
@@ -26,20 +26,24 @@ if (!class_exists('DataConnection')){
 		
 	
 		public function open(){
-			$this->link = mysql_connect(MYSQL_SERVER, $this->user, $this->password);
+			// #25: native PDO (was mysql_connect)
+			if (defined('CONGRUENCY_SQLITE')) { $this->pdo = new PDO('sqlite:' . CONGRUENCY_SQLITE); }
+			else { $this->pdo = new PDO('mysql:host=' . MYSQL_SERVER . ';dbname=' . $this->database, $this->user, $this->password); }
+			$this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_SILENT);
 		}
 		
 		public function close(){
-			return mysql_close($this->link);
+			$this->pdo = null; return true;   // #25: native PDO (was mysql_close)
 		}
 	
 	
 	     
 		public function query($statement){
-			//Log the query?
-			if(mysql_select_db ($this->database, $this->link) ){
-				return mysql_query($statement, $this->link);			
-			}			
+			// #25: native PDO (was mysql_select_db + mysql_query); MysqlShimResult keeps mysql_num_rows/fetch_assoc consumers working
+			if (!isset($this->pdo)) { $this->open(); }
+			$stmt = $this->pdo->query($statement);
+			if ($stmt === false) { error_log('[DataConnection] query failed: ' . $statement); return false; }
+			return ($stmt->columnCount() > 0) ? new MysqlShimResult($stmt->fetchAll(PDO::FETCH_ASSOC)) : true;
 		}  
 
 		 /* From the PHP Manual: a best practice for avoiding injection attacks*/
