@@ -42,7 +42,8 @@ if (!function_exists('mysql_query')) {
         if ($stmt === false) {
             $info = $pdo->errorInfo();
             $GLOBALS['__mysql_last_error'] = isset($info[2]) ? $info[2] : 'error';
-            fwrite(STDERR, "[shim] query failed: $sql\n         -> {$GLOBALS['__mysql_last_error']}\n");
+            // error_log() is SAPI-portable; STDERR is only defined in the CLI SAPI, not under php -S (bug #58)
+            error_log("[shim] query failed: $sql -> {$GLOBALS['__mysql_last_error']}");
             return false;
         }
         if ($stmt->columnCount() > 0) {           // a SELECT-style result
