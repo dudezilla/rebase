@@ -1,0 +1,8 @@
+# main (the ratchet) carries only the installers — keep runtime/build artifacts out of git.
+__pycache__/
+*.pyc
+logs/
+*.sqlite
+# install.py / deploy.py provision these into the working tree at runtime:
+tooling/congruencey-harness/php/
+checkouts/current/install.json
