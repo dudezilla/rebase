@@ -36,14 +36,14 @@ if (!class_exists("TicketLogger")) {
         }
 
         /* TicketDAO-style insert: the only writer of web-submitted tickets. */
-        private static function insert_ticket($type, $description) {
+        private static function insert_ticket($type, $description, $severity = 'medium') {
             $db = new PDO('sqlite:' . CONGRUENCY_SQLITE);
             $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $now = microtime(true);
             $meta = json_encode(array('source' => 'web-form', 'type' => $type));
             $st = $db->prepare("INSERT INTO tickets (ts,updated,component,title,severity,status,body,meta)
-                                VALUES (:ts,:up,:cm,:ti,'medium','OPEN',:bo,:me)");
-            $st->execute(array(':ts' => $now, ':up' => $now, ':cm' => $type,
+                                VALUES (:ts,:up,:cm,:ti,:sev,'OPEN',:bo,:me)");
+            $st->execute(array(':ts' => $now, ':up' => $now, ':cm' => $type, ':sev' => $severity,
                                ':ti' => $description, ':bo' => $description, ':me' => $meta));
             return (int)$db->lastInsertId();
         }
@@ -72,7 +72,8 @@ if (!class_exists("TicketLogger")) {
                          . "<p><a href='?page=tickets'>&larr; back to the form</a></p>";
                 }
 
-                $id = self::insert_ticket($type, $description);
+                $urgent = isset($res['urgent']) && $res['urgent'] !== '' && $res['urgent'] !== null;
+                $id = self::insert_ticket($type, $description, $urgent ? 'high' : 'medium');
                 // consume the submission so a refresh/return can't file it twice
                 if (isset($fm)) {
                     $form = $fm->getCachedForm('TicketForm');
