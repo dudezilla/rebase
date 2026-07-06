@@ -4,6 +4,7 @@
 /logs/bug_reports.jsonl
 
 /logs/predictions.jsonl
+/logs/doc_watch.json
 
 /checkouts/current/install.json
 __pycache__/
