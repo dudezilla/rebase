@@ -24,6 +24,7 @@ require $B . 'BasicElements/TextField.php';
 require $B . 'BasicElements/BigTextBox.php';
 require $B . 'BasicElements/DbSelect.php';
 require $B . 'BasicElements/Checkbox.php';
+require $B . 'BasicElements/FormConfigElement.php';
 
 // DbSelect is DB-backed; point CONGRUENCY_SQLITE at the install DB so its options load
 $__cfg = dirname(__DIR__) . '/install.json';
@@ -91,6 +92,16 @@ $cb->setId('urgent'); $cb->setSelectionComment('Urgent?'); $cb->setOrder(6); $cb
 $b = roundtrip($cb);
 check('Checkbox round-trips (class/id/order via base)',
       $b instanceof Checkbox && $b->getId() === 'urgent' && $b->getCompareValue() == 6);
+
+// --- FormConfigElement (FCE: action/oncomplete parsed from elementString on demand; base fields only) ---
+$fce = new FormConfigElement();
+$fce->setId('__fce');
+$fce->setElementString("<action='TicketLogger'><oncomplete='Thanks'><incomplete='Fill it in'>");
+$b = roundtrip($fce);
+check('FormConfigElement round-trips (elementString -> action/oncomplete re-parse)',
+      $b instanceof FormConfigElement
+      && FormConfigElement::parseActionTag($b->getElementString()) === 'TicketLogger'
+      && FormConfigElement::parseOnCompleteTag($b->getElementString()) === 'Thanks');
 
 echo "formelement round-trip: $pass passed, $fail failed\n";
 exit($fail === 0 ? 0 : 1);
