@@ -32,6 +32,29 @@ function congruency_rest_dispatch() {
         }
 
         $api = (string)($_GET['api'] ?? '');
+        $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+
+        if ($method === 'POST' && isset($tables[$api])) {
+            // CREATE: insert a row from the JSON body; only real columns are used (rest ignored).
+            $data = json_decode((string)file_get_contents('php://input'), true);
+            if (!is_array($data)) { http_response_code(400); echo json_encode(array('error' => 'body must be a JSON object')); return true; }
+            $cols = array();
+            foreach ($db->query("PRAGMA table_info(\"$api\")") as $c) { $cols[$c['name']] = 1; }
+            $use = array();
+            foreach ($data as $k => $v) { if (isset($cols[$k])) { $use[$k] = $v; } }
+            if (!$use) { http_response_code(400); echo json_encode(array('error' => 'no valid columns for ' . $api, 'columns' => array_keys($cols))); return true; }
+            $names = array_keys($use);
+            $sql = "INSERT INTO \"$api\" (" . implode(',', array_map(function ($n) { return "\"$n\""; }, $names)) . ") "
+                 . "VALUES (" . implode(',', array_map(function ($n) { return ":$n"; }, $names)) . ")";
+            $st = $db->prepare($sql);
+            foreach ($use as $k => $v) { $st->bindValue(":$k", $v); }
+            $st->execute();
+            http_response_code(201);
+            echo json_encode(array('created' => true, 'table' => $api, 'rowid' => $db->lastInsertId(), 'used' => $use),
+                             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+            return true;
+        }
+
         if ($api === '' || $api === 'tables') {
             $out = array('tables' => array_keys($tables));
         } elseif (isset($tables[$api])) {
