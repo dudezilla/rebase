@@ -200,5 +200,11 @@
     "target": ".gitignore (+ untrack __pycache__)",
     "purpose": "fix: gitignore __pycache__/*.pyc + untrack 25 leaked bytecode caches (root cause: add -A captured them)",
     "recorded": "2026-07-05T22:53:28"
+  },
+  {
+    "fix": "pin_port_config.py",
+    "target": "boot/config_loader.php + DEPLOY.md",
+    "purpose": "build #17: pin serving port/host in the config -> CONGRUENCY_PORT/HOST",
+    "recorded": "2026-07-05T23:08:48"
   }
 ]

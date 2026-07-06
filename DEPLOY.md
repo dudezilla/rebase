@@ -14,6 +14,8 @@ target + config if absent.
 
 ## install.json (config pushed into CONSTANTS)
     { "db": "/srv/site/state/congruency.sqlite",
+      "port": 8080,                                         // pinned serving port (the launcher binds it)
+      "host": "0.0.0.0",                                    // optional serving host/interface
       "abs_path": "/srv/site",                              // optional; default = relocatable
       "site": { "email": "...", "order_subject": "..." },   // optional
       "constants": { "MYSQL_SERVER": "..." } }              // optional (real-MySQL deploy)

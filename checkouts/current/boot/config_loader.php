@@ -9,6 +9,8 @@
    Recognised keys:
      "db"        : path to the sqlite file            -> define('CONGRUENCY_SQLITE', ...)   [the one that matters]
      "abs_path"  : deploy root override               -> define('ABS_PATH', .../)           [optional]
+     "port"      : serving port                        -> define('CONGRUENCY_PORT', (int))   [pinned for the launcher]
+     "host"      : serving host/interface              -> define('CONGRUENCY_HOST', ...)     [optional, default 0.0.0.0]
      "site"      : { "email": .., "order_subject": .. }-> EMAIL_RECIPIANTS / ORDER_SUBJECT_HEADER [optional]
      "constants" : { NAME: VALUE, ... }               -> define(NAME, VALUE) for a real MySQL deploy [optional]
 */
@@ -24,6 +26,12 @@ if (is_file($__cfg)) {
         }
         if (!empty($__c['abs_path']) && !defined('ABS_PATH')) {
             define('ABS_PATH', rtrim(str_replace('\\', '/', $__c['abs_path']), '/') . '/');
+        }
+        if (isset($__c['port']) && !defined('CONGRUENCY_PORT')) {
+            define('CONGRUENCY_PORT', (int) $__c['port']);
+        }
+        if (!empty($__c['host']) && !defined('CONGRUENCY_HOST')) {
+            define('CONGRUENCY_HOST', $__c['host']);
         }
         if (!empty($__c['site']) && is_array($__c['site'])) {
             if (!empty($__c['site']['email']) && !defined('EMAIL_RECIPIANTS')) {
