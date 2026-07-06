@@ -214,7 +214,8 @@ def serve_only(target, port=None, host=None):
         raise RuntimeError("php not provisioned (%s) — run a deploy/install first" % php)
     log = os.path.join(target, "serve.log")
     proc = subprocess.Popen([php, "-S", "%s:%d" % (host, port), "boot/router.php"], cwd=target,
-                            stdout=open(log, "a"), stderr=subprocess.STDOUT)
+                            stdout=open(log, "a"), stderr=subprocess.STDOUT,
+                            stdin=subprocess.DEVNULL, start_new_session=True)
     if T:
         T.emit("serve", status="up", target=target, port=port, pid=proc.pid)
     print("serving %s on http://%s:%d/  (pid %d, port from install.json; log %s)" % (target, host, port, proc.pid, log))
