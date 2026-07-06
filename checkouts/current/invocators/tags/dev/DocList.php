@@ -95,7 +95,8 @@ if (!class_exists("DocList")) {
             $lines = explode("\n", str_replace("\r", "", $esc));
             $out = ""; $para = array(); $inFence = false; $code = "";
             $flush = function () use (&$para, &$out) {
-                if ($para) { $out .= "<p>" . implode(" ", $para) . "</p>\n"; $para = array(); }
+                // inline() on the JOINED paragraph so bold/italic/code spanning a wrapped line still match
+                if ($para) { $out .= "<p>" . self::inline(implode(" ", $para)) . "</p>\n"; $para = array(); }
             };
             foreach ($lines as $ln) {
                 if (preg_match('/^\s*```/', $ln)) {
@@ -111,7 +112,7 @@ if (!class_exists("DocList")) {
                     $flush(); $out .= "<pre><code>" . $m[1] . "</code></pre>\n"; continue;
                 }
                 if (trim($ln) === "") { $flush(); continue; }
-                $para[] = self::inline($ln);
+                $para[] = $ln;   // raw; inline() applied to the whole paragraph in $flush
             }
             $flush();
             if ($inFence) { $out .= "<pre><code>" . $code . "</code></pre>\n"; }
@@ -119,8 +120,18 @@ if (!class_exists("DocList")) {
         }
 
         private static function inline($s) {
-            $s = preg_replace('/`([^`]+)`/', '<code>$1</code>', $s);
+            // Protect inline code first: its contents may hold * (e.g. `mysql_*`) that would otherwise
+            // break the bold/italic passes. Swap each span for a placeholder, transform, then restore.
+            $codes = array();
+            $s = preg_replace_callback('/`([^`]+)`/', function ($m) use (&$codes) {
+                $k = "\x01" . count($codes) . "\x01";
+                $codes[$k] = "<code>" . $m[1] . "</code>";
+                return $k;
+            }, $s);
+            $s = preg_replace('/\*\*(.+?)\*\*/', '<strong>$1</strong>', $s);           // **bold** (non-greedy)
+            $s = preg_replace('/(^|[^*])\*([^*\s][^*]*)\*/', '$1<em>$2</em>', $s);      // *italic*
             $s = preg_replace('/\[([^\]]+)\]\(([^)\s]+)\)/', '<a href="$2">$1</a>', $s);
+            foreach ($codes as $k => $v) { $s = str_replace($k, $v, $s); }
             return $s;
         }
     }
