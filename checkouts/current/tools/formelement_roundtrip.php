@@ -26,6 +26,7 @@ require $B . 'BasicElements/DbSelect.php';
 require $B . 'BasicElements/Checkbox.php';
 require $B . 'BasicElements/FormConfigElement.php';
 require $B . 'BasicElements/NumberField.php';
+require $B . 'BasicElements/DateField.php';
 require $B . '../FormLogic/StandardForm.php';
 require $B . '../FormInterface/FormManager.php';
 
@@ -159,6 +160,24 @@ check('NumberField validates (accepts in-range, rejects over-max + non-numeric)'
 $html = $nfb->getHTML();
 check('NumberField renders <input type=number> with min/max attrs',
       strpos($html, "type='number'") !== false && strpos($html, "min='1'") !== false && strpos($html, "max='10'") !== false);
+
+// --- DateField (#44: date input; min/max ISO dates from elementString; range validation) ---
+$df = new DateField();
+$df->setId('due'); $df->setSelectionComment('Due:'); $df->setOrder(8); $df->setTabIndex(8);
+$df->setElementString('min=2024-01-01;max=2025-12-31');
+$dfb = roundtrip($df);
+check('DateField round-trips (class/id; min/max re-derived from elementString)',
+      $dfb instanceof DateField && $dfb->getId() === 'due'
+      && $dfb->getMin() === '2024-01-01' && $dfb->getMax() === '2025-12-31');
+$vForm2 = new StandardForm('vt2'); $vForm2->addElement($dfb);
+$_POST = array('due' => '2024-06-15'); $ok_ok  = ($dfb->failsExtendedValidation() === false);
+$_POST = array('due' => '2026-01-01'); $ok_hi  = ($dfb->failsExtendedValidation() === true);
+$_POST = array('due' => 'june');       $ok_bad = ($dfb->failsExtendedValidation() === true);
+$_POST = array();
+check('DateField validates (accepts in-range ISO, rejects out-of-range + non-ISO)', $ok_ok && $ok_hi && $ok_bad);
+$html = $dfb->getHTML();
+check('DateField renders <input type=date> with min/max attrs',
+      strpos($html, "type='date'") !== false && strpos($html, "min='2024-01-01'") !== false && strpos($html, "max='2025-12-31'") !== false);
 
 echo "formelement round-trip: $pass passed, $fail failed\n";
 exit($fail === 0 ? 0 : 1);
