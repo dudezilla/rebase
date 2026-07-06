@@ -47,21 +47,33 @@ if (!class_exists("SourceList")) {
             }
         }
 
-        /* Flag a source blob for follow-up: opens a `refactor` ticket in the backlog with the blob hash,
-           path and an optional note. (Reachable while the browser is ungated during shakeout.) */
+        /* Flag a source blob for follow-up. The abstract backing is an `annotations` row — a `tag` applied
+           to an opaque `target` ref ("source:<hash>", and by the same shape "page:<id>", "doc:<hash>",
+           "ticket:<id>"), so anything can be tagged with anything (see the #132 unify-tagging idea). A
+           `refactor` ticket is then filed as a follow-up projection, linked back to the annotation. */
         private function doFlag($db) {
             $hash = trim((string) $_POST['flag_hash']);
             $path = isset($_POST['flag_path']) ? trim((string) $_POST['flag_path']) : '';
             $note = isset($_POST['flag_note']) ? trim((string) $_POST['flag_note']) : '';
             $now  = microtime(true);
+
+            // 1) abstract backing: tag -> target ref
+            $db->exec("CREATE TABLE IF NOT EXISTS annotations (id INTEGER PRIMARY KEY AUTOINCREMENT, tag TEXT, target TEXT, note TEXT, ts REAL, meta TEXT)");
+            $an = $db->prepare("INSERT INTO annotations (tag,target,note,ts,meta) VALUES ('flag',?,?,?,?)");
+            $an->execute(array("source:" . $hash, $note, $now, json_encode(array('path' => $path))));
+            $aid = (int) $db->lastInsertId();
+
+            // 2) follow-up projection into the ticket backlog, linked to the annotation
             $title = "Source flag: " . $path;
             $body  = ($note !== '' ? $note . "\n\n" : "") . "flagged source blob " . substr($hash, 0, 12) . " \u{00b7} " . $path;
-            $meta  = json_encode(array('source' => 'source-flag', 'path' => $path, 'hash' => $hash, 'note' => $note));
+            $meta  = json_encode(array('source' => 'source-flag', 'annotation' => $aid, 'target' => "source:" . $hash, 'path' => $path));
             $st = $db->prepare("INSERT INTO tickets (ts,updated,component,title,severity,status,body,meta) VALUES (?,?,?,?,?,'OPEN',?,?)");
             $st->execute(array($now, $now, 'refactor', $title, 'low', $body, $meta));
             $id = (int) $db->lastInsertId();
+
             return "<div style='border:1px solid #1a7a3a;border-left:5px solid #1a7a3a;background:#f3fbf5;padding:.5rem .8rem;margin:.5rem 0'>"
-                 . "&#9873; Flagged for follow-up &mdash; <strong>ticket #" . $id . "</strong> (" . self::esc($path)
+                 . "&#9873; Flagged for follow-up &mdash; annotation <code>flag &rarr; source:" . self::esc(substr($hash, 0, 12))
+                 . "</code>, <strong>ticket #" . $id . "</strong> (" . self::esc($path)
                  . "). <a href='?page=tickets'>see the backlog &rarr;</a></div>\n";
         }
 

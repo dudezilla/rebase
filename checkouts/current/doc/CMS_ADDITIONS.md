@@ -58,10 +58,13 @@ walks the git tree and UPSERTs each file **content-addressed by git blob hash** 
 `doc_blobs`/`doc_refs`. Blobs dedupe by hash; the `*_refs` are the **reverse lookup** (hash → path@commit,
 and path → its version history); `is_current=1` marks the running-source version. Two tags render it:
 `<<<SourceList>>>` (index + `?file=<hash>` view — escaped `<pre>` + line numbers + version history + a
-**flag-for-follow-up** form that opens a `refactor` ticket for the blob) and
+**flag-for-follow-up** form: writes an abstract `annotations` row — a `tag` on an opaque `target` ref
+(`source:<hash>`; the same shape can tag `page:<id>`/`doc:<hash>`/`ticket:<id>`) — and files a linked
+`refactor` ticket as the follow-up projection) and
 `<<<DocList>>>` (index + `?doc=<hash>` view — a small **escape-first markdown subset**, so `<<<Tag>>>`
 examples in docs stay literal). Scope = the app PHP + the python tooling + docs + `main:deploy.py`/`install.py`;
-frozen/vendored trees excluded. The four archive tables (and the `Login_Password`/privilege tables) are
+`.md` anywhere but `.txt` **only** from `checkouts/current/doc/` (the legacy CMS docs — not stray prompts or
+curl cookie jars); frozen/vendored trees excluded. The four archive tables (and the `Login_Password`/privilege tables) are
 **denylisted from the public REST** (admin-only). Admin auth is the 2006 `UserPrivilegeSet`/`Login` path.
 
 ## Tooling (`tools/`)

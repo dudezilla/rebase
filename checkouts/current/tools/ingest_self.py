@@ -28,6 +28,7 @@ ROOT = None   # repo root (dir of registry.json); set in main()
 
 CODE_EXT = (".php", ".py")
 DOC_EXT = (".md", ".txt")
+DOC_TXT_PREFIXES = ("checkouts/current/doc/",)   # .txt is a doc ONLY here (legacy 2006 CMS docs) — not stray prompts/cookie jars
 IGNORE_SUBSTR = ("tooling/congruencey/", "tooling/tournament-", "/vendor/", "/node_modules/")
 CODE_PREFIXES = (
     "checkouts/current/lib/", "checkouts/current/invocators/", "checkouts/current/boot/",
@@ -126,7 +127,10 @@ def in_scope(path):
     ext = os.path.splitext(path)[1]
     if ext in CODE_EXT and any(path.startswith(p) for p in CODE_PREFIXES):
         return "code"
-    if ext in DOC_EXT:
+    if ext == ".md":
+        return "doc"
+    # .txt ONLY from the doc dir (the legacy 2006 CMS docs) — NOT stray prompts / cookie jars (e.g. wiz.txt)
+    if ext == ".txt" and any(path.startswith(p) for p in DOC_TXT_PREFIXES):
         return "doc"
     return None
 
