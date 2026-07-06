@@ -22,6 +22,14 @@ require $B . 'BasicElements/RadioSelect.php';
 require $B . 'BasicElements/TextBox.php';
 require $B . 'BasicElements/TextField.php';
 require $B . 'BasicElements/BigTextBox.php';
+require $B . 'BasicElements/DbSelect.php';
+
+// DbSelect is DB-backed; point CONGRUENCY_SQLITE at the install DB so its options load
+$__cfg = dirname(__DIR__) . '/install.json';
+if (is_file($__cfg)) {
+    $__j = json_decode(file_get_contents($__cfg), true);
+    if (!empty($__j['CONGRUENCY_SQLITE'])) { define('CONGRUENCY_SQLITE', $__j['CONGRUENCY_SQLITE']); }
+}
 
 $pass = 0; $fail = 0;
 function check($name, $ok) {
@@ -66,6 +74,15 @@ $bt->setId('body'); $bt->setSelectionComment('Body:'); $bt->setOrder(4); $bt->se
 $b = roundtrip($bt);
 check('BigTextBox round-trips (class/id/order via base)',
       $b instanceof BigTextBox && $b->getId() === 'body' && $b->getCompareValue() == 4);
+
+// --- DbSelect (DB-backed <select>; options re-derived from elementString, not serialized) ---
+$ds = new DbSelect();
+$ds->setId('pageId'); $ds->setSelectionComment('Page:'); $ds->setOrder(5); $ds->setTabIndex(5);
+$ds->setElementString('pages');
+$b = roundtrip($ds);
+check('DbSelect round-trips (class/id; options re-derived from elementString)',
+      $b instanceof DbSelect && $b->getId() === 'pageId' && $b->getOptions() == $ds->getOptions()
+      && count($ds->getOptions()) > 0);
 
 echo "formelement round-trip: $pass passed, $fail failed\n";
 exit($fail === 0 ? 0 : 1);

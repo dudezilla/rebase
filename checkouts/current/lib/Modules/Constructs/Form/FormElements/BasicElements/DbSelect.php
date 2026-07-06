@@ -69,6 +69,17 @@ if (!class_exists("DbSelect")) {
             foreach ($this->options as $o) { if ((string)$o[0] === (string)$v) { return FALSE; } }
             return TRUE;                                 // value not among live options -> invalid
         }
+
+        public function getOptions() { return $this->options; }   // #45: testability
+
+        /* #45: $options are DB-derived from elementString (re-derivable), so they are NOT serialized.
+           from_array sets elementString on the base directly (bypassing setElementString), so re-derive
+           the option set here on rebuild. */
+        protected function extraFromArray($extra) {
+            if (isset($this->elementString)) {
+                $this->setElementString($this->elementString);
+            }
+        }
     }
 }
 ?>
