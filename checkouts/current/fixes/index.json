@@ -117,5 +117,11 @@
       "checkouts/current/tools/provision_php.py"
     ],
     "recorded": "2026-07-05T19:10:35"
+  },
+  {
+    "fix": "doc_root.py",
+    "target": "README.md",
+    "purpose": "doc: root README \u2014 structure overview + 3-branch model",
+    "recorded": "2026-07-05T19:37:23"
   }
 ]
