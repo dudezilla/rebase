@@ -36,7 +36,7 @@ if(!class_exists("AbstractDAO")){
 			}
 			// Quote if not a number or a numeric string
 			if (!is_numeric($value)) {
-				$value = "'" . mysql_real_escape_string($value) . "'";
+				$value = "'" . str_replace("'", "''", $value) . "'";
 			}
 			return $value;
 		}
@@ -77,7 +77,7 @@ if(!class_exists("AbstractDAO")){
 		protected function select($whereClause){
 			$this->query($this->buildSelectSQL($whereClause));
 			if($this->resultSet){
-				return mysql_num_rows($this->resultSet);
+				return count($this->resultSet->rows);   // #25 native
 			}else{
 				return NULL;	
 			} 			
@@ -90,9 +90,8 @@ if(!class_exists("AbstractDAO")){
 		
 		protected function returnAllBeans($rows){
 			$beansArray = array();   // BUG-04: a zero-row result must be [] not null
-			for($index=0;$index<$rows;$index++){
-				$row = mysql_fetch_assoc($this->resultSet);
-				$beansArray[$index] = $this->getBean($row);
+			if (is_object($this->resultSet) && isset($this->resultSet->rows)) {   // #25 native (was mysql_fetch_assoc)
+				foreach ($this->resultSet->rows as $row) { $beansArray[] = $this->getBean($row); }
 			}
 			
 			return $beansArray;				
