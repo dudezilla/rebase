@@ -6,7 +6,7 @@
     "mono": ".",
     "php": "tooling/congruencey-harness/php/php"
   },
-  "bug_reports": "file-system-repair/bug_reports.jsonl",
+  "bug_reports": "logs/bug_reports.jsonl",
   "php_provision": {
     "sources": [],
     "download": {

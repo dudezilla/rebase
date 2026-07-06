@@ -124,7 +124,7 @@ if __name__ == "__main__":
             "note": "ratchet fix: prove versioner",
         }
         bugs = os.path.join(os.path.dirname(os.path.dirname(SOURCE)),
-                            "file-system-repair", "bug_reports.jsonl")
+                            "logs", "bug_reports.jsonl")
         try:
             with open(bugs, "a") as fh:
                 fh.write(json.dumps(ticket) + "\n")

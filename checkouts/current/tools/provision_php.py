@@ -63,7 +63,7 @@ def bug_report(reg, exc, tb):
     # Root is the registry root when known; else the mono root (HERE's parent, since HERE is
     # file-system-repair/). Never HERE itself — that would double the default rel path.
     root = (reg or {}).get("__root__") or os.path.dirname(HERE)
-    path = os.path.join(root, (reg or {}).get("bug_reports", "file-system-repair/bug_reports.jsonl"))
+    path = os.path.join(root, (reg or {}).get("bug_reports", "logs/bug_reports.jsonl"))
     frames = traceback.extract_tb(exc.__traceback__)
     last = frames[-1] if frames else None
     entry = {
@@ -153,7 +153,7 @@ def main():
 
     rel = os.path.relpath(dest, mono)
     ensure_gitignore(mono, rel)
-    subprocess.run(["git", "add", ".gitignore", "file-system-repair/provision_php.py"],
+    subprocess.run(["git", "add", ".gitignore", "checkouts/current/tools/provision_php.py"],
                    cwd=mono, capture_output=True, text=True)
 
     result = {

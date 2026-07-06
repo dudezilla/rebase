@@ -106,7 +106,7 @@ if __name__ == "__main__":
             "traceback": tb.strip().splitlines()[-6:],
             "note": "ratchet link: install_state_db",
         }
-        bugs = os.path.join(MONO, "file-system-repair", "bug_reports.jsonl")
+        bugs = os.path.join(MONO, "logs", "bug_reports.jsonl")
         try:
             with open(bugs, "a") as fh:
                 fh.write(json.dumps(ticket) + "\n")

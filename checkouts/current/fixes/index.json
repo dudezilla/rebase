@@ -95,5 +95,27 @@
     "target": "file-system-repair/README.md, mcp/README.md",
     "purpose": "doc: what file-system-repair + mcp do (phase 1 of the migration)",
     "recorded": "2026-07-05T19:08:20"
+  },
+  {
+    "fix": "migrate_provision_php.py",
+    "target": "provision_php.py -> tools/ ; bug sink -> logs/ ; de-anchor writers",
+    "purpose": "bug #9: get provision_php working in tools/ + de-anchor the bug sink from file-system-repair",
+    "changed_files": [
+      "checkouts/current/fixes/boot_www.py",
+      "checkouts/current/fixes/fix_versioner_major4_minor3.py",
+      "checkouts/current/fixes/install_state_db.py",
+      "checkouts/current/fixes/prove_git_store.py",
+      "checkouts/current/fixes/repath_to_new_tree.py",
+      "checkouts/current/fixes/fix_make_state_determinism.py",
+      "checkouts/current/fixes/fix_provision_php_idempotent.py",
+      "checkouts/current/fixes/doc_fsr_mcp.py",
+      "checkouts/current/fixes/migrate_provision_php.py",
+      "checkouts/current/fixes/examples/turn_example.py",
+      "checkouts/current/tools/make_state.py",
+      "checkouts/current/tools/serve.py",
+      "checkouts/current/tools/mint_crank.py",
+      "checkouts/current/tools/provision_php.py"
+    ],
+    "recorded": "2026-07-05T19:10:35"
   }
 ]

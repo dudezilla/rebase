@@ -71,7 +71,7 @@ config + servers are in `~/.MCP` (outside this repo).
 def bug_report(exc, tb):
     # de-anchored: prefer registry bug_reports, else logs/ (never hardcode file-system-repair)
     reg = os.path.join(ROOT, "registry.json")
-    rel = "file-system-repair/bug_reports.jsonl"
+    rel = "logs/bug_reports.jsonl"
     if os.path.isfile(reg):
         try:
             rel = json.load(open(reg)).get("bug_reports", rel)

@@ -26,7 +26,7 @@ SOURCE = os.path.dirname(HERE)                                   # checkouts/cur
 MONO = os.path.dirname(os.path.dirname(SOURCE))                 # b01
 BOOT = os.path.join(SOURCE, "boot")
 INDEX = os.path.join(HERE, "index.json")
-BUGS = os.path.join(MONO, "file-system-repair", "bug_reports.jsonl")
+BUGS = os.path.join(MONO, "logs", "bug_reports.jsonl")
 REF = "/home/notificationsforsteven/congruencey-harness"        # reference only (read-only)
 
 # ABS_PATH, computed from the boot dir's parent (= checkouts/current). No hard path.

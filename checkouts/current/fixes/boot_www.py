@@ -23,7 +23,7 @@ MONO = os.path.dirname(os.path.dirname(SOURCE))                 # b01
 PHP = os.path.join(MONO, "tooling", "congruencey-harness", "php", "php")
 ROUTER = "boot/router.php"
 INDEX = os.path.join(HERE, "index.json")
-BUGS = os.path.join(MONO, "file-system-repair", "bug_reports.jsonl")
+BUGS = os.path.join(MONO, "logs", "bug_reports.jsonl")
 FATAL = ("Fatal error", "Parse error", "Uncaught", "PHP Fatal", "Stack trace")
 PAGES = ["?page=catalog&fresh=1", "?page=about", "?page=catalog"]
 

@@ -32,7 +32,7 @@ PHP = os.path.join(MONO, "tooling", "congruencey-harness", "php", "php")
 PARSER = os.path.join(SOURCE, "tests", "parser")
 SQLITE = os.path.join(SOURCE, "state", "congruency.sqlite")
 INDEX = os.path.join(HERE, "index.json")
-BUGS = os.path.join(MONO, "file-system-repair", "bug_reports.jsonl")
+BUGS = os.path.join(MONO, "logs", "bug_reports.jsonl")
 
 
 def php(script):

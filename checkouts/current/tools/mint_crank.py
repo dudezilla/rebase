@@ -61,7 +61,7 @@ def load_registry():
 def bug_report(reg, exc, tb, step):
     import json
     root = (reg or {}).get("__root__") or os.path.dirname(os.path.dirname(SOURCE))
-    path = os.path.join(root, (reg or {}).get("bug_reports", "file-system-repair/bug_reports.jsonl"))
+    path = os.path.join(root, (reg or {}).get("bug_reports", "logs/bug_reports.jsonl"))
     frames = traceback.extract_tb(exc.__traceback__)
     last = frames[-1] if frames else None
     entry = {

@@ -39,7 +39,7 @@ def _root(start=HERE):
 
 
 def bug_report(exc, tb):
-    path = os.path.join(_root(), "file-system-repair", "bug_reports.jsonl")
+    path = os.path.join(_root(), "logs", "bug_reports.jsonl")
     frames = traceback.extract_tb(exc.__traceback__)
     last = frames[-1] if frames else None
     entry = {"filename": os.path.basename(__file__), "function": last.name if last else "?",

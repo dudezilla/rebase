@@ -66,7 +66,7 @@ def load_registry():
 
 def bug_report(reg, exc, tb):
     root = (reg or {}).get("__root__", os.path.dirname(os.path.dirname(SOURCE)))
-    rel = (reg or {}).get("bug_reports", "file-system-repair/bug_reports.jsonl")
+    rel = (reg or {}).get("bug_reports", "logs/bug_reports.jsonl")
     path = os.path.join(root, rel)
     frames = traceback.extract_tb(exc.__traceback__)
     last = frames[-1] if frames else None
@@ -100,7 +100,7 @@ def find_php(reg):
         return cand
     raise FileNotFoundError(
         "php not found (checked $CONGRUENCEY_PHP and %s). Provision it first: "
-        "python3 file-system-repair/provision_php.py" % cand)
+        "python3 checkouts/current/tools/provision_php.py" % cand)
 
 
 def ensure_db():

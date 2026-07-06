@@ -5,7 +5,7 @@ ONE change: make `provision_php` idempotent — if a WORKING php is already at d
 (`dest -v` returns 0), skip re-acquisition entirely instead of re-downloading ~12MB every
 run. The network-fetch fallback is preserved for a genuinely fresh clone.
 
-Patch mechanism: one exact-anchor replacement in file-system-repair/provision_php.py, then
+Patch mechanism: one exact-anchor replacement in checkouts/current/tools/provision_php.py, then
 compile-check. Self-records to fixes/index.json; Variant-A bug report on any exception.
 """
 import json
@@ -30,7 +30,7 @@ def _root(d=HERE):
     return os.path.dirname(os.path.dirname(SOURCE))
 
 
-PROVISION = os.path.join(_root(), "file-system-repair", "provision_php.py")
+PROVISION = os.path.join(_root(), "checkouts", "current", "tools", "provision_php.py")
 
 OLD = '''    cfg = reg.get("php_provision", {}) or {}
     sources = cfg.get("sources", DEFAULT_SOURCES)
@@ -65,7 +65,7 @@ NEW = '''    # idempotent (bug #4): a WORKING php already at dest -> skip re-acq
 
 
 def bug_report(exc, tb):
-    path = os.path.join(_root(), "file-system-repair", "bug_reports.jsonl")
+    path = os.path.join(_root(), "logs", "bug_reports.jsonl")
     frames = traceback.extract_tb(exc.__traceback__)
     last = frames[-1] if frames else None
     entry = {"filename": os.path.basename(__file__), "function": last.name if last else "?",
@@ -82,7 +82,7 @@ def bug_report(exc, tb):
 
 
 def record():
-    entry = {"fix": os.path.basename(__file__), "target": "file-system-repair/provision_php.py",
+    entry = {"fix": os.path.basename(__file__), "target": "checkouts/current/tools/provision_php.py",
              "purpose": "bug #4: provision_php idempotent — skip re-download when a working php is already at dest",
              "recorded": time.strftime("%Y-%m-%dT%H:%M:%S")}
     idx = json.load(open(INDEX)) if os.path.isfile(INDEX) else []
