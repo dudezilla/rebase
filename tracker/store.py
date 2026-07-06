@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""store.py — the project DB layer: tickets (projected from the ledger), signals, and a dead-man's switch.
+"""store.py — the project DB layer: tickets (projected from the ledger), signals, a dead-man's switch,
+and the gate's tool-use memories.
 
-The append-only ledger (tracker/tickets.jsonl) stays the committed source of truth; this DB
-(tracker/project.db, git-ignored) is the queryable projection PLUS an operational safety layer:
+The append-only ledger (tracker/tickets.jsonl) stays the committed source of truth. The DB is ONE
+PERSISTENT, INSTALL-LEVEL file — by default ~/.MCP/project.db (override with $PROJECT_DB) — NOT a copy
+inside the disposable working tree. This matters: `memories` (and, transiently, signals/heartbeat) are
+NOT rebuildable from the ledger, so the db must survive a repo re-clone. Only `tickets` is a projection
+that one `sync` can rebuild; everything else is durable operational state that lives with the install.
 
-  tickets(id, type, description, status, created)          -- projection of the ledger
+  tickets(id, type, description, status, created)          -- projection of the ledger (rebuildable)
   signals(id, ts, level, source, code, message, ref, status) -- the DB error channel; errors looked up here
   heartbeat(component, last_seen, ttl, state)              -- dead-man's switch, DEFAULT state = ERROR
+  memories(id, ts, session, tool, intent, note)            -- the gate's tool-use log (durable, NOT rebuildable)
 
 Safety-oriented by design:
   * `sync_from_ledger()` pushes the ledger into the DB "no matter what" — every step is wrapped so ANY
@@ -24,17 +29,37 @@ import sys
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DB = os.path.join(HERE, "project.db")
+
+
+def _default_db():
+    """The ONE unified congruency db — where telemetry, tickets, notes AND the CMS content all live
+    (jazz_telemetry's default: ~/.jazz/congruency.sqlite). This safety layer keeps its own
+    signals/heartbeat/memories tables in that same file; `tickets` is owned by jazz (see SCHEMA).
+    Override precedence: $PROJECT_DB > $JAZZ_DB > ~/.jazz/congruency.sqlite. (The old ~/.MCP/project.db
+    was a stray fork — merged back into .jazz and retired.)"""
+    env = os.environ.get("PROJECT_DB") or os.environ.get("JAZZ_DB")
+    if env:
+        return os.path.abspath(os.path.expanduser(env))
+    return os.path.join(os.path.expanduser("~"), ".jazz", "congruency.sqlite")
+
+
+DB = _default_db()
 LEDGER = os.path.join(HERE, "tickets.jsonl")
 
 SCHEMA = """
-CREATE TABLE IF NOT EXISTS tickets (
-    id INTEGER PRIMARY KEY, type TEXT, description TEXT, status TEXT, created TEXT);
+-- NB: `tickets` is intentionally NOT created here — jazz owns the tickets table in the unified db
+-- (schema: id/ts/updated/component/title/severity/body/meta). This layer only owns the operational
+-- tables below. Recreating a divergent `tickets` here would collide with jazz's.
 CREATE TABLE IF NOT EXISTS signals (
     id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, level TEXT, source TEXT,
     code TEXT, message TEXT, ref TEXT, status TEXT DEFAULT 'open');
 CREATE TABLE IF NOT EXISTS heartbeat (
     component TEXT PRIMARY KEY, last_seen TEXT, ttl INTEGER, state TEXT);
+CREATE TABLE IF NOT EXISTS memories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, session TEXT,
+    tool TEXT, intent TEXT, note TEXT);
+CREATE INDEX IF NOT EXISTS idx_memories_session ON memories(session);
+CREATE INDEX IF NOT EXISTS idx_memories_ts ON memories(ts);
 """
 
 
@@ -136,35 +161,17 @@ def _ledger_state():
 
 
 def sync_from_ledger():
-    """Migrate/refresh the db from the ledger. ANY exception -> ERROR signal (never a silent crash);
-    reconciliation raises signals for tickets ADDED, VANISHED, or otherwise inconsistent."""
+    """RETIRED as a ledger→tickets projector: jazz now owns `tickets` in the unified db, and the
+    append-only tickets.jsonl ledger is kept only as a historical export (its tickets were merged into
+    jazz — see ~/databases/PRESERVED and the merge). The watchdog still calls this every tick, so it now
+    just HOLDS BACK the dead-man's switch by beating; any failure still becomes a signal + no beat.
+    (The full port of the tracker's ticket semantics onto the jazz schema is jazz tickets #32/#36.)"""
     try:
-        ledger = {t["id"]: t for t in _ledger_state()}
-    except Exception as exc:  # noqa: BLE001 — the MCP-style catch: any reader exception becomes a signal
-        raise_signal("error", "ticket_reader", "READER_EXCEPTION",
-                     "%s: %s" % (type(exc).__name__, exc), ref=LEDGER)
-        return {"ok": False, "error": str(exc)}   # NB: no beat() -> the dead-man's switch will fire too
-
-    con = _con()
-    db_ids = {r["id"] for r in con.execute("SELECT id FROM tickets")}
-    added = [tid for tid in ledger if tid not in db_ids]
-    vanished = [tid for tid in db_ids if tid not in ledger]
-    for tid, t in ledger.items():
-        con.execute("INSERT INTO tickets (id, type, description, status, created) VALUES (?,?,?,?,?) "
-                    "ON CONFLICT(id) DO UPDATE SET type=excluded.type, description=excluded.description, "
-                    "status=excluded.status, created=excluded.created",
-                    (tid, t["type"], t["description"], t.get("status"), t.get("created")))
-    con.commit()
-    con.close()
-    # raise reconciliation signals AFTER the ticket-write txn is closed (avoid nested-connection locks)
-    for tid in added:
-        raise_signal("info", "sync", "TICKET_ADDED",
-                     "ticket #%s appeared in the ledger (type=%s)" % (tid, ledger[tid]["type"]), ref=tid)
-    for tid in vanished:
-        raise_signal("warn", "sync", "TICKET_VANISHED",
-                     "ticket #%s is in the db but no longer in the ledger (edited away?)" % tid, ref=tid)
-    beat("ticket_reader")   # a clean read holds the dead-man's switch back
-    return {"ok": True, "synced": len(ledger), "added": len(added), "vanished": len(vanished)}
+        beat("ticket_reader")   # the daemon is alive → hold the default-error switch back
+        return {"ok": True, "note": "ledger projection retired; jazz owns tickets"}
+    except Exception as exc:  # noqa: BLE001 — never fail silently; a write failure becomes a signal (no beat)
+        raise_signal("error", "signals-daemon", "READER_EXCEPTION", "%s: %s" % (type(exc).__name__, exc))
+        return {"ok": False, "error": str(exc)}
 
 
 def lookup_ticket(tid):
@@ -176,6 +183,56 @@ def lookup_ticket(tid):
         raise_signal("error", "lookup", "TICKET_NOT_FOUND", "ticket #%s not found in the db" % tid, ref=tid)
         return None
     return dict(r)
+
+
+# --------------------------------------------------------------------------- #
+# memories — the gate's tool-use log (durable; the reason project.db is persistent)
+# --------------------------------------------------------------------------- #
+def record_memory(tool, intent, session=None, note=None, ts=None):
+    """Append one gate memory. `ts` is the gate's authoritative stamp (ISO-8601); `session` is the
+    Claude Code session id so memories persist AS sessions, not one undifferentiated stream."""
+    con = _con()
+    con.execute("INSERT INTO memories (ts, session, tool, intent, note) VALUES (?,?,?,?,?)",
+                (ts or _now(), session, tool, intent, note))
+    con.commit()
+    con.close()
+
+
+def memories(session=None, contains=None, limit=50):
+    """Read memories, newest first. Filter by `session` (exact) and/or `contains` (tool/intent substring)."""
+    con = _con()
+    q = "SELECT * FROM memories WHERE 1=1"
+    args = []
+    if session:
+        q += " AND session=?"; args.append(session)
+    if contains:
+        q += " AND (intent LIKE ? OR tool LIKE ?)"; args += ["%" + contains + "%"] * 2
+    rows = [dict(r) for r in con.execute(q + " ORDER BY id DESC LIMIT ?", args + [int(limit)])]
+    con.close()
+    return rows
+
+
+def import_json_log(path):
+    """One-time, idempotent backfill of the legacy gate-memories.json into the memories table.
+    Dedupes on (ts, tool) so re-running is safe."""
+    if not os.path.exists(path):
+        return {"imported": 0, "reason": "no log at %s" % path}
+    with open(path) as f:
+        data = json.load(f)
+    con = _con()
+    have = {(r["ts"], r["tool"]) for r in con.execute("SELECT ts, tool FROM memories")}
+    n = 0
+    for e in data.values():
+        key = (e.get("timestamp"), e.get("tool"))
+        if key in have or not key[0]:
+            continue
+        con.execute("INSERT INTO memories (ts, session, tool, intent, note) VALUES (?,?,?,?,?)",
+                    (e.get("timestamp"), e.get("session"), e.get("tool"), e.get("intent"), e.get("note")))
+        have.add(key)
+        n += 1
+    con.commit()
+    con.close()
+    return {"imported": n}
 
 
 def main():
@@ -194,6 +251,13 @@ def main():
         stale = check_deadman(); print("dead-man fired for: %s" % (stale or "none"))
     elif cmd == "lookup":
         print(json.dumps(lookup_ticket(a[1])))
+    elif cmd == "memories":
+        sess = a[a.index("--session") + 1] if "--session" in a else None
+        for m in memories(session=sess):
+            print("  [%s] %-10s %-22s %s" % (m["ts"], (m["session"] or "-")[:10], m["tool"], m["intent"]))
+    elif cmd == "import-memories":
+        src = a[1] if len(a) > 1 else os.path.expanduser("~/.MCP/gate-memories.json")
+        print(json.dumps(import_json_log(src)))
     elif cmd == "watch":
         every = int(a[1]) if len(a) > 1 else 15
         print("watching: sync + dead-man every %ds (Ctrl-C to stop)" % every)
@@ -202,14 +266,17 @@ def main():
             time.sleep(every)
     elif cmd == "status":
         con = _con()
-        print("tickets: %d  ·  open signals: %d (errors: %d)  ·  components: %s" % (
+        print("db: %s" % DB)
+        print("tickets: %d  ·  open signals: %d (errors: %d)  ·  memories: %d  ·  components: %s" % (
             con.execute("SELECT COUNT(*) FROM tickets").fetchone()[0],
             con.execute("SELECT COUNT(*) FROM signals WHERE status='open'").fetchone()[0],
             con.execute("SELECT COUNT(*) FROM signals WHERE status='open' AND level='error'").fetchone()[0],
+            con.execute("SELECT COUNT(*) FROM memories").fetchone()[0],
             [dict(r)["component"] + ":" + dict(r)["state"] for r in con.execute("SELECT * FROM heartbeat")] or "none"))
         con.close()
     else:
-        print("usage: store.py sync|signals|beat|check|lookup|watch|status", file=sys.stderr)
+        print("usage: store.py sync|signals|beat|check|lookup|memories|import-memories|watch|status",
+              file=sys.stderr)
         return 2
     return 0
 

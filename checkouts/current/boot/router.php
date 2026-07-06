@@ -11,6 +11,10 @@ ini_set('sendmail_path', '/bin/true');                 // Orderer::sendEmail() -
 require $BOOT . '/shim.php';                            // mysql_* -> PDO/sqlite
 require $BOOT . '/configure.php';                       // install.json + defaults -> ALL constants
 
+// REST: ?api=... -> generic read-only JSON over every table (before the CMS front controller)
+require $BOOT . '/rest.php';
+if (isset($_GET['api'])) { congruency_rest_dispatch(); exit; }
+
 
 set_include_path($BOOT . PATH_SEPARATOR . get_include_path());  // shadow the app's illegal AutoLoader.php
 require(CLASS_LOADER_HEADER);

@@ -25,10 +25,11 @@ file. So we need:
  tracker/tickets.jsonl        append-only ledger — the committed SOURCE OF TRUTH (on GitHub)
         │  (sync, "no matter what")
         ▼
- tracker/store.py  ──►  project.db   (git-ignored runtime projection)
-        │                 ├── tickets    projection of the ledger
+ tracker/store.py  ──►  ~/.MCP/project.db   (ONE PERSISTENT INSTALL db — $PROJECT_DB overrides)
+        │                 ├── tickets    projection of the ledger (rebuildable)
         │                 ├── signals    the DB ERROR CHANNEL  ◄── errors looked up here
-        │                 └── heartbeat  the DEAD-MAN's SWITCH (default state = error)
+        │                 ├── heartbeat  the DEAD-MAN's SWITCH (default state = error)
+        │                 └── memories   the gate's tool-use log (durable, NOT rebuildable) ◄── gate writes here
         ▼
  ~/.MCP/signals-mcp/server.py   the DAEMON (watchdog thread) + the error-channel TOOLS
         │  registry.json → servers.signals
@@ -36,9 +37,12 @@ file. So we need:
  the gate  ──►  signals__due · signals__ack · signals__sync · signals__check · signals__lookup · signals__status
 ```
 
-The ledger stays the source of truth (committed, diffable, append-only). `project.db` is a **disposable
-projection** — it can be deleted and rebuilt from the ledger by one `sync`. The safety state (signals,
-heartbeat) is operational, not historical, so it lives in the runtime db.
+The ledger stays the source of truth (committed, diffable, append-only). `project.db` is **one persistent,
+install-level db** — by default `~/.MCP/project.db` (the install root, beside the gate and registry;
+override with `$PROJECT_DB`). It is deliberately **not** a copy in the disposable working tree, because the
+`memories` table (the gate's tool-use log) is durable operational history with **no ledger to rebuild it
+from**. Only `tickets` is a projection one `sync` can rebuild; `signals`/`heartbeat` are transient
+operational state; `memories` is the durable data that makes the db worth persisting across a repo re-clone.
 
 ---
 
@@ -48,9 +52,10 @@ Three tables:
 
 | table | purpose |
 |---|---|
-| `tickets(id, type, description, status, created)` | projection of the ledger |
+| `tickets(id, type, description, status, created)` | projection of the ledger (rebuildable via `sync`) |
 | `signals(id, ts, level, source, code, message, ref, status)` | the **error channel** — every process writes here; errors are read with a query |
 | `heartbeat(component, last_seen, ttl, state)` | the **dead-man's switch**, one row per component |
+| `memories(id, ts, session, tool, intent, note)` | the **gate's tool-use log** — one row per gated call, tagged with the Claude Code **session** id; durable (no ledger to rebuild it), the reason the db is a persistent install |
 
 Key functions:
 
@@ -170,8 +175,10 @@ foreground — handy for testing or a cron/systemd unit.
 - **Daemon dies** → `ticket_reader` goes stale → `DEADMAN_EXPIRED` on next check. Silence ≠ health.
 - **DB briefly locked** → connections use a 5s busy timeout; signal writes never nest inside another open
   write transaction (that was a real bug we fixed).
-- **`project.db` lost** → harmless; one `sync` rebuilds tickets from the ledger. Only in-flight
-  operational signals/heartbeat are transient — by design.
+- **`project.db` lost** → `tickets` rebuild from the ledger on one `sync`, and `signals`/`heartbeat` are
+  transient by design — but **`memories` are gone for good** (there is no ledger behind them). That is
+  exactly why the db is a **persistent install file at `~/.MCP/project.db`**, not a copy in the disposable
+  working tree: a repo re-clone or a `git clean` must not take the tool-use history with it.
 
 ---
 
