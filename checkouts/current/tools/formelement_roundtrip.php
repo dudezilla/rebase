@@ -25,6 +25,7 @@ require $B . 'BasicElements/BigTextBox.php';
 require $B . 'BasicElements/DbSelect.php';
 require $B . 'BasicElements/Checkbox.php';
 require $B . 'BasicElements/FormConfigElement.php';
+require $B . '../FormLogic/StandardForm.php';
 
 // DbSelect is DB-backed; point CONGRUENCY_SQLITE at the install DB so its options load
 $__cfg = dirname(__DIR__) . '/install.json';
@@ -102,6 +103,29 @@ check('FormConfigElement round-trips (elementString -> action/oncomplete re-pars
       $b instanceof FormConfigElement
       && FormConfigElement::parseActionTag($b->getElementString()) === 'TicketLogger'
       && FormConfigElement::parseOnCompleteTag($b->getElementString()) === 'Thanks');
+
+// --- StandardForm (composes elements; from_array rebuilds + rewires the circular back-refs) ---
+$f = new StandardForm('demoForm');
+$r2 = new RadioSelect(); $r2->setId('type'); $r2->setElementString('<<build>><<bug>>'); $r2->setOrder(1);
+$t2 = new TextBox(); $t2->setId('description'); $t2->setOrder(2);
+$f->addElement($r2); $f->addElement($t2);
+$f->setElementResult('type', 'bug');
+$f->setElementResult('description', 'the thing broke');
+$fb = StandardForm::from_array(json_decode(json_encode($f->to_array()), true));
+$rpEls = new ReflectionProperty('StandardForm', 'formElements'); $rpEls->setAccessible(true);
+$rebuilt = $rpEls->getValue($fb);
+$rpForm = new ReflectionProperty('AbstractFormElement', 'form'); $rpForm->setAccessible(true);
+check('StandardForm round-trips (results survive + 2 elements + back-refs rewired to new form)',
+      $fb instanceof StandardForm
+      && $fb->getElementResult('type') === 'bug'
+      && $fb->getElementResult('description') === 'the thing broke'
+      && $fb->getResults() == array('type' => 'bug', 'description' => 'the thing broke')
+      && $fb->getId() === 'demoForm'
+      && count($rebuilt) === 2
+      && ($rebuilt['type'] ?? null) instanceof RadioSelect
+      && ($rebuilt['description'] ?? null) instanceof TextBox
+      && $rebuilt['type']->getId() === 'type'
+      && $rpForm->getValue($rebuilt['type']) === $fb);
 
 echo "formelement round-trip: $pass passed, $fail failed\n";
 exit($fail === 0 ? 0 : 1);

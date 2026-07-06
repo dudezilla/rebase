@@ -257,6 +257,62 @@ if(!class_exists("StandardForm")){
 			$sorter = $this->getSorter();
 			$sorter->reset();		
 		}
+
+		/* #45: plain-data (de)serialization for JSON-based POM persistence. formElements are stored as
+		   an id-keyed map of each element's to_array(); the transient $sorter is skipped (rebuilt lazily).
+		   The FCE is already removed from formElements during build, so no config side effects on rebuild. */
+		public function to_array(){
+			$elements = array();
+			if(!empty($this->formElements)){
+				foreach($this->formElements as $key=>$el){
+					$elements[$key] = $el->to_array();
+				}
+			}
+			return array(
+				'__class'        => 'StandardForm',
+				'id'             => $this->id,
+				'methodType'     => $this->methodType,
+				'action'         => $this->action,
+				'onComplete'     => $this->onComplete,
+				'incomplete'     => $this->incomplete,
+				'valid'          => $this->valid,
+				'style'          => isset($this->style) ? $this->style : NULL,
+				'isComplete'     => $this->isComplete,
+				'isVerified'     => $this->isVerified,
+				'firstDisplay'   => $this->firstDisplay,
+				'classes'        => $this->classes,
+				'elementResults' => $this->elementResults,
+				'formElements'   => $elements,
+			);
+		}
+
+		public static function from_array($a){
+			$form = (new ReflectionClass('StandardForm'))->newInstanceWithoutConstructor();
+			$form->id             = isset($a['id']) ? $a['id'] : NULL;
+			$form->methodType     = isset($a['methodType']) ? $a['methodType'] : 'POST';
+			$form->action         = isset($a['action']) ? $a['action'] : NULL;
+			$form->onComplete     = isset($a['onComplete']) ? $a['onComplete'] : NULL;
+			$form->incomplete     = isset($a['incomplete']) ? $a['incomplete'] : NULL;
+			$form->valid          = isset($a['valid']) ? $a['valid'] : NULL;
+			if(isset($a['style'])){ $form->style = $a['style']; }
+			$form->isComplete     = isset($a['isComplete']) ? $a['isComplete'] : NULL;
+			$form->isVerified     = isset($a['isVerified']) ? $a['isVerified'] : NULL;
+			$form->firstDisplay   = isset($a['firstDisplay']) ? $a['firstDisplay'] : TRUE;
+			$form->classes        = isset($a['classes']) ? $a['classes'] : array();
+			$form->elementResults = isset($a['elementResults']) ? $a['elementResults'] : array();
+			$form->sorter         = NULL;
+			$form->formElements   = array();
+			if(!empty($a['formElements'])){
+				foreach($a['formElements'] as $key=>$elData){
+					$el = AbstractFormElement::from_array($elData);
+					if($el !== NULL){
+						$form->formElements[$key] = $el;
+						$el->setFormObject($form);
+					}
+				}
+			}
+			return $form;
+		}
 	}	
 }
 ?>
