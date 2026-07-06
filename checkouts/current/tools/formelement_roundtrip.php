@@ -19,6 +19,7 @@ require $B . 'Lib/FormElementInterface.php';
 require $B . 'Lib/FormElementUtils.php';
 require $B . 'Lib/AbstractFormElement.php';
 require $B . 'BasicElements/RadioSelect.php';
+require $B . 'BasicElements/TextBox.php';
 
 $pass = 0; $fail = 0;
 function check($name, $ok) {
@@ -40,6 +41,14 @@ check('RadioSelect round-trips (class/id/options/required/order)',
       $b instanceof RadioSelect && $b->getId() === 'type'
       && $b->getOptions() == $r->getOptions() && $b->getRequired() === true
       && $b->getCompareValue() == 1);
+
+// --- TextBox (no element-specific state; base fields only) ---
+$t = new TextBox();
+$t->setId('description'); $t->setSelectionComment('Description:'); $t->setRequired(false);
+$t->setOrder(2); $t->setTabIndex(2);
+$b = roundtrip($t);
+check('TextBox round-trips (class/id/comment/order via base)',
+      $b instanceof TextBox && $b->getId() === 'description' && $b->getCompareValue() == 2);
 
 echo "formelement round-trip: $pass passed, $fail failed\n";
 exit($fail === 0 ? 0 : 1);
