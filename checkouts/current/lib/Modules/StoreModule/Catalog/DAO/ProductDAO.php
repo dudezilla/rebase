@@ -9,6 +9,8 @@ if(!class_exists("ProductDAO")){
 		
 		public function __construct(){
 			$this->table = "paw.product";
+			$this->dataConnection = DataConnection::CreateConnection(MYSQL_SERVER,MYSQL_STORE_DATABASE,STORE_LOGIN,STORE_PASSWORD);   // BUG-02: open a connection like sibling DAOs
+			$this->dataConnection->open();
 		}
 
 		public function obtainRow($key){
