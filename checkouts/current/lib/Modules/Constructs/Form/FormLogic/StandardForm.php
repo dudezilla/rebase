@@ -151,16 +151,8 @@ if(!class_exists("StandardForm")){
 			$this->elementResults[$id] = $value;
 		}
 		
-		//Forms are containers... we need to load some classdefs
-		// before unserialization is complete.
-		public function __wakeup(){
-			if(!empty($this->classes)){
-				$loader = getClassLoader();
-				foreach($this->classes as $class=>$referenced){
-					$loader->loadClassByName($class);	
-				}
-			}
-		}
+		/* #45: __wakeup removed — the POM no longer unserializes StandardForm (data is JSON via to_array/from_array);
+		   the app autoloader loads element classes on demand. */
 		
 		public function __construct($ID){
 			$this->usePostMethod();

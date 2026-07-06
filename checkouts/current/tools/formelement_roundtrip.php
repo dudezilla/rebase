@@ -26,6 +26,7 @@ require $B . 'BasicElements/DbSelect.php';
 require $B . 'BasicElements/Checkbox.php';
 require $B . 'BasicElements/FormConfigElement.php';
 require $B . '../FormLogic/StandardForm.php';
+require $B . '../FormInterface/FormManager.php';
 
 // DbSelect is DB-backed; point CONGRUENCY_SQLITE at the install DB so its options load
 $__cfg = dirname(__DIR__) . '/install.json';
@@ -126,6 +127,18 @@ check('StandardForm round-trips (results survive + 2 elements + back-refs rewire
       && ($rebuilt['description'] ?? null) instanceof TextBox
       && $rebuilt['type']->getId() === 'type'
       && $rpForm->getValue($rebuilt['type']) === $fb);
+
+// --- FormManager (id-keyed StandardForms; the POM's top-level form value) ---
+$fm = new FormManager();
+$innerForm = new StandardForm('demoForm');
+$ir = new RadioSelect(); $ir->setId('type'); $ir->setElementString('<<build>><<bug>>');
+$innerForm->addElement($ir);
+$innerForm->setElementResult('type', 'bug');
+$rpFA = new ReflectionProperty('FormManager', 'formsArray'); $rpFA->setAccessible(true);
+$rpFA->setValue($fm, array('demoForm' => $innerForm));
+$fmb = FormManager::from_array(json_decode(json_encode($fm->to_array()), true));
+check('FormManager round-trips (getResults survives through the whole form graph)',
+      $fmb instanceof FormManager && $fmb->getResults('demoForm') == array('type' => 'bug'));
 
 echo "formelement round-trip: $pass passed, $fail failed\n";
 exit($fail === 0 ? 0 : 1);

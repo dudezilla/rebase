@@ -95,10 +95,52 @@ if(!class_exists("PersistentObjectManager")){
 		
 		public static function pack(&$location){
 			$pOM = self::$pOM;
-			$pOM->data = serialize($pOM->data);
+			$pOM->data = json_encode(self::encode_data($pOM->data));   // #45: forms -> JSON envelopes; other objects serialize-fallback
 			$location = serialize($pOM);
 		}
-		
+
+		/* #45: POM data (de)serialization. FormManager/StandardForm go to inspectable JSON (via their
+		   to_array/from_array — no PHP serialize, no StandardForm::__wakeup reliance); any other object
+		   (ClassLoader/Document/UserPrivilegeSet/...) falls back to base64(serialize()) inside the JSON. */
+		private static function encode_data($data){
+			$out = array();
+			if(is_array($data)){
+				foreach($data as $k=>$v){ $out[$k] = self::encode_value($v); }
+			}
+			return $out;
+		}
+
+		private static function encode_value($v){
+			if($v instanceof FormManager){ return array('t'=>'FormManager', 'v'=>$v->to_array()); }
+			if($v instanceof StandardForm){ return array('t'=>'StandardForm', 'v'=>$v->to_array()); }
+			if(self::hasObject($v)){ return array('t'=>'php', 'v'=>base64_encode(serialize($v))); }
+			return array('t'=>'raw', 'v'=>$v);
+		}
+
+		private static function decode_data($enc){
+			$out = array();
+			if(is_array($enc)){
+				foreach($enc as $k=>$e){ $out[$k] = self::decode_value($e); }
+			}
+			return $out;
+		}
+
+		private static function decode_value($e){
+			if(!is_array($e) || !isset($e['t'])){ return $e; }
+			switch($e['t']){
+				case 'FormManager':  return FormManager::from_array($e['v']);
+				case 'StandardForm': return StandardForm::from_array($e['v']);
+				case 'php':          return unserialize(base64_decode($e['v']));
+				default:             return isset($e['v']) ? $e['v'] : NULL;
+			}
+		}
+
+		private static function hasObject($v){
+			if(is_object($v)){ return TRUE; }
+			if(is_array($v)){ foreach($v as $x){ if(self::hasObject($x)){ return TRUE; } } }
+			return FALSE;
+		}
+
 		public static function displayContents(){
 			if(isset(self::$pOM->data)){
 				foreach (self::$pOM->data as $association=>$item){
@@ -123,8 +165,8 @@ if(!class_exists("PersistentObjectManager")){
 		private static function unpack($pOM){
 			$pOM = unserialize($pOM);
 			$pOM->loadClasses();
-			$pOM->data = unserialize($pOM->data);
-			self::$pOM = $pOM;	
+			$pOM->data = self::decode_data(json_decode($pOM->data, true));   // #45: rebuild forms from JSON, others from fallback
+			self::$pOM = $pOM;
 		}
 		
 		private function loadClasses(){

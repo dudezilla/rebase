@@ -111,9 +111,31 @@ if(!class_exists("FormManager")){
 						$form->addElement($element->produceElement());
 					}
 				}else{
-					$form = NULL;	
+					$form = NULL;
 				}
 			}
+		}
+
+		/* #45: JSON (de)serialization for POM persistence — formsArray is an id-keyed map of StandardForm. */
+		public function to_array(){
+			$forms = array();
+			if(!empty($this->formsArray)){
+				foreach($this->formsArray as $id=>$form){
+					$forms[$id] = $form->to_array();
+				}
+			}
+			return array('__class'=>'FormManager', 'formsArray'=>$forms);
+		}
+
+		public static function from_array($a){
+			$fm = new FormManager();
+			$fm->formsArray = array();
+			if(!empty($a['formsArray'])){
+				foreach($a['formsArray'] as $id=>$fData){
+					$fm->formsArray[$id] = StandardForm::from_array($fData);
+				}
+			}
+			return $fm;
 		}
 	}		
 }
