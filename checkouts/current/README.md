@@ -36,6 +36,14 @@ python3 tools/serve.py            # http://127.0.0.1:8899/?page=catalog
 - **Config is data** — `boot/constants.default.json` (defaults) merged with `install.json`
   (overrides, e.g. `CONGRUENCY_SQLITE`). `install.json` may live outside the install folder via
   the `$CONGRUENCY_CONFIG` env var. The unified DB is `~/.jazz/congruency.sqlite`.
+- **Database — native PDO** — every DAO reaches the database through `DataConnection`, a thin
+  native-PDO layer (`new PDO('sqlite:' . CONGRUENCY_SQLITE)`); its `query()` returns a small result
+  object whose `->rows` is an array of associative rows that the DAOs iterate directly. The 2006 code
+  was written against `ext/mysql` (`mysql_*`), removed from PHP 7+; that entire API was migrated to
+  PDO — there are now **zero `mysql_*` calls or shims** in the tree. `boot/shim.php` survives only as a
+  one-line `get_magic_quotes_gpc()` polyfill (that function was removed in PHP 8.0 and the DAO `quote()`
+  guards still reference it). The layer is driver-agnostic: hand `DataConnection` a `mysql:` DSN instead
+  of `sqlite:` and the same DAOs run against MySQL — SQLite is just this deployment's target.
 - **Pages** — `?page=` `catalog · about · bugs · tickets · memories · pages · tags`. Navigation is
   generated from the `Documents` table by `<<<SiteMap>>>`.
 - **Tickets & tags** — a full ticket tracker (`<<<TicketList>>>` + a native-forms submission flow),
@@ -46,8 +54,7 @@ python3 tools/serve.py            # http://127.0.0.1:8899/?page=catalog
 - **Tooling** — `tools/crawl.py` (broken-link spider), `tools/tagcheck.py` (tag-render harness),
   `tools/gpl_stamp.py` (GPL-header check/stamp).
 
-**Full write-up: [`doc/CMS_ADDITIONS.md`](doc/CMS_ADDITIONS.md).** _(The `mysql_*`→PDO migration is
-tracked as an open ticket.)_
+**Full write-up: [`doc/CMS_ADDITIONS.md`](doc/CMS_ADDITIONS.md).**
 
 ## Layout
 
