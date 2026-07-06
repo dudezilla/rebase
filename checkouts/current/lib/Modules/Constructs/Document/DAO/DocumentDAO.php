@@ -43,10 +43,10 @@ if(!class_exists("DocumentDAO")){
 				. " WHERE Documents.DocumentID = '$key' ";
 				$resultSet = $this->dataConnection->query($selectString);
 				if($resultSet){
-					$rows = mysql_num_rows($resultSet);
+					$rows = count($resultSet->rows);
 						if($rows == 1){
-							$result = mysql_fetch_assoc($resultSet);
-							mysql_free_result($resultSet);
+							$result = $resultSet->rows[0];   // #25 native
+							// #25: PDO result — no free needed
 						}
 				}
 			}
