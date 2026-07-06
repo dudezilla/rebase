@@ -40,7 +40,9 @@ validation), and `MultiSelect` (array-valued checkbox group). All live in
 general `annotations` table as `tag=<category name>`, `target="page:<DocumentID>"` — the old
 `Page_Categories` join table was migrated onto it and **dropped**. First category: `specifications`. Browse
 via `CategoryPages` (reads annotations); tag via the `TagPageForm` UI on `?page=pages` (`TagPageHandler`
-writes an annotation). Same model the source `⚑ flag` uses (`tag=flag`, `target="source:<hash>"`).
+writes an annotation). Same model the source `⚑ flag` uses (`tag=flag`, `target="source:<hash>"`). Browse
+everything tagged at `?page=annotations` (`<<<Annotations>>>`) — one table over flags + categories, filter
+by `tag` or target-`kind` (source/page/doc/ticket), each target linked back to where it lives.
 
 ## REST (`boot/rest.php`, dispatched by `router.php` on `?api=`)
 Generic CRUD over **every** table, table name allowlisted against `sqlite_master`, columns validated:
