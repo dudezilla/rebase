@@ -7,7 +7,7 @@ See the LICENSE file in the project root for full license terms.
 /*
  * TicketLogger — finalize a ticket submission (the handler half of #38).
  *
- * Modeled on OrdererTag: invoked as <<<TicketLogger>>> on ?page=ticketDone,
+ * Modeled on the order-wizard handler pattern: invoked as <<<TicketLogger>>> on ?page=ticketDone,
  * it reads the POSTed ticket, validates `type` against the in_array allowlist
  * sourced from the forms table (TicketForm::spec), and inserts a row into the
  * unified `tickets` table (jazz schema) with a MECHANICAL id (SQLite
