@@ -52,7 +52,8 @@ python3 tools/serve.py            # http://127.0.0.1:8899/?page=catalog
 - **REST** — generic CRUD over every table: `GET/POST/PUT/DELETE ?api=<table>` (paginated,
   allowlisted, column-validated).
 - **Tooling** — `tools/crawl.py` (broken-link spider), `tools/tagcheck.py` (tag-render harness),
-  `tools/gpl_stamp.py` (GPL-header check/stamp).
+  `tools/gpl_stamp.py` (GPL-header check/stamp), `tools/deploy_lifecycle_check.py` (production-deploy
+  on/off/redeploy gate — drives `deploy.py` in an isolated git worktree, leaving your branch untouched).
 
 **Full write-up: [`doc/CMS_ADDITIONS.md`](doc/CMS_ADDITIONS.md).**
 
