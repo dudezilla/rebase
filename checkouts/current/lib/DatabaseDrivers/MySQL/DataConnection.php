@@ -55,7 +55,7 @@ if (!class_exists('DataConnection')){
 			}
 			// Quote if not a number or a numeric string
 			if (!is_numeric($value)) {
-				$value = "'" . mysql_real_escape_string($value) . "'";
+				$value = "'" . str_replace("'", "''", $value) . "'";
 			}
 			return $value;
 		}
@@ -95,8 +95,8 @@ if (!class_exists('DataConnection')){
 		
 		public static function mysqlReport(){
 			$result = "Verify the success of the database operation:<br>";
-			$result .= "Query Information: ". mysql_info();
-			$result .= "Errors: <br>\n" . mysql_error() . "<br><br>"; 
+			$result .= "Query Information: ". '';
+			$result .= "Errors: <br>\n" . '' . "<br><br>"; 
 			return $result;
 		}
 		
