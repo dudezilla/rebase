@@ -4,3 +4,5 @@
 /logs/bug_reports.jsonl
 
 /logs/predictions.jsonl
+
+/checkouts/current/install.json

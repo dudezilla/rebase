@@ -2,7 +2,8 @@
 /* New-tree router for `php -S`. Self-contained bootstrap for checkouts/current,
    pathed entirely off __DIR__ (relocatable). Telemetry stripped — standup only. */
 $BOOT = __DIR__;                                        // checkouts/current/boot
-define('CONGRUENCY_SQLITE', dirname($BOOT) . '/state/congruency.sqlite');
+require $BOOT . '/config_loader.php';                  // load install.json -> CONSTANTS (no-op if absent)
+if (!defined('CONGRUENCY_SQLITE')) define('CONGRUENCY_SQLITE', dirname($BOOT) . '/state/congruency.sqlite');
 
 error_reporting(E_ALL & ~E_DEPRECATED);
 ini_set('display_errors', '1');

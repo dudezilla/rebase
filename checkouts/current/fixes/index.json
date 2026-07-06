@@ -176,5 +176,11 @@
     "target": "checkouts/current/boot/Constants_patched.php",
     "purpose": "refactor #12: guard 46 define()s with if(!defined()) so a config loader's pre-defs win",
     "recorded": "2026-07-05T20:31:38"
+  },
+  {
+    "fix": "install_config_loader.py",
+    "target": "checkouts/current/boot/config_loader.php + router.php",
+    "purpose": "build #13: JSON install.json -> CMS CONSTANTS via config_loader (DB path etc.); router requires it first",
+    "recorded": "2026-07-05T20:34:16"
   }
 ]
