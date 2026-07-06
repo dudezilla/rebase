@@ -14,15 +14,16 @@ if ( !class_exists('AbstractList')){
 	   protected abstract function obtainBean($arg);
 
 	   protected function obtainList($table){
-	      $result = mysql_query("SELECT * FROM $table ");
+	      // #25 native PDO (was global mysql_query/num_rows/fetch_assoc)
+	      $conn = DataConnection::CreateConnection(MYSQL_SERVER, MYSQL_CONT_DATABASE, CONTENT_LOGIN, CONTENT_PASSWORD);
+	      $conn->open();
+	      $result = $conn->query("SELECT * FROM $table ");
 	      if ($result){
-	   	      $this->fill = mysql_num_rows($result);
-	          $bean = mysql_fetch_assoc($result);
-
-	             for ($count=0 ; $count<$this->fill; $count++ ){
-	                $this->orderList[ $count ] =  $this->obtainBean( $bean );
-	                $bean = mysql_fetch_assoc($result);
-	            }
+	         $this->fill = count($result->rows);
+	         $count = 0;
+	         foreach ($result->rows as $bean){
+	            $this->orderList[ $count++ ] = $this->obtainBean( $bean );
+	         }
 	      }
 	   }
 
