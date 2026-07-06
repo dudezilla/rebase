@@ -224,5 +224,11 @@
     "target": "boot/configure.php + constants.default.json (retire Constants_patched.php + config_loader.php)",
     "purpose": "build #20: config-as-data \u2014 one loop over JSON constants + computed derived; delete the two old PHP config files",
     "recorded": "2026-07-06T00:23:25"
+  },
+  {
+    "fix": "retire_www_etc_constants.py",
+    "target": "www/Constants.php + etc/Constants.php (retired); www/index.php rewired",
+    "purpose": "build #21: retire the dormant www/ + etc/ Constants.php copies; configure.php is the sole constants source",
+    "recorded": "2026-07-06T00:30:55"
   }
 ]
