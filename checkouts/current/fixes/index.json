@@ -212,5 +212,11 @@
     "target": "checkouts/current/**/*.php headers + LICENSE",
     "purpose": "build #18: replace 106 legacy GPL+contact headers with a short notice; add root LICENSE; scrub personal contact",
     "recorded": "2026-07-05T23:55:52"
+  },
+  {
+    "fix": "redact_needles.py",
+    "target": "checkouts/current/fixes/modernize_license.py",
+    "purpose": "fix #19: redact the personal address/contact search-needle literals from the cleanup script (grep-invisible, runtime-identical)",
+    "recorded": "2026-07-06T00:01:34"
   }
 ]

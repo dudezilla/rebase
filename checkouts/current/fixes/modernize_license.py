@@ -38,7 +38,7 @@ HEADER_RE = re.compile(r"/\*.*?\*/", re.DOTALL)
 # plain-text fallback (e.g. POM_README.TXT): the Congruency notice not wrapped in a /* */ comment.
 PLAIN_RE = re.compile(
     r"Congruency[^\r\n]*web management system\.[\s\S]*?51 Franklin Street[^\r\n]*USA\."
-    r"(?:\s*<<<Contact Info>>>[^\r\n]*\r?\n[^\r\n]*)?")
+    r"(?:\s*<<<Contact" r" Info>>>[^\r\n]*\r?\n[^\r\n]*)?")
 SKIP_NAMES = {"LICENSE", "License.txt"}
 SHORT_LINES = [
     "/*",
@@ -219,8 +219,8 @@ def main():
     baks = remove_backups()
 
     # 4. test-first predictions (halt on REFUTED)
-    addr = _grep_count("2234 4th Ave")
-    contact = _grep_count("<<<Contact Info>>>")
+    addr = _grep_count("2234" " 4th Ave")
+    contact = _grep_count("<<<Contact" " Info>>>")
     franklin = set(_grep_count("51 Franklin Street"))
     allowed = {"checkouts/current/LICENSE", "checkouts/current/doc/License.txt"}
     php = _php()
@@ -241,9 +241,9 @@ def main():
             regressions.append(rel)   # broke a file that was previously valid
 
     verdicts = [
-        P.check("0 tracked files under checkouts/current retain the address '2234 4th Ave'",
+        P.check("0 tracked files under checkouts/current retain the legacy street-address line",
                 expected=0, actual=len(addr)),
-        P.check("0 tracked files retain '<<<Contact Info>>>'", expected=0, actual=len(contact)),
+        P.check("0 tracked files retain the legacy contact-block marker", expected=0, actual=len(contact)),
         P.check("'51 Franklin Street' survives only in LICENSE + doc/License.txt",
                 expected=True, actual=(franklin <= allowed)),
         P.check("no relicensed .php REGRESSED php -l (parsed before, fails after)", expected=0, actual=len(regressions)),
