@@ -48,7 +48,21 @@ Generic CRUD over **every** table, table name allowlisted against `sqlite_master
 - `PUT|PATCH ?api=<table>&id=` — update (pk protected)
 - `DELETE ?api=<table>&id=` — delete one row
 
+## Self-hosting — the CMS renders its own running source + docs
+`?page=source` and `?page=docs` (**admin-only**, gated on the login) browse the CMS's own source and
+documentation, mirrored into the DB on every crank. `tools/ingest_self.py` (run by the post-commit hook)
+walks the git tree and UPSERTs each file **content-addressed by git blob hash** into two table pairs:
+`code_blobs(hash,lang,bytes,body)` + `code_refs(hash,path,commit_sha,is_current)`, and the matching
+`doc_blobs`/`doc_refs`. Blobs dedupe by hash; the `*_refs` are the **reverse lookup** (hash → path@commit,
+and path → its version history); `is_current=1` marks the running-source version. Two tags render it:
+`<<<SourceList>>>` (index + `?file=<hash>` view — escaped `<pre>` + line numbers + version history) and
+`<<<DocList>>>` (index + `?doc=<hash>` view — a small **escape-first markdown subset**, so `<<<Tag>>>`
+examples in docs stay literal). Scope = the app PHP + the python tooling + docs + `main:deploy.py`/`install.py`;
+frozen/vendored trees excluded. The four archive tables are **denylisted from the public REST** (admin-only).
+
 ## Tooling (`tools/`)
+- `ingest_self.py` — mirrors the running source + docs into the DB each crank (see Self-hosting, above).
+- `doc_watch.py` — files a `documentation` ticket when a commit changes code but no doc (post-commit hook).
 - `serve.py` — the dev server. `crawl.py` — BFS site spider → broken-link report (uses `?api=Documents`
   as the page oracle; expect exactly **1** broken = the deliberate `?page=nope` demo on `about`).
 - `tagcheck.py` — renders every tag and asserts 200 + no PHP fatal **or warning/notice** (**24/24 pass**).
@@ -59,9 +73,10 @@ Generic CRUD over **every** table, table name allowlisted against `sqlite_master
   update (self-installs a `post-commit` hook via `--install-hook`). Together these are the regression
   gates the ratchet loop runs.
 
-## Unified DB shape (13 tables)
+## Unified DB shape (13 CMS/ops tables + the self-hosting archive)
 `events, tickets, signals, heartbeat, memories` (ops/tracker) + `Documents, Document_Templates, Products,
-forms, orders, Categories, Store_Content_Blocks, Page_Categories` (CMS) + `_merge_conflicts` (merge audit).
+forms, orders, Categories, Store_Content_Blocks, Page_Categories` (CMS) + `_merge_conflicts` (merge audit)
++ `code_blobs, code_refs, doc_blobs, doc_refs` (the content-addressed source/doc archive — see Self-hosting).
 
 ## Status (as of this session)
 **Closed:** #25 (mysql_*→native PDO), #26 (deploy on/off/redeploy lifecycle + gate), #28 (README PDO

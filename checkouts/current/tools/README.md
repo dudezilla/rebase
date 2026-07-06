@@ -46,6 +46,22 @@ Filing goes through `jazz_telemetry.open_ticket(..., component="documentation")`
 never blocks a commit). The watermark lives at `logs/doc_watch.json` (git-ignored); correctness comes
 from `meta.commits`, so a lost watermark only re-scans, never double-files.
 
+## ingest_self.py — mirror the running source + docs into the CMS DB (self-hosting)
+
+On every crank the CMS's own source and docs are pushed into the DB (the post-commit hook runs this after
+`doc_watch`), **content-addressed by git blob hash**, so `?page=source` / `?page=docs` (admin-only) render
+them. Deduped `code_blobs`/`doc_blobs` + reverse-lookup `code_refs`/`doc_refs` (hash → path@commit;
+`is_current` = the running source).
+
+```
+python3 tools/ingest_self.py             # --head: mirror the HEAD tree + flag current (hook default)
+python3 tools/ingest_self.py --backfill  # walk source history into the archive
+python3 tools/ingest_self.py --stats     # row counts
+```
+
+Scope = app PHP + the python tooling + docs + `main:deploy.py`/`install.py`; frozen/vendored excluded. The
+four archive tables are denylisted from the public REST. Rendered by the `SourceList`/`DocList` tags.
+
 ## Gates the ratchet runs
 
 Every crank is verified against these (exit non-zero on failure):

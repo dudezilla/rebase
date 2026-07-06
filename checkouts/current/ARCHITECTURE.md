@@ -96,6 +96,14 @@ is fabricated by `state/seed.php`; the unified DB is `~/.jazz/congruency.sqlite`
 one at `TAGS_DIR` (`TAG_LOADER`). `lib/ClassLoader/AutoLoader.php` declares the illegal `__autoLoad()` —
 shadowed on the live path by the empty `boot/AutoLoader.php` + the `spl_autoload_register` in `router.php`.
 
+## 7. Self-hosting (renders its own source + docs)
+`tools/ingest_self.py` mirrors the running source + docs into the DB on every crank (the post-commit hook),
+content-addressed by git blob hash: `code_blobs`/`doc_blobs` (deduped content) + `code_refs`/`doc_refs`
+(reverse lookup: hash → path@commit; `is_current` = running source). The admin-gated `<<<SourceList>>>` /
+`<<<DocList>>>` tags (`UserPrivilegeSet::logged_in()`) render an index + a hash-selected view — escaped
+`<pre>` + line numbers for code, an escape-first markdown subset for docs (tag examples stay literal) — at
+`?page=source` / `?page=docs`. The four archive tables are denylisted from the generic REST.
+
 ## Notable hacks (self-catalogued by `invocators/tags/dev/BugReport.php`, rendered *through* the CMS at `?page=bugs`)
 **Still live:** neutered-AutoLoader + include_path shadowing (the load-bearing PHP-8 trick) · tag-name
 regex mismatch makes underscore invocators dead · autoloader = full-tree scan, name==filename · **LIFO

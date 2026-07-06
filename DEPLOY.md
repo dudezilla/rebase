@@ -30,6 +30,13 @@ demo products/order-wizard). Add your pages/catalog/features on top.
 See `DEPENDENCIES.md` for runtime deps + process changes, and `checkouts/current/ARCHITECTURE.md` for the
 CMS internals.
 
+## Self-hosting archive (admin)
+`?page=source` / `?page=docs` render the CMS's own source + docs from four tables
+(`code_blobs`/`code_refs`/`doc_blobs`/`doc_refs`) that `tools/ingest_self.py` populates from the git tree on
+every crank (post-commit hook), content-addressed by git blob hash. On a fresh production target the tables
+are empty until `ingest_self.py` runs there; the pages are admin-only and the tables are excluded from the
+public REST.
+
 
 ## Configuration is data (`configure.php` + `constants.default.json`)
 The CMS constants are DATA: `boot/constants.default.json` holds the defaults; `install.json` (a flat map

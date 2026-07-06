@@ -26,6 +26,9 @@ ledger entry + a prediction). This file is the answer to "did we forget to recor
   as a `get_magic_quotes_gpc()` polyfill. `pdo_sqlite` (above) is therefore a hard runtime dep.
 - **Test-first + prediction record:** `checkouts/current/tools/predict.py` records prediction↔actual to
   `logs/predictions.jsonl`; a REFUTED prediction opens a jazz bug ticket (component=deploy).
+- **Self-hosting ingestion:** the post-commit hook also runs `checkouts/current/tools/ingest_self.py`, which
+  mirrors the running source + docs into the CMS DB (content-addressed by git blob hash) so the CMS renders
+  itself at `?page=source`/`?page=docs`. Needs `git` at runtime (the hook + tool shell out to it).
 
 ## Artifact discipline (no lost/untracked artifacts)
 - **Tracked recipes:** `predict.py`, `boot/configure.php` + `boot/constants.default.json`,
