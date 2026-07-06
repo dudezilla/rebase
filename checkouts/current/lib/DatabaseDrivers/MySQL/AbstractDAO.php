@@ -89,7 +89,7 @@ if(!class_exists("AbstractDAO")){
 		}
 		
 		protected function returnAllBeans($rows){
-			$beansArray = NULL;
+			$beansArray = array();   // BUG-04: a zero-row result must be [] not null
 			for($index=0;$index<$rows;$index++){
 				$row = mysql_fetch_assoc($this->resultSet);
 				$beansArray[$index] = $this->getBean($row);
