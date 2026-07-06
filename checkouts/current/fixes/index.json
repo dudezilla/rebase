@@ -164,5 +164,11 @@
     "target": "tooling/tournament/ (removed), tooling/README.md",
     "purpose": "dedup: remove nested-duplicate tooling/tournament/ (keeps top-level tournament-package/ + -lineage/)",
     "recorded": "2026-07-05T19:53:59"
+  },
+  {
+    "fix": "install_predict.py",
+    "target": "checkouts/current/tools/predict.py",
+    "purpose": "build #11: predictions harness (test-first prediction-vs-actual ledger) + self-test",
+    "recorded": "2026-07-05T20:29:10"
   }
 ]

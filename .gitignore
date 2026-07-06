@@ -2,3 +2,5 @@
 /checkouts/current/state/congruency.sqlite
 /checkouts/current/state/seed.php
 /logs/bug_reports.jsonl
+
+/logs/predictions.jsonl
