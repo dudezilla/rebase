@@ -230,5 +230,11 @@
     "target": "www/Constants.php + etc/Constants.php (retired); www/index.php rewired",
     "purpose": "build #21: retire the dormant www/ + etc/ Constants.php copies; configure.php is the sole constants source",
     "recorded": "2026-07-06T00:30:55"
+  },
+  {
+    "fix": "sweep_license.py",
+    "target": "bugs/** + tooling/** headers",
+    "purpose": "build #22: sweep legacy GPL+contact headers out of the bugs/ + tooling/ copies (548 files); address -> 0 repo-wide",
+    "recorded": "2026-07-06T00:55:25"
   }
 ]
