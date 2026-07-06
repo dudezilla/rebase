@@ -188,5 +188,11 @@
     "target": "checkouts/current/state/prod_seed.php",
     "purpose": "build #14: fresh production stub DB (intro landing + 404, empty store tables, no dev content)",
     "recorded": "2026-07-05T20:37:12"
+  },
+  {
+    "fix": "doc_deploy_deps.py",
+    "target": "DEPENDENCIES.md, DEPLOY.md",
+    "purpose": "build/doc #16: record runtime deps + process changes; document deploy.py + install.json + stub",
+    "recorded": "2026-07-05T20:43:10"
   }
 ]
