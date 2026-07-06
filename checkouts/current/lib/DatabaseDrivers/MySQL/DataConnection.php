@@ -4,6 +4,8 @@ Copyright (C) 2006 Steven Peterson
 Congruency is free software, licensed under the GNU GPLv2 or later.
 See the LICENSE file in the project root for full license terms.
 */
+require_once __DIR__ . '/MysqlShimResult.php';   // #25: result class (was in boot/shim.php)
+
 if (!class_exists('DataConnection')){
 	class DataConnection {
 
