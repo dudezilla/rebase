@@ -59,7 +59,7 @@ def telemetry_handles():
 
 
 def bug_sink():
-    rel = "file-system-repair/bug_reports.jsonl"
+    rel = "logs/bug_reports.jsonl"
     reg = os.path.join(HERE, "registry.json")
     if os.path.isfile(reg):
         try:
@@ -147,7 +147,7 @@ def do_checkout(branch):
 
 
 def do_provision_php():
-    return run(["python3", os.path.join(HERE, "file-system-repair", "provision_php.py")], "provision_php")
+    return run(["python3", os.path.join(HERE, "checkouts", "current", "tools", "provision_php.py")], "provision_php")
 
 
 def _state_spec():
