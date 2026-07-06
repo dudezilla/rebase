@@ -206,5 +206,11 @@
     "target": "boot/config_loader.php + DEPLOY.md",
     "purpose": "build #17: pin serving port/host in the config -> CONGRUENCY_PORT/HOST",
     "recorded": "2026-07-05T23:08:48"
+  },
+  {
+    "fix": "modernize_license.py",
+    "target": "checkouts/current/**/*.php headers + LICENSE",
+    "purpose": "build #18: replace 106 legacy GPL+contact headers with a short notice; add root LICENSE; scrub personal contact",
+    "recorded": "2026-07-05T23:55:52"
   }
 ]

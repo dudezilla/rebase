@@ -8,3 +8,5 @@
 /checkouts/current/install.json
 __pycache__/
 *.pyc
+
+*~
