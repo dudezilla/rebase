@@ -25,10 +25,10 @@ if(!class_exists("ContentDAO")){
 			$statement =  "SELECT * FROM Content_Blocks WHERE ContentID = $key ";;			
 			$resultSet = $this->dataConnection->query($statement);
 			if($resultSet){
-				$rows=mysql_num_rows($resultSet);
+				$rows=count($resultSet->rows);   // #25 native
 				if($rows == 1){		//Only want 1 result set anything else is an error.
-					$content = mysql_fetch_assoc($resultSet);
-					mysql_free_result($resultSet);
+					$content = $resultSet->rows[0];   // #25 native
+					/* #25: PDO result, no free */
 				}
 			}
 			return $content;		
