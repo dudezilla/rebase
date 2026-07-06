@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Self-import: use the SUBMISSION'S OWN implementation to import the submission.
  * Corpus reads its own manifest (its description) and reconstructs the dataset
  * object-graph; DocumentStore + BlobStore then persist that graph through the

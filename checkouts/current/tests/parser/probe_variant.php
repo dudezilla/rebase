@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Parses a fixed input list under ONE tag-syntax constant variant (etc|www) and
  * emits [{input,name,argc}]. Run in a subprocess since PHP constants are
  * define-once. Pins the real etc-vs-www divergence (underscore acceptance). */

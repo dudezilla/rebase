@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* TagComputer — lets a TAG drive computation (goals #2 + #4). A computational tag
  * like <<<add(2)(3)>>> is parsed, its name dispatched through the evaluator's
  * op-table, and its args (un-reversed to source order) become integer operands.

@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* CollectionRenderer — format-at-the-edge for a whole ordered list of tag states
  * (a document), reusing the single-state element renderers. Same internal list
  * renders to XML/HTML/JSON/YAML via a registry; JSON/XML also read back. */

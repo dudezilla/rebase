@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Systematic computational-tag sweep: every binary op x operand pairs, computed
  * through the REAL parser + evaluator (TagComputer). Ground truth; each row is a
  * "<<<op(a)(b)>>> = result" data element. Zero denominators skipped (would throw). */

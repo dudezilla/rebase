@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Ground-truth capture of the TagArguments stack API: getArguments() (reversed
  * storage), top(), and the pop() drain sequence (recovers SOURCE order). */
 error_reporting(E_ALL & ~E_DEPRECATED);

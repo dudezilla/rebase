@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* DocumentStore — persistence with git as the primary store (goal #6).
  *
  * Canonical state {name,args} is written to plain files under a store root; that

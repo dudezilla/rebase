@@ -1,5 +1,10 @@
 <?php
 /*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
+/*
  * FormTag — render a stored form by id through the real form pipeline.
  *
  * Usage in document content:  <<<FormTag(contact)>>>

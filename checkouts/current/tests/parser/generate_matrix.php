@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Cross-stage acceptance matrix: for each candidate tag string, capture whether
  * the content SCANNER matches it whole vs. what the PARSER extracts. Pins the
  * (deliberate) divergence between the two regexes — e.g. digits in a name are

@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* TagEvaluator — a keyed evaluation core with named recursive functions.
  *
  * Every node {op, args|value|name} is dispatched through an OPERATOR MAP, never a

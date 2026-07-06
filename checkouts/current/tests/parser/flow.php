@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* FormFlow — server-side form chaining (goal #5): form -> server -> next form.
  * The whole interaction is a keyed transition table; the server computes the next
  * state from (current state, submitted action). No JavaScript, no magic strings —

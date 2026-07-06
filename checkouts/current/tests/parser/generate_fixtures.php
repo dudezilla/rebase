@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Regenerates parse-fixtures.json by running the real Tag_Parser over a corpus
  * of inputs and recording its exact output. Ground-truth capture, not guesswork.
  * Usage:  php generate_fixtures.php  > parse-fixtures.json  (run from tests/parser) */

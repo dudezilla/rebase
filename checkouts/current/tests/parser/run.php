@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Deterministic, self-contained oracle for the tag parser + 4-format renderer.
  * No DB, no server, no JavaScript. Exit 0 iff every assertion passes.
  *

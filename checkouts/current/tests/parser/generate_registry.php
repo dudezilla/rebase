@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Builds tag-registry.json: identifier => {category,file,class} for every
  * invocator under invocators/tags/. Ground-truth capture from the filesystem. */
 $ENTRY = dirname(__DIR__, 2);

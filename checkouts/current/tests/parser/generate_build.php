@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Ground truth for build->parse: builds tags from (name, source args) and records
  * the built string + what the real parser extracts (name + reversed args). */
 error_reporting(E_ALL & ~E_DEPRECATED);

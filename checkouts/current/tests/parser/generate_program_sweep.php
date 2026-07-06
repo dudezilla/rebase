@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Parameterized recursive-program sweep: factorial, fibonacci, and sum across
  * input ranges, each result computed by the real evaluator (ground truth). */
 error_reporting(E_ALL & ~E_DEPRECATED);

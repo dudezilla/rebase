@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* The tag-syntax constants the parser needs, isolated so the corpus runs with
  * no DB/app config. Mirrors etc/Constants.php (underscore-permitting variant). */
 if (!defined('KEY_PREFIX'))        define("KEY_PREFIX","<<<");

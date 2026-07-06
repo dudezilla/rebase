@@ -1,5 +1,10 @@
 <?php
 /*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
+/*
  * Compatibility shim for resurrecting Congruency (2006) on PHP 8.3.
  * Emulates the removed ext/mysql API (mysql_*) over PDO + SQLite, and
  * restores get_magic_quotes_gpc() (removed in PHP 8.0). Nostalgia use only.

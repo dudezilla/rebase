@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* TagScanner — the content-scanning stage: find every tag invocation embedded in
  * a document body. Mirrors Tag_Wrapper::identify_tag exactly, composing the match
  * pattern from the syntax constants (no baked-in regex literal). */

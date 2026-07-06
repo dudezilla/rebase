@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Systematic render sweep: states across arg-counts 0..8 rendered to all four
  * formats + round-trip flag. Ground truth (goal #1), reproducibility-locked. */
 error_reporting(E_ALL & ~E_DEPRECATED);

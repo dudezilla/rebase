@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* BlobStore — content-addressed persistence, git-object style (goal #6). A state's
  * address is the sha1 of its canonical serialization, so identical states dedupe to
  * one immutable object and the address never lies about content. */

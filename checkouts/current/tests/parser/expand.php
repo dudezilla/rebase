@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* TagExpander — models Tag_Wrapper::execute_all_tags: recursively replace every
  * embedded tag with its rendered output, re-scanning that output for child tags.
  * Tag output is resolved through a template map (goal #2, no magic strings). A

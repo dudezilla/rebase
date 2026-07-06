@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Captures FACTS about the real BugReport tag's rendered output: the catalogued
  * bug IDs, severity distribution, output length, and the zero-JavaScript invariant
  * (goal #5) — a real invocator tag verified to emit no <script>. */

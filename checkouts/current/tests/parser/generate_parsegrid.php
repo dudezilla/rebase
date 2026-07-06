@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Parse grid: names x arg-token patterns, tags assembled via TagBuilder then
  * parsed. Ground truth; kind "parse" (Suite A). Combines name shapes and arg
  * token styles (word/digit/underscore/mixed/empty) not enumerated elsewhere. */

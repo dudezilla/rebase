@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Format-at-the-edge renderer. A parsed tag's canonical state {name, args[]} is
  * rendered to XML/HTML/JSON/YAML by looking the format up in a registry map — the
  * rendering logic never bakes in a format, and no magic strings select behavior. */

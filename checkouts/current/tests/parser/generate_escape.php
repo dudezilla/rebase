@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Capture renderer escaping + round-trip behavior for states containing special
  * characters (< > & " ' and tag-like text). Ground truth: records each format's
  * rendered output AND whether render->parse recovers the original state, so the

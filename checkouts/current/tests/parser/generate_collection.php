@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Ground-truth capture of collection rendering + json/xml round-trip. */
 error_reporting(E_ALL & ~E_DEPRECATED);
 require __DIR__ . '/collection.php';

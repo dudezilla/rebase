@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* DocumentRenderer — the unified "scan content and render it" pass. Each embedded
  * tag is either COMPUTED (its name is an eval op -> tags drive computation) or
  * EXPANDED from a template map, with the output re-scanned recursively. One engine,

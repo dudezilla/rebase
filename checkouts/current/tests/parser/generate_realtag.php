@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Captures REAL invocator-tag output: TestTagA is a self-contained recursive tag
  * that emits <<<TestTagA(n-1)>>> until a base case. Ground truth from the actual
  * class (not a model), plus the child tag the scanner finds in its output. */

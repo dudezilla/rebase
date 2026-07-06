@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* BFS the form-flow transition table from the start state to compute the shortest
  * action-path to every reachable state. Ground-truth reachability map (goal #5). */
 require __DIR__ . '/flow.php';

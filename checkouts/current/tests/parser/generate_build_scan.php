@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Inbound pipeline capture: build a tag from a spec, embed it in content, scan it
  * back out, and parse it. Ties TagBuilder -> TagScanner -> Tag_Parser end to end. */
 error_reporting(E_ALL & ~E_DEPRECATED);

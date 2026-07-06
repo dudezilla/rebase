@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Corpus — self-describing dataset graph. The suite reads its OWN description
  * (manifest.json) to discover and self-configure which datasets exist, of what
  * kind, and where. No hard-coded fixture list; adding a dataset = a manifest row.

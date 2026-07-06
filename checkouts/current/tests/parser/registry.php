@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* TagRegistry: resolves a tag identifier to its invocator descriptor purely via a
  * dictionary loaded from tag-registry.json. Dispatch is data, not hard-coded cases. */
 final class TagRegistry {

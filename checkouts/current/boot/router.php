@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* New-tree router for `php -S`. Self-contained bootstrap for checkouts/current,
    pathed entirely off __DIR__ (relocatable). Telemetry stripped — standup only. */
 $BOOT = __DIR__;                                        // checkouts/current/boot

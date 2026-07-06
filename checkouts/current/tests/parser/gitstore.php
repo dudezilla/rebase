@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* GitStore — goal #6 made concrete: a real git repo IS the primary store. Each
  * put() writes the canonical state (via the shared JSON edge) and commits it, so
  * history is the version log. Deterministic commits (fixed identity + dates).

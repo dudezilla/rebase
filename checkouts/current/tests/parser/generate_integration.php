@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* End-to-end pipeline capture: a tag string -> parsed {name,args} -> rendered to
  * XML/HTML/JSON/YAML. Records the whole composition so parser+renderer are
  * regression-locked together. Ground truth from the live code. */

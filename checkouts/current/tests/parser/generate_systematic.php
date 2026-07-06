@@ -1,4 +1,9 @@
 <?php
+/*
+Copyright (C) 2006 Steven Peterson
+Congruency is free software, licensed under the GNU GPLv2 or later.
+See the LICENSE file in the project root for full license terms.
+*/
 /* Systematic parse sweep: arg-count 0..8, name shapes, and whitespace variants.
  * Ground-truth capture; kind "parse" so Suite A picks it up via the manifest. */
 error_reporting(E_ALL & ~E_DEPRECATED);
