@@ -39,8 +39,8 @@ loaded by a dedicated `TAG_LOADER` (ClassLoader rooted at `TAGS_DIR`).
   `ProductView`, `CategoryView`, `ItemList`; `Login`/`Logout`/`ToggleLogin`; `FormTag` (renders a `forms`
   row); and the CMS/dev tags added this era: `TicketList`+`TicketLogger`, `MemoryList`, `PageList`,
   `TagList`, `CategoryPages`, `TagPageHandler`, `SiteMap`, `BugReport`/`BugDemo` (the order-wizard tags removed).
-- **Hack:** `etc/Constants.php` allows `[a-zA-Z_]+` tag names but the *live* `Constants_patched.php`
-  (= `www/Constants.php`) allows only `[a-zA-Z]+`, so the underscore invocators
+- **Hack:** `etc/Constants.php` allows `[a-zA-Z_]+` tag names but the *live* config (`constants.default.json`
+  via `configure.php`, mirroring `www/Constants.php`) allows only `[a-zA-Z]+`, so the underscore invocators
   (`Config_Form_Invocator`, `Catalog_Controller`, …) are **unreachable** — hence the non-underscore dev
   tags that delegate to the same singletons.
 
