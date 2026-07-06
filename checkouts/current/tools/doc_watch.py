@@ -216,14 +216,18 @@ def write_watermark(reg, sha):
 
 
 HOOK = """#!/usr/bin/env python3
-# doc_watch post-commit hook (installed by `doc_watch.py --install-hook`). Best-effort; never blocks.
+# post-commit hook (installed by `doc_watch.py --install-hook`). Best-effort; never blocks the commit.
+# Runs the doc-stale observer AND the self-source ingestion, so on every crank the DB both flags stale
+# docs and mirrors the running source (content-addressed by git blob hash).
 import subprocess, sys, os
 try:
     root = subprocess.run(["git", "rev-parse", "--show-toplevel"],
                           capture_output=True, text=True, timeout=10).stdout.strip()
-    tool = os.path.join(root, "checkouts", "current", "tools", "doc_watch.py")
-    if root and os.path.isfile(tool):
-        subprocess.run([sys.executable, tool, "--head"], timeout=30)
+    if root:
+        for tool in ("doc_watch.py", "ingest_self.py"):
+            p = os.path.join(root, "checkouts", "current", "tools", tool)
+            if os.path.isfile(p):
+                subprocess.run([sys.executable, p, "--head"], timeout=60)
 except Exception:
     pass
 """

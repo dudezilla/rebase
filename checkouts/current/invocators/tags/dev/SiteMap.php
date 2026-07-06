@@ -32,8 +32,9 @@ if (!class_exists("SiteMap")) {
                 // the nav now leads with Pages (all pages) and Tags (all tags).
                 $block = array('invalid' => 1, 'thanks' => 1, 'ticketDone' => 1, 'order' => 1,
                                'catalog' => 1, 'about' => 1, 'config' => 1);
-                $label = array('pages' => 'Pages', 'tags' => 'Tags', 'bugs' => 'bug report');
-                $order = array('pages', 'tags', 'bugs', 'forms', 'tickets', 'memories');
+                $label = array('pages' => 'Pages', 'tags' => 'Tags', 'bugs' => 'bug report',
+                               'source' => 'Source', 'docs' => 'Docs');
+                $order = array('pages', 'tags', 'bugs', 'forms', 'tickets', 'memories', 'source', 'docs');
 
                 $ids = array();
                 foreach ($order as $id) { if (isset($have[$id]) && !isset($block[$id])) { $ids[] = $id; unset($have[$id]); } }
