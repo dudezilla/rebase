@@ -23,11 +23,10 @@ if(!class_exists("PriceDAO")){
    	    		$statement = "SELECT Price,Description From Item_Price_Binding	INNER JOIN  Price_List ON Price_List.Key = Item_Price_Binding.ItemKey WHERE product_grouping = '$product_key'";
 				$resultSet = $this->dataConnection->query($statement);
 				if($resultSet){
-					$rows = mysql_num_rows($resultSet);
-					while($rows-- > 0){
-						array_push($result,mysql_fetch_assoc($resultSet));
+					foreach($resultSet->rows as $__row){   // #25 native
+						array_push($result,$__row);
 					}
-					mysql_free_result($resultSet);							
+					/* #25: no free */							
 				}
 				return $result;	   	    		
    	  		}
@@ -51,12 +50,11 @@ if(!class_exists("PriceDAO")){
    	    	$statement = "SELECT * FROM Price_List";
 			$result_set = $this->dataConnection->query($statement);
 			if($result_set){
-				$rows = mysql_num_rows($result_set);
-				while($rows-- > 0){
-					$record = mysql_fetch_assoc($result_set);
+				foreach($result_set->rows as $__row){   // #25 native
+					$record = $__row;
 					array_push($result,$record);					
 				}
-			mysql_free_result($result_set);
+			/* #25: no free */
 			}
 			return $result;   	  					
 		}*/
@@ -71,12 +69,11 @@ LEFT JOIN Products ON Products.key = Item_Price_Binding.product_grouping";
 
 			$result_set = $this->dataConnection->query($statement);
 			if($result_set){
-				$rows = mysql_num_rows($result_set);
-				while($rows-- > 0){
-					$record = mysql_fetch_assoc($result_set);
+				foreach($result_set->rows as $__row){   // #25 native
+					$record = $__row;
 					array_push($result,$record);					
 				}
-			mysql_free_result($result_set);
+			/* #25: no free */
 			}
 			return $result;   	  					
 		}
@@ -97,8 +94,8 @@ LEFT JOIN Products ON Products.key = Item_Price_Binding.product_grouping";
    	    		$statement = "SELECT * FROM Price_List WHERE `Key`=$v_key";
 				$result_set = $this->dataConnection->query($statement);
 				if($result_set){
-					$result = mysql_fetch_assoc($result_set);
-					mysql_free_result($result_set);				
+					$result = ($result_set->rows ? $result_set->rows[0] : NULL);   // #25 native
+					/* #25: no free */				
 				}
 				return $result;
 			}   	  		
@@ -109,9 +106,8 @@ LEFT JOIN Products ON Products.key = Item_Price_Binding.product_grouping";
 		
 		private function sort_result_set($result_set){
 			$records = array();
-			$rows = mysql_num_rows($result_set);
-			while($rows-- > 0){
-				$record = mysql_fetch_assoc($result_set);
+			foreach($result_set->rows as $__row){   // #25 native
+				$record = $__row;
 				$index = $record['product_grouping'];
 				if($index != ""){
 					if(!isset($records[$index])){
@@ -120,7 +116,7 @@ LEFT JOIN Products ON Products.key = Item_Price_Binding.product_grouping";
 					array_push($records[$index],$record);
 				}
 			}
-			mysql_free_result($result_set);
+			/* #25: no free */
 			return $records;									
 		}			
 			
