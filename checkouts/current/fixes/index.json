@@ -170,5 +170,11 @@
     "target": "checkouts/current/tools/predict.py",
     "purpose": "build #11: predictions harness (test-first prediction-vs-actual ledger) + self-test",
     "recorded": "2026-07-05T20:29:10"
+  },
+  {
+    "fix": "guard_constants.py",
+    "target": "checkouts/current/boot/Constants_patched.php",
+    "purpose": "refactor #12: guard 46 define()s with if(!defined()) so a config loader's pre-defs win",
+    "recorded": "2026-07-05T20:31:38"
   }
 ]
