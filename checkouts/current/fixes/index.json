@@ -194,5 +194,11 @@
     "target": "DEPENDENCIES.md, DEPLOY.md",
     "purpose": "build/doc #16: record runtime deps + process changes; document deploy.py + install.json + stub",
     "recorded": "2026-07-05T20:43:10"
+  },
+  {
+    "fix": "fix_gitignore_pycache.py",
+    "target": ".gitignore (+ untrack __pycache__)",
+    "purpose": "fix: gitignore __pycache__/*.pyc + untrack 25 leaked bytecode caches (root cause: add -A captured them)",
+    "recorded": "2026-07-05T22:53:28"
   }
 ]
