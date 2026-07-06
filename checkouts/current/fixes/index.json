@@ -141,5 +141,11 @@
     "target": "checkouts/current/ARCHITECTURE.md",
     "purpose": "doc: the 2006 CMS internals (boot/tag-engine/POM/DAO/modules/forms/classloader)",
     "recorded": "2026-07-05T19:41:46"
+  },
+  {
+    "fix": "doc_tooling.py",
+    "target": "tooling/README.md",
+    "purpose": "doc: tooling/ top-level index (tests/harness/bugs/coverage/ops/pwdriver/tournament)",
+    "recorded": "2026-07-05T19:43:02"
   }
 ]
