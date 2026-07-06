@@ -25,6 +25,7 @@ require $B . 'BasicElements/BigTextBox.php';
 require $B . 'BasicElements/DbSelect.php';
 require $B . 'BasicElements/Checkbox.php';
 require $B . 'BasicElements/FormConfigElement.php';
+require $B . 'BasicElements/NumberField.php';
 require $B . '../FormLogic/StandardForm.php';
 require $B . '../FormInterface/FormManager.php';
 
@@ -139,6 +140,25 @@ $rpFA->setValue($fm, array('demoForm' => $innerForm));
 $fmb = FormManager::from_array(json_decode(json_encode($fm->to_array()), true));
 check('FormManager round-trips (getResults survives through the whole form graph)',
       $fmb instanceof FormManager && $fmb->getResults('demoForm') == array('type' => 'bug'));
+
+// --- NumberField (#44: numeric input; min/max from elementString; range validation) ---
+$nf = new NumberField();
+$nf->setId('qty'); $nf->setSelectionComment('Quantity:'); $nf->setOrder(7); $nf->setTabIndex(7);
+$nf->setElementString('min=1;max=10');
+$nfb = roundtrip($nf);
+check('NumberField round-trips (class/id; min/max re-derived from elementString)',
+      $nfb instanceof NumberField && $nfb->getId() === 'qty'
+      && $nfb->getMin() == 1 && $nfb->getMax() == 10 && $nfb->getMin() === $nf->getMin());
+// validation via a StandardForm back-ref + simulated $_POST
+$vForm = new StandardForm('vt'); $vForm->addElement($nfb);
+$_POST = array('qty' => '5');   $ok_in  = ($nfb->failsExtendedValidation() === false);
+$_POST = array('qty' => '99');  $ok_max = ($nfb->failsExtendedValidation() === true);
+$_POST = array('qty' => 'abc'); $ok_num = ($nfb->failsExtendedValidation() === true);
+$_POST = array();
+check('NumberField validates (accepts in-range, rejects over-max + non-numeric)', $ok_in && $ok_max && $ok_num);
+$html = $nfb->getHTML();
+check('NumberField renders <input type=number> with min/max attrs',
+      strpos($html, "type='number'") !== false && strpos($html, "min='1'") !== false && strpos($html, "max='10'") !== false);
 
 echo "formelement round-trip: $pass passed, $fail failed\n";
 exit($fail === 0 ? 0 : 1);
