@@ -27,6 +27,7 @@ require $B . 'BasicElements/Checkbox.php';
 require $B . 'BasicElements/FormConfigElement.php';
 require $B . 'BasicElements/NumberField.php';
 require $B . 'BasicElements/DateField.php';
+require $B . 'BasicElements/MultiSelect.php';
 require $B . '../FormLogic/StandardForm.php';
 require $B . '../FormInterface/FormManager.php';
 
@@ -178,6 +179,25 @@ check('DateField validates (accepts in-range ISO, rejects out-of-range + non-ISO
 $html = $dfb->getHTML();
 check('DateField renders <input type=date> with min/max attrs',
       strpos($html, "type='date'") !== false && strpos($html, "min='2024-01-01'") !== false && strpos($html, "max='2025-12-31'") !== false);
+
+// --- MultiSelect (#44: array-valued checkbox group; option-set doubles as allowlist) ---
+$ms = new MultiSelect();
+$ms->setId('tags'); $ms->setSelectionComment('Tags:'); $ms->setOrder(9); $ms->setTabIndex(9);
+$ms->setElementString('<<red>><<green>><<blue>>');
+$msb = roundtrip($ms);
+check('MultiSelect round-trips (class/id; options re-derived from elementString)',
+      $msb instanceof MultiSelect && $msb->getId() === 'tags'
+      && $msb->getOptions() == $ms->getOptions() && count($ms->getOptions()) === 3);
+$vForm3 = new StandardForm('vt3'); $vForm3->addElement($msb);
+$_POST = array('tags' => array('red', 'green'));  $ok_a = ($msb->failsExtendedValidation() === false);
+$_POST = array('tags' => array('red', 'purple')); $ok_b = ($msb->failsExtendedValidation() === true);
+$_POST = array('tags' => array('green'));          $html = $msb->getHTML();
+$_POST = array();
+check('MultiSelect validates (accepts subset of options, rejects a non-option value)', $ok_a && $ok_b);
+check('MultiSelect renders checkbox group (name=tags[] + type=checkbox + all 3 options)',
+      strpos($html, "name='tags[]'") !== false && strpos($html, "type='checkbox'") !== false
+      && strpos($html, "value='red'") !== false && strpos($html, "value='green'") !== false
+      && strpos($html, "value='blue'") !== false);
 
 echo "formelement round-trip: $pass passed, $fail failed\n";
 exit($fail === 0 ? 0 : 1);
