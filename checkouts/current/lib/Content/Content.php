@@ -22,7 +22,7 @@ if(!class_exists("Content")){
 	}
 	
 	public function __toString(){
-		return $this->content;
+		return $this->content ?? '';   // bug #60: never return null (string return type)
 	}
 	
 	public function set_content($content){
