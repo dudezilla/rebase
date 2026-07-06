@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 """mint_crank.py — mint a crank: inject one python patch, capture it as the next version.
 
-A crank stroke = INJECT one author-supplied Python patch onto a NEW crank branch, RUN it
-(its one change), and CAPTURE it (commit) — the captured patch IS the diff that defines the
-next version. This formalises the fixes/*.py "ratchet link" discipline into one operation.
+A crank stroke = INJECT one author-supplied Python patch on the single `source` branch, RUN it
+(its one change), and CAPTURE it (commit + version tag) — the captured patch IS the diff that
+defines the next version. No branch-per-crank: a crank is a commit + tag IN PLACE. This formalises
+the fixes/*.py "ratchet link" discipline into one operation.
 
-    # precondition: installed on a crank bNN (via install.py), clean tree, php provisioned
+    # precondition: on the `source` branch, tracked-clean, php provisioned
     python3 checkouts/current/tools/mint_crank.py --patch /path/to/turn_xyz.py [--name xyz] [-m MSG]
 
 Steps (each records a BUG EVENT on ANY unexpected outcome — exception OR expected!=actual —
-then fail-fast; nothing is left half-minted):
-    fork    git checkout -b b(NN+1)
-    inject  copy the python patch -> checkouts/current/fixes/<name>.py  (must compile)
-    run     python3 <injected>                                          (exit 0)
-    capture add -A + commit + version-4.05x tag on THIS repo (reuses compute_next_version)
-    state   make_state.py --crank b(NN+1)                               (state:<next>/database.tar.xz)
-    verify  tooling/congruencey-tests/verify                            (0 failed)
+then fail-fast):
+    precondition  on `source`, tracked-clean (no fork)
+    inject        copy the python patch -> checkouts/current/fixes/<name>.py  (must compile)
+    run           python3 <injected>                                          (exit 0)
+    capture       add -A + commit + version-4.05x tag on `source` (reuses compute_next_version)
+    state         make_state.py --version <ver>   (state:database.tar.xz + state-<ver> tag)
+    verify        tooling/congruencey-tests/verify                            (0 failed)
 
 Push is a SEPARATE release step (ticket #6) — the mint stays local. python only, registry-gated.
 """
@@ -119,21 +120,13 @@ def run_py(path, *args, timeout=300):
 # --------------------------------------------------------------------------- #
 # steps                                                                       #
 # --------------------------------------------------------------------------- #
-def step_fork(current):
-    if not re.match(r"^b\d\d$", current):
-        raise Unexpected("mint must run from a crank branch bNN, not %r" % current)
-    nxt = "b%02d" % (int(current[1:]) + 1)
-    if git("rev-parse", "--verify", "-q", nxt).returncode == 0:
-        raise Unexpected("target crank branch %s already exists" % nxt)
+def step_precondition(current):
+    # A crank is now a commit + tag IN PLACE on the single `source` branch (no fork).
+    if current != "source":
+        raise Unexpected("mint must run on the `source` branch, not %r" % current)
     if [l for l in git("status", "--porcelain").stdout.splitlines() if not l.startswith("??")]:
-        raise Unexpected("tree has uncommitted tracked changes; refusing to fork")
-    r = git("checkout", "-b", nxt)
-    if r.returncode != 0:
-        raise Unexpected("git checkout -b %s failed: %s" % (nxt, r.stderr.strip()))
-    now = git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
-    if now != nxt:
-        raise Unexpected("expected HEAD on %s, got %s" % (nxt, now))
-    return nxt
+        raise Unexpected("tree has uncommitted tracked changes; refusing to mint")
+    return current
 
 
 def step_inject(patch, name):
@@ -189,13 +182,13 @@ def step_capture(message):
     return {"version": version, "tag": tag, "committed_in": ["congruencey"], "commit": after[:10]}
 
 
-def step_state(nxt):
-    r = run_py(os.path.join(HERE, "make_state.py"), "--crank", nxt)
+def step_state(version):
+    r = run_py(os.path.join(HERE, "make_state.py"), "--version", version)
     if r.returncode != 0:
         raise Unexpected("make_state failed: %s" % (r.stderr or r.stdout).strip()[-400:])
-    if git("cat-file", "-e", "state:%s/database.tar.xz" % nxt).returncode != 0:
-        raise Unexpected("state:%s/database.tar.xz not committed" % nxt)
-    return {"state_ref": "state:%s/database.tar.xz" % nxt}
+    if git("cat-file", "-e", "state:database.tar.xz").returncode != 0:
+        raise Unexpected("state:database.tar.xz not committed")
+    return {"state_ref": "state:database.tar.xz"}
 
 
 def step_verify():
@@ -247,17 +240,17 @@ def main():
             print("   FAIL: %s\n   bug report -> %s" % (exc, p), file=sys.stderr)
             raise
 
-    print("mint crank: from %s, patch=%s" % (current, a.patch))
-    nxt = do("fork", lambda: step_fork(current))
+    print("mint crank: on %s, patch=%s" % (current, a.patch))
+    do("precondition", lambda: step_precondition(current))
     dest = do("inject", lambda: step_inject(a.patch, name))
     do("run patch", lambda: step_run(dest))
-    cap = do("capture (commit_release)", lambda: step_capture(message))
-    do("state", lambda: step_state(nxt))
+    cap = do("capture (commit + tag)", lambda: step_capture(message))
+    do("state", lambda: step_state(cap["version"]))
     do("verify", lambda: step_verify())
 
     if T:
-        T.emit("mint", status="ok", crank=nxt, version=cap.get("version"))
-    print("\n== crank %s minted: %s (patch captured, state + verify green) ==" % (nxt, cap.get("tag")))
+        T.emit("mint", status="ok", branch=current, version=cap.get("version"))
+    print("\n== crank minted on %s: %s (commit + tag in place; state + verify green) ==" % (current, cap.get("tag")))
     return 0
 
 
