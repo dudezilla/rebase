@@ -54,8 +54,11 @@ if (!class_exists("BugDemo")) {
             if (count($inject) > count($legit)) {
                 $body .= "<br><br><b style='color:#b00020'>Injected.</b> The <code>WHERE</code> clause became "
                        . "<code>category=0 OR 1=1</code>, leaking every product: " . implode(', ', $leaked) . ".";
+            } else {
+                $body .= "<br><br><b style='color:#1a7a3a'>Blocked &#10003;</b> The validated numeric key sanitised the input "
+                       . "(<code>0 OR 1=1</code> &rarr; <code>NULL</code>), so no injectable query was built.";
             }
-            return $this->box('BUG-01 &mdash; live SQL injection', $body);
+            return $this->box('BUG-01 &mdash; PATCHED (was live SQL injection)', $body);
         }
 
         /* ---- BUG-08 live: the command "queue" runs last-in-first-out ---- */

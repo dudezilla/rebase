@@ -29,7 +29,8 @@ if (!class_exists("BugReport")) {
             return array(
                 array('BUG-01', 'critical', 'SQL injection in the product catalog',
                     'select_products_by_category() validates the key into $itemKey, then guards on isset($key) and interpolates the RAW $key into SQL. The validated value is dead code one variable name away.',
-                    'lib/Modules/StoreModule/Catalog/DAO/CatalogDAO.php#L58'),
+                    'lib/Modules/StoreModule/Catalog/DAO/CatalogDAO.php#L58',
+                    'FIXED &mdash; CatalogDAO now interpolates the validated $itemKey and guards isset($itemKey); malicious keys sanitise to NULL.'),
                 array('BUG-02', 'high', 'ProductDAO never opens a connection',
                     'The constructor sets $this->table but omits the CreateConnection()->open() every sibling DAO has. First query dereferences null.',
                     'lib/Modules/StoreModule/Catalog/DAO/ProductDAO.php#L25'),
@@ -38,13 +39,15 @@ if (!class_exists("BugReport")) {
                     'lib/Modules/StoreModule/Order/DAO/OrderDAO.php#L65'),
                 array('BUG-04', 'medium', 'Empty result set returns null, not []',
                     'returnAllBeans() inits to NULL and only fills in-loop; a zero-row query returns null and callers do current(null) -> TypeError.',
-                    'lib/DatabaseDrivers/MySQL/AbstractDAO.php#L86'),
+                    'lib/DatabaseDrivers/MySQL/AbstractDAO.php#L86',
+                    'FIXED &mdash; returnAllBeans() now inits array(); a zero-row query returns [].'),
                 array('BUG-05', 'medium', 'A missing page crashes the front controller',
                     'Controller::display passes a possibly-null document to setData(), which does get_class(null). Silent false in PHP 5; fatal TypeError in PHP 8.',
                     'lib/PersistanceObjectManager/PersistentObjectManager.php#L75'),
                 array('BUG-06', 'medium', 'Unbounded tag recursion (stored-content DoS)',
                     'execute_all_tags recurses into a tag&rsquo;s rendered output with no depth/visited guard. A document whose Title is &lt;&lt;&lt;TitleTag&gt;&gt;&gt; loops forever.',
-                    'lib/TagLoader/Tag/Tag_Wrapper.php#L81'),
+                    'lib/TagLoader/Tag/Tag_Wrapper.php#L81',
+                    'FIXED &mdash; execute_all_tags now caps recursion depth at 64.'),
                 array('BUG-07', 'high', 'Config constants referenced but never defined',
                     'The store/order/auth modules use MYSQL_STORE_DATABASE, ETC, &hellip; that Constants.php never defines. Undefined constants are fatal on PHP 8 &mdash; why Install.txt says &ldquo;does not execute.&rdquo;',
                     'www/Constants.php'),
@@ -71,13 +74,14 @@ if (!class_exists("BugReport")) {
             $out .= ".bug a{font:.72rem/1 monospace;color:#8a5a1a}";
             $out .= "</style>\n<div class='bugs'>\n";
             foreach ($this->catalog() as $b) {
-                list($id, $sev, $title, $desc, $loc) = $b;
-                $c = self::colour($sev);
-                $out .= "  <div class='bug' style='border-left-color:$c'>";
-                $out .= "<span class='sev' style='background:$c'>$sev</span>";
+                list($id, $sev, $title, $desc, $loc, $fixed) = array_pad($b, 6, null);
+                $c = $fixed ? '#1a7a3a' : self::colour($sev);
+                $out .= "  <div class='bug' style='border-left-color:$c" . ($fixed ? ";opacity:.72" : "") . "'>";
+                $out .= "<span class='sev' style='background:$c'>" . ($fixed ? 'resolved' : $sev) . "</span>";
                 $out .= "<span class='id'>$id</span>";
-                $out .= "<h3>$title</h3>";
+                $out .= "<h3" . ($fixed ? " style='text-decoration:line-through'" : "") . ">$title</h3>";
                 $out .= "<p>$desc</p>";
+                if ($fixed) { $out .= "<p style='color:#1a7a3a;font-weight:600;margin:.2rem 0'>&#10003; $fixed</p>"; }
                 $out .= "<a href='$gh$loc'>$loc</a>";
                 $out .= "</div>\n";
             }
