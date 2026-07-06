@@ -12,15 +12,15 @@ Checks out `version-X`, exports the app (minus the ratchet apparatus + dev DB) i
 site is up and dev content is gone (recorded as predictions; a REFUTED prediction halts). Creates the
 target + config if absent.
 
-## install.json (config pushed into CONSTANTS)
-    { "db": "/srv/site/state/congruency.sqlite",
-      "port": 8080,                                         // pinned serving port (the launcher binds it)
-      "host": "0.0.0.0",                                    // optional serving host/interface
-      "abs_path": "/srv/site",                              // optional; default = relocatable
-      "site": { "email": "...", "order_subject": "..." },   // optional
-      "constants": { "MYSQL_SERVER": "..." } }              // optional (real-MySQL deploy)
-`boot/config_loader.php` reads it (env `$CONGRUENCY_CONFIG` overrides the path) and `define()`s the
-constants before the app boots. Under the sqlite shim only `db` (CONGRUENCY_SQLITE) actually matters.
+## install.json (config-as-data — a flat map of CONSTANT → value)
+    { "CONGRUENCY_SQLITE": "/srv/site/state/congruency.sqlite",   // the DB path (the one that matters)
+      "CONGRUENCY_PORT": 8080,                                     // pinned serving port
+      "CONGRUENCY_HOST": "0.0.0.0" }                               // optional serving host/interface
+`boot/configure.php` merges it over `boot/constants.default.json` and `define()`s each constant before
+the app boots (env `$CONGRUENCY_CONFIG` overrides the install.json path). `deploy.py` writes exactly these
+`CONGRUENCY_*` keys. To deploy against real MySQL instead of the sqlite target, set the `MYSQL_*`
+constants and give `DataConnection` a `mysql:` DSN — the DAOs are driver-agnostic since the native-PDO
+migration (#25); under sqlite only `CONGRUENCY_SQLITE` matters.
 
 ## The production stub (state/prod_seed.php)
 A fresh, functional-but-empty starter: a landing/intro (keyed `catalog`, the Controller default) + the
