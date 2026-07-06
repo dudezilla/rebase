@@ -26,3 +26,6 @@
 {"kind": "new", "id": 12, "type": "spec", "description": "Migrate the tracker (ledger + signals + dead-man) into jazz", "ts": "2026-07-06T01:41:05"}
 {"kind": "status", "id": 12, "status": "open", "note": "filed", "ts": "2026-07-06T01:41:05"}
 {"kind": "status", "id": 10, "status": "active", "note": "store built + demonstrated", "ts": "2026-07-06T01:41:06"}
+{"kind": "status", "id": 11, "status": "done", "note": "signals MCP built (~/.MCP/signals-mcp), registered in the gate, documented in tracker/SIGNALS.md", "ts": "2026-07-06T02:26:19"}
+{"kind": "new", "id": 13, "type": "documentation", "description": "One-command installer so the repo signals-mcp server stays in sync with ~/.MCP (no drift)", "ts": "2026-07-06T02:26:19"}
+{"kind": "status", "id": 13, "status": "open", "note": "filed", "ts": "2026-07-06T02:26:19"}
