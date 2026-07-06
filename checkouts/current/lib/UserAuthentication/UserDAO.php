@@ -31,11 +31,11 @@ if(!class_exists("UserDAO")){
 		private function privileges($resultSet){
 			$userPrivilege = NULL;
 			if($resultSet){
-				$rows=mysql_num_rows($resultSet);
+				$rows=count($resultSet->rows);   // #25 native
 				if($rows > 0){
 					$userPrivilege = new UserPrivilegeSet();
-					for($rows=mysql_num_rows($resultSet);$rows>0;$rows-- ){
-						$permission = mysql_fetch_assoc($resultSet);
+					foreach($resultSet->rows as $__row){   // #25 native
+						$permission = $__row;
 						$userPrivilege->add($permission['Module'],$permission['Value']); 
 					}
 				}
