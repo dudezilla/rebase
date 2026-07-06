@@ -49,8 +49,10 @@ Generic CRUD over **every** table, table name allowlisted against `sqlite_master
 - `DELETE ?api=<table>&id=` — delete one row
 
 ## Self-hosting — the CMS renders its own running source + docs
-`?page=source` and `?page=docs` (**admin-only**, gated on the login) browse the CMS's own source and
-documentation, mirrored into the DB on every crank. `tools/ingest_self.py` (run by the post-commit hook)
+`?page=source` and `?page=docs` browse the CMS's own source and documentation, mirrored into the DB on
+every crank. They are **admin-only by design** (the `ADMIN_GATED` const on `SourceList`/`DocList`, checked
+against `UserPrivilegeSet::logged_in()`) — currently **ungated** (`ADMIN_GATED=false`) during shakeout; flip
+it to `true` to require the login. `tools/ingest_self.py` (run by the post-commit hook)
 walks the git tree and UPSERTs each file **content-addressed by git blob hash** into two table pairs:
 `code_blobs(hash,lang,bytes,body)` + `code_refs(hash,path,commit_sha,is_current)`, and the matching
 `doc_blobs`/`doc_refs`. Blobs dedupe by hash; the `*_refs` are the **reverse lookup** (hash → path@commit,

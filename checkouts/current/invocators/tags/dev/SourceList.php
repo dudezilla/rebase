@@ -18,12 +18,14 @@ See the LICENSE file in the project root for full license terms.
 if (!class_exists("SourceList")) {
     class SourceList implements Tag_Interface {
 
+        const ADMIN_GATED = false;   // TEMP: browse without login while the browser is being finished; set true to re-gate
+
         private $arguments;
         public function __construct($arguments) { $this->arguments = $arguments; }
         private static function esc($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
 
         private static function gate() {
-            if (!class_exists('UserPrivilegeSet') || !UserPrivilegeSet::logged_in()) {
+            if (self::ADMIN_GATED && (!class_exists('UserPrivilegeSet') || !UserPrivilegeSet::logged_in())) {
                 return "<p><strong>Administrator area.</strong> Please log in to browse the source.</p>\n<<<Login>>>";
             }
             return null;
