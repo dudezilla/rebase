@@ -21,6 +21,7 @@ require $B . 'Lib/AbstractFormElement.php';
 require $B . 'BasicElements/RadioSelect.php';
 require $B . 'BasicElements/TextBox.php';
 require $B . 'BasicElements/TextField.php';
+require $B . 'BasicElements/BigTextBox.php';
 
 $pass = 0; $fail = 0;
 function check($name, $ok) {
@@ -58,6 +59,13 @@ $tf->setOrder(3); $tf->setTabIndex(3);
 $b = roundtrip($tf);
 check('TextField round-trips (class/id/required/order via base)',
       $b instanceof TextField && $b->getId() === 'email' && $b->getRequired() === true && $b->getCompareValue() == 3);
+
+// --- BigTextBox (no element-specific state; base fields only) ---
+$bt = new BigTextBox();
+$bt->setId('body'); $bt->setSelectionComment('Body:'); $bt->setOrder(4); $bt->setTabIndex(4);
+$b = roundtrip($bt);
+check('BigTextBox round-trips (class/id/order via base)',
+      $b instanceof BigTextBox && $b->getId() === 'body' && $b->getCompareValue() == 4);
 
 echo "formelement round-trip: $pass passed, $fail failed\n";
 exit($fail === 0 ? 0 : 1);
