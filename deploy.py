@@ -133,8 +133,8 @@ def _ignore(dirpath, names):
     return drop
 
 
-def build_target(target, php):
-    """Create the target + export app + install.json + fresh stub DB (only if not already configured)."""
+def build_target(target, php, port, host):
+    """Create the target + export app + install.json (pinned port) + fresh stub DB (if not already configured)."""
     cfg = os.path.join(target, "install.json")
     if os.path.isfile(cfg):
         return {"created": False, "config": cfg, "note": "target already configured"}
@@ -153,7 +153,7 @@ def build_target(target, php):
     db = os.path.join(os.path.abspath(target), "state", "congruency.sqlite")
     os.makedirs(os.path.dirname(db), exist_ok=True)
     with open(cfg, "w") as fh:
-        json.dump({"db": db, "site": {}}, fh, indent=2)
+        json.dump({"db": db, "port": port, "host": host, "site": {}}, fh, indent=2)
     # seed the FRESH production stub DB
     seed = os.path.join(target, "state", "prod_seed.php")
     if not os.path.isfile(seed):
@@ -179,8 +179,8 @@ def _probe(url):
         return None, "%r" % e
 
 
-def boot_and_verify(target, php, port, keep):
-    proc = subprocess.Popen([php, "-S", "127.0.0.1:%d" % port, "boot/router.php"], cwd=target,
+def boot_and_verify(target, php, port, host, keep):
+    proc = subprocess.Popen([php, "-S", "%s:%d" % (host, port), "boot/router.php"], cwd=target,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     time.sleep(1.5)
     try:
@@ -201,23 +201,52 @@ def boot_and_verify(target, php, port, keep):
     return ok, {"home": s_home, "bugs_len": len(b_bug), "port": port, "serving": keep and proc.pid or None}
 
 
+def serve_only(target, port=None, host=None):
+    """Serve an already-deployed target on its PINNED config port (no checkout/rebuild)."""
+    cfg = os.path.join(target, "install.json")
+    if not os.path.isfile(cfg):
+        raise RuntimeError("no install.json in %s — deploy there first" % target)
+    conf = json.load(open(cfg))
+    port = port or int(conf.get("port", 8080))
+    host = host or conf.get("host", "0.0.0.0")
+    php = os.path.join(HERE, "tooling", "congruencey-harness", "php", "php")
+    if not os.path.isfile(php):
+        raise RuntimeError("php not provisioned (%s) — run a deploy/install first" % php)
+    log = os.path.join(target, "serve.log")
+    proc = subprocess.Popen([php, "-S", "%s:%d" % (host, port), "boot/router.php"], cwd=target,
+                            stdout=open(log, "a"), stderr=subprocess.STDOUT)
+    if T:
+        T.emit("serve", status="up", target=target, port=port, pid=proc.pid)
+    print("serving %s on http://%s:%d/  (pid %d, port from install.json; log %s)" % (target, host, port, proc.pid, log))
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description="deploy a source version to a production target folder")
     ap.add_argument("--target", required=True, help="target deploy folder (created if absent)")
     ap.add_argument("--version", default=None, help="source version (default: latest version-* tag)")
-    ap.add_argument("--port", type=int, default=None, help="serve port (default: ephemeral)")
+    ap.add_argument("--port", type=int, default=None, help="serve port to pin into install.json (default 8080)")
+    ap.add_argument("--host", default=None, help="serve host/interface to pin (default 0.0.0.0)")
+    ap.add_argument("--serve", action="store_true", help="serve an existing target on its config port (no rebuild)")
     ap.add_argument("--keep-serving", action="store_true", help="leave the server running after verify")
     a = ap.parse_args()
 
-    version = resolve_version(a.version)
     target = os.path.abspath(os.path.expanduser(a.target))
-    print("deploy: source version-%s -> %s" % (version, target))
+    if a.serve:
+        return serve_only(target, a.port, a.host)
+
+    version = resolve_version(a.version)
+    port = a.port or 8080
+    host = a.host or "0.0.0.0"
+    print("deploy: source version-%s -> %s (port %d)" % (version, target, port))
     try:
         tag = checkout_version(version)
         php = provision_php()
-        built = build_target(target, php)
+        built = build_target(target, php, port, host)
         print("   target %s (%s)" % ("built" if built.get("created") else "reused", built.get("config")))
-        ok, info = boot_and_verify(target, php, a.port or _free_port(), a.keep_serving)
+        conf = json.load(open(os.path.join(target, "install.json")))     # honor the pinned config port
+        eff_port, eff_host = int(conf.get("port", port)), conf.get("host", host)
+        ok, info = boot_and_verify(target, php, eff_port, eff_host, a.keep_serving)
         if T:
             T.emit("deploy", status="ok" if ok else "fail", version=version, target=target)
         run(["git", "checkout", "main"], "return to main")
