@@ -37,22 +37,22 @@ file. So we need:
  the gate  ──►  signals__due · signals__ack · signals__sync · signals__check · signals__lookup · signals__status
 ```
 
-The ledger stays the source of truth (committed, diffable, append-only). `project.db` is **one persistent,
-install-level db** — by default `~/.MCP/project.db` (the install root, beside the gate and registry;
-override with `$PROJECT_DB`). It is deliberately **not** a copy in the disposable working tree, because the
-`memories` table (the gate's tool-use log) is durable operational history with **no ledger to rebuild it
-from**. Only `tickets` is a projection one `sync` can rebuild; `signals`/`heartbeat` are transient
-operational state; `memories` is the durable data that makes the db worth persisting across a repo re-clone.
+The ledger stays the source of truth (committed, diffable, append-only). The db is **one persistent,
+install-level file** — now the unified `~/.jazz/congruency.sqlite` (precedence `$PROJECT_DB` > `$JAZZ_DB` >
+that default; the old `~/.MCP/project.db` was merged back and retired). It is deliberately **not** a copy in
+the disposable working tree, because the `memories` table (the gate's tool-use log) is durable operational
+history with **no ledger to rebuild it from**. `tickets` is now owned by **jazz** (not this layer, which no
+longer creates it); `signals`/`heartbeat` are transient operational state; `memories` is the durable data
+that makes the db worth persisting across a repo re-clone.
 
 ---
 
 ## 3. `store.py` — the DB + the safety functions
 
-Three tables:
+Three tables (`tickets` is intentionally **not** created here — jazz owns it in the unified db):
 
 | table | purpose |
 |---|---|
-| `tickets(id, type, description, status, created)` | projection of the ledger (rebuildable via `sync`) |
 | `signals(id, ts, level, source, code, message, ref, status)` | the **error channel** — every process writes here; errors are read with a query |
 | `heartbeat(component, last_seen, ttl, state)` | the **dead-man's switch**, one row per component |
 | `memories(id, ts, session, tool, intent, note)` | the **gate's tool-use log** — one row per gated call, tagged with the Claude Code **session** id; durable (no ledger to rebuild it), the reason the db is a persistent install |
@@ -185,6 +185,6 @@ foreground — handy for testing or a cron/systemd unit.
 ## 10. Deploying / keeping in sync
 
 The running server lives at `~/.MCP/signals-mcp/server.py` (so it can import the shared `~/.MCP/mcplib`);
-the **source of record** is versioned in the repo at `tracker/signals-mcp/server.py`. To deploy or
-update: copy the repo copy over the `~/.MCP` copy and restart the gate. (A future ticket: make this a
-one-command install so the two never drift — see the tracker's own `build`/`spec` tickets.)
+the **source of record** is versioned in the repo at `tracker/signals-mcp/server.py`. Keep them in sync
+with the one-command installer (ticket #37): `python3 tracker/install_signals.py` copies the repo copy
+into `~/.MCP` (`--check` reports drift without writing); then restart the gate.
