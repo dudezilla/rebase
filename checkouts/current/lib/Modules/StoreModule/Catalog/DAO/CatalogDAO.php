@@ -43,8 +43,8 @@ if(!class_exists("CatalogDAO")){
 		public function select_products_by_category($key){
 			$result = array();
 			$itemKey = ValidateFields::validateNumericKey($key);
-			if(isset($key)){
-				$selectString = "SELECT * FROM Products where category=$key";
+			if(isset($itemKey)){
+				$selectString = "SELECT * FROM Products where category=$itemKey";
 				$resultSet = $this->dataConnection->query($selectString);
 				if($resultSet){
 					$rows = mysql_num_rows($resultSet);
@@ -81,8 +81,8 @@ if(!class_exists("CatalogDAO")){
 		public function get_product_details($key){
 			$result = NULL;
 			$itemKey = ValidateFields::validateNumericKey($key);
-			if(isset($key)){
-				$selectString = "SELECT Content FROM Store_Content_Blocks WHERE productID=$key ORDER BY display_order";
+			if(isset($itemKey)){
+				$selectString = "SELECT Content FROM Store_Content_Blocks WHERE productID=$itemKey ORDER BY display_order";
 				$resultSet = $this->dataConnection->query($selectString);
 				if($resultSet){
 					$rows = mysql_num_rows($resultSet);
@@ -100,8 +100,8 @@ if(!class_exists("CatalogDAO")){
 		public function get_category_details($key){
 			$result = NULL;
 			$itemKey = ValidateFields::validateNumericKey($key);
-			if(isset($key)){
-				$selectString = "SELECT Content FROM Store_Content_Blocks WHERE categoryID=$key ORDER BY display_order";
+			if(isset($itemKey)){
+				$selectString = "SELECT Content FROM Store_Content_Blocks WHERE categoryID=$itemKey ORDER BY display_order";
 				$resultSet = $this->dataConnection->query($selectString);
 				if($resultSet){
 					$rows = mysql_num_rows($resultSet);
