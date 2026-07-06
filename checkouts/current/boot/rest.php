@@ -55,6 +55,39 @@ function congruency_rest_dispatch() {
             return true;
         }
 
+        if (($method === 'PUT' || $method === 'PATCH') && isset($tables[$api])) {
+            // UPDATE by primary key: ?id=<pk>, JSON body of column=>value (real columns only).
+            $pk = null;
+            foreach ($db->query("PRAGMA table_info(\"$api\")") as $c) { if ($c['pk']) { $pk = $c['name']; } }
+            if ($pk === null || !isset($_GET['id'])) { http_response_code(400); echo json_encode(array('error' => 'update needs a single-column pk and ?id=')); return true; }
+            $data = json_decode((string)file_get_contents('php://input'), true);
+            if (!is_array($data)) { http_response_code(400); echo json_encode(array('error' => 'body must be a JSON object')); return true; }
+            $cols = array();
+            foreach ($db->query("PRAGMA table_info(\"$api\")") as $c) { $cols[$c['name']] = 1; }
+            $use = array();
+            foreach ($data as $k => $v) { if (isset($cols[$k]) && $k !== $pk) { $use[$k] = $v; } }
+            if (!$use) { http_response_code(400); echo json_encode(array('error' => 'no valid columns to update')); return true; }
+            $set = implode(', ', array_map(function ($n) { return "\"$n\" = :$n"; }, array_keys($use)));
+            $st = $db->prepare("UPDATE \"$api\" SET $set WHERE \"$pk\" = :__id");
+            foreach ($use as $k => $v) { $st->bindValue(":$k", $v); }
+            $st->bindValue(":__id", $_GET['id']);
+            $st->execute();
+            echo json_encode(array('updated' => $st->rowCount(), 'table' => $api, 'pk' => $pk, 'id' => $_GET['id'], 'set' => $use),
+                             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+            return true;
+        }
+
+        if ($method === 'DELETE' && isset($tables[$api])) {
+            // DELETE a single row by primary key (?id=). No bulk deletes.
+            $pk = null;
+            foreach ($db->query("PRAGMA table_info(\"$api\")") as $c) { if ($c['pk']) { $pk = $c['name']; } }
+            if ($pk === null || !isset($_GET['id'])) { http_response_code(400); echo json_encode(array('error' => 'delete needs a single-column pk and ?id=')); return true; }
+            $st = $db->prepare("DELETE FROM \"$api\" WHERE \"$pk\" = ?");
+            $st->execute(array($_GET['id']));
+            echo json_encode(array('deleted' => $st->rowCount(), 'table' => $api, 'pk' => $pk, 'id' => $_GET['id'])) . "\n";
+            return true;
+        }
+
         if ($api === '' || $api === 'tables') {
             $out = array('tables' => array_keys($tables));
         } elseif (isset($tables[$api])) {
