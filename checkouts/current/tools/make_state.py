@@ -130,10 +130,18 @@ def build_tarball(reg, php, tmp):
     if missing:
         raise RuntimeError("seeded DB missing expected tables: %s" % sorted(missing))
 
+    def _norm(ti):
+        # reproducible (bug #3): strip mtime/owner so identical state -> identical blob
+        ti.mtime = 0
+        ti.uid = ti.gid = 0
+        ti.uname = ti.gname = ""
+        ti.mode = 0o644
+        return ti
     tar_path = os.path.join(tmp, "database.tar.xz")
     with tarfile.open(tar_path, "w:xz") as t:
-        t.add(sqlite_tmp, arcname="congruency.sqlite")   # flat members: install_state_db extractall()s to state/
-        t.add(seed_tmp, arcname="seed.php")
+        for src, arc in sorted([(sqlite_tmp, "congruency.sqlite"), (seed_tmp, "seed.php")],
+                               key=lambda x: x[1]):
+            t.add(src, arcname=arc, filter=_norm)   # flat, normalized members
     return tar_path, tables
 
 
@@ -151,6 +159,13 @@ def commit_to_state_branch(reg, tar_path, crank, side_branch="state"):
 
     ref = "refs/heads/%s" % side_branch
     head = git(["rev-parse", "--verify", "-q", ref]).stdout.strip() or None
+
+    # idempotent (bug #3): if identical state is already committed, do NOT churn a new commit
+    existing = git(["rev-parse", "-q", "--verify",
+                    "%s:%s/database.tar.xz" % (side_branch, crank)]).stdout.strip()
+    if existing == blob:
+        return {"branch": side_branch, "path": "%s/database.tar.xz" % crank, "blob": blob[:10],
+                "commit": "(unchanged)", "parent": (head or "(orphan)")[:10]}
 
     tmpidx = tar_path + ".idx"
     env = dict(os.environ, GIT_INDEX_FILE=tmpidx,
