@@ -153,7 +153,7 @@ def build_target(target, php, port, host):
     db = os.path.join(os.path.abspath(target), "state", "congruency.sqlite")
     os.makedirs(os.path.dirname(db), exist_ok=True)
     with open(cfg, "w") as fh:
-        json.dump({"db": db, "port": port, "host": host, "site": {}}, fh, indent=2)
+        json.dump({"CONGRUENCY_SQLITE": db, "CONGRUENCY_PORT": port, "CONGRUENCY_HOST": host}, fh, indent=2)
     # seed the FRESH production stub DB
     seed = os.path.join(target, "state", "prod_seed.php")
     if not os.path.isfile(seed):
@@ -207,8 +207,8 @@ def serve_only(target, port=None, host=None):
     if not os.path.isfile(cfg):
         raise RuntimeError("no install.json in %s — deploy there first" % target)
     conf = json.load(open(cfg))
-    port = port or int(conf.get("port", 8080))
-    host = host or conf.get("host", "0.0.0.0")
+    port = port or int(conf.get("CONGRUENCY_PORT", 8080))
+    host = host or conf.get("CONGRUENCY_HOST", "0.0.0.0")
     php = os.path.join(HERE, "tooling", "congruencey-harness", "php", "php")
     if not os.path.isfile(php):
         raise RuntimeError("php not provisioned (%s) — run a deploy/install first" % php)
@@ -246,7 +246,7 @@ def main():
         built = build_target(target, php, port, host)
         print("   target %s (%s)" % ("built" if built.get("created") else "reused", built.get("config")))
         conf = json.load(open(os.path.join(target, "install.json")))     # honor the pinned config port
-        eff_port, eff_host = int(conf.get("port", port)), conf.get("host", host)
+        eff_port, eff_host = int(conf.get("CONGRUENCY_PORT", port)), conf.get("CONGRUENCY_HOST", host)
         ok, info = boot_and_verify(target, php, eff_port, eff_host, a.keep_serving)
         if T:
             T.emit("deploy", status="ok" if ok else "fail", version=version, target=target)
