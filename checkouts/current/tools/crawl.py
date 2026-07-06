@@ -90,6 +90,9 @@ def crawl(base, check_external):
             tnorm = tp.path + (("?" + tp.query) if tp.query else "")
             if not tp.netloc or tp.netloc == host:
                 refs[tnorm].add(norm)
+                tq = urllib.parse.parse_qs(tp.query)
+                if "file" in tq or "doc" in tq:      # the self-hosting archive: hundreds of content-addressed
+                    continue                          # views (?page=source&file=<hash> / ?page=docs&doc=<hash>) — record, don't descend
                 if tnorm not in seen:
                     q.append(tnorm)
             else:
