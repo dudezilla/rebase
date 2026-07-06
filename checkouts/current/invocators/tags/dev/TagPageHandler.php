@@ -39,13 +39,18 @@ if (!class_exists("TagPageHandler")) {
 
                 $st = $db->prepare("SELECT `key` FROM Categories WHERE name=?");
                 $st->execute(array($category));
-                $row = $st->fetch(PDO::FETCH_ASSOC);
-                if (!$row) { return "<p style='color:#b00020'>No such category: <code>" . self::esc($category) . "</code></p>" . self::back(); }
-                $key = (int)$row['key'];
+                if (!$st->fetch()) { return "<p style='color:#b00020'>No such category: <code>" . self::esc($category) . "</code></p>" . self::back(); }
 
-                $ins = $db->prepare("INSERT OR IGNORE INTO Page_Categories (DocumentID, category_key) VALUES (?,?)");
-                $ins->execute(array($pageId, $key));
-                $added = $ins->rowCount() > 0;
+                // page-tagging is now an annotation: tag=<category name>, target="page:<DocumentID>"
+                $target = 'page:' . $pageId;
+                $chk = $db->prepare("SELECT 1 FROM annotations WHERE tag=? AND target=?");
+                $chk->execute(array($category, $target));
+                $added = false;
+                if (!$chk->fetch()) {
+                    $ins = $db->prepare("INSERT INTO annotations (tag,target,note,ts,meta) VALUES (?,?,'',?,?)");
+                    $ins->execute(array($category, $target, microtime(true), json_encode(array('kind' => 'category'))));
+                    $added = true;
+                }
 
                 if (isset($fm)) { $f = $fm->getCachedForm('TagPageForm'); if (isset($f)) { $f->setResults(array()); $f->reset(); } }
 

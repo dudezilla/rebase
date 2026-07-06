@@ -44,6 +44,8 @@ DDL = [
     "CREATE UNIQUE INDEX IF NOT EXISTS ix_code_refs ON code_refs(hash, path, commit_sha)",
     "CREATE TABLE IF NOT EXISTS doc_blobs  (hash TEXT PRIMARY KEY, kind TEXT, bytes INTEGER, body TEXT)",
     "CREATE TABLE IF NOT EXISTS doc_refs   (hash TEXT, path TEXT, commit_sha TEXT, ts REAL, is_current INTEGER DEFAULT 0)",
+    # abstract tagging: a `tag` applied to an opaque `target` ref ("source:<hash>" / "page:<id>" / "doc:<hash>" / "ticket:<id>")
+    "CREATE TABLE IF NOT EXISTS annotations (id INTEGER PRIMARY KEY AUTOINCREMENT, tag TEXT, target TEXT, note TEXT, ts REAL, meta TEXT)",
     "CREATE UNIQUE INDEX IF NOT EXISTS ix_doc_refs ON doc_refs(hash, path, commit_sha)",
 ]
 

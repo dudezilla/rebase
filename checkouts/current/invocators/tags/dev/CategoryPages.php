@@ -36,8 +36,8 @@ if (!class_exists("CategoryPages")) {
                 if ($cat === '' && isset($_GET['category'])) { $cat = trim((string)$_GET['category']); }
 
                 if ($cat === '') {   // no arg -> index of all categories with page counts
-                    $rows = $db->query("SELECT c.name, c.description, COUNT(pc.DocumentID) AS n
-                        FROM Categories c LEFT JOIN Page_Categories pc ON pc.category_key=c.`key`
+                    $rows = $db->query("SELECT c.name, c.description, COUNT(a.id) AS n
+                        FROM Categories c LEFT JOIN annotations a ON a.tag=c.name AND a.target LIKE 'page:%'
                         GROUP BY c.`key` ORDER BY c.name")->fetchAll(PDO::FETCH_ASSOC);
                     $out = "<ul>";
                     foreach ($rows as $r) {
@@ -47,10 +47,9 @@ if (!class_exists("CategoryPages")) {
                     return $out . "</ul>";
                 }
 
-                $st = $db->prepare("SELECT d.DocumentID, d.Title FROM Page_Categories pc
-                    JOIN Categories c ON c.`key`=pc.category_key
-                    JOIN Documents d ON d.DocumentID=pc.DocumentID
-                    WHERE c.name=? ORDER BY d.DocumentID");
+                $st = $db->prepare("SELECT d.DocumentID, d.Title FROM annotations a
+                    JOIN Documents d ON d.DocumentID=substr(a.target, 6)
+                    WHERE a.tag=? AND a.target LIKE 'page:%' ORDER BY d.DocumentID");
                 $st->execute(array($cat));
                 $rows = $st->fetchAll(PDO::FETCH_ASSOC);
                 if (!$rows) { return "<p>No pages tagged <code>" . self::esc($cat) . "</code> yet.</p>"; }

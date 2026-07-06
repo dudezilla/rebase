@@ -35,10 +35,12 @@ requests by the POM-in-session — `router.php` does `session_start()`; the POM 
 validation), and `MultiSelect` (array-valued checkbox group). All live in
 `lib/Modules/Constructs/Form/FormElements/BasicElements/` and JSON-round-trip through the POM.
 
-## Categories as page tags
-`Categories(key,name,description)` + the new link table `Page_Categories(DocumentID, category_key)`
-(many-to-many). First category: `specifications`. Browse via `CategoryPages`; tag via the `TagPageForm`
-UI on `?page=pages`.
+## Categories as page tags (on the abstract `annotations` layer)
+`Categories(key,name,description)` is the tag **vocabulary**; the page→category links now live in the
+general `annotations` table as `tag=<category name>`, `target="page:<DocumentID>"` — the old
+`Page_Categories` join table was migrated onto it and **dropped**. First category: `specifications`. Browse
+via `CategoryPages` (reads annotations); tag via the `TagPageForm` UI on `?page=pages` (`TagPageHandler`
+writes an annotation). Same model the source `⚑ flag` uses (`tag=flag`, `target="source:<hash>"`).
 
 ## REST (`boot/rest.php`, dispatched by `router.php` on `?api=`)
 Generic CRUD over **every** table, table name allowlisted against `sqlite_master`, columns validated:
@@ -80,10 +82,11 @@ curl cookie jars); frozen/vendored trees excluded. The four archive tables (and 
   update (self-installs a `post-commit` hook via `--install-hook`). Together these are the regression
   gates the ratchet loop runs.
 
-## Unified DB shape (13 CMS/ops tables + the self-hosting archive)
+## Unified DB shape (CMS/ops tables + the self-hosting archive + annotations)
 `events, tickets, signals, heartbeat, memories` (ops/tracker) + `Documents, Document_Templates, Products,
-forms, orders, Categories, Store_Content_Blocks, Page_Categories` (CMS) + `_merge_conflicts` (merge audit)
-+ `code_blobs, code_refs, doc_blobs, doc_refs` (the content-addressed source/doc archive — see Self-hosting).
+forms, orders, Categories, Store_Content_Blocks` (CMS) + `_merge_conflicts` (merge audit)
++ `code_blobs, code_refs, doc_blobs, doc_refs` (content-addressed source/doc archive — see Self-hosting)
++ `annotations` (abstract `tag`→`target`: source flags + page categories; `Page_Categories` migrated here).
 
 ## Status (as of this session)
 **Closed:** #25 (mysql_*→native PDO), #26 (deploy on/off/redeploy lifecycle + gate), #28 (README PDO
