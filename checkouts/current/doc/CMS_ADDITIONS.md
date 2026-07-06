@@ -58,7 +58,8 @@ and path → its version history); `is_current=1` marks the running-source versi
 `<<<SourceList>>>` (index + `?file=<hash>` view — escaped `<pre>` + line numbers + version history) and
 `<<<DocList>>>` (index + `?doc=<hash>` view — a small **escape-first markdown subset**, so `<<<Tag>>>`
 examples in docs stay literal). Scope = the app PHP + the python tooling + docs + `main:deploy.py`/`install.py`;
-frozen/vendored trees excluded. The four archive tables are **denylisted from the public REST** (admin-only).
+frozen/vendored trees excluded. The four archive tables (and the `Login_Password`/privilege tables) are
+**denylisted from the public REST** (admin-only). Admin auth is the 2006 `UserPrivilegeSet`/`Login` path.
 
 ## Tooling (`tools/`)
 - `ingest_self.py` — mirrors the running source + docs into the DB each crank (see Self-hosting, above).

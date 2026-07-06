@@ -89,11 +89,11 @@ if (!class_exists("SourceList")) {
             $head = "<p><a href='?page=source'>&larr; index</a> &middot; <strong>" . self::esc($path) . "</strong> "
                   . "<span style='color:#888'>(" . self::esc($blob['lang']) . " &middot; " . (int) $blob['bytes'] . " B &middot; blob " . self::esc(substr($hash, 0, 12)) . ")</span></p>\n";
 
-            $refhtml = "<p style='font-size:.85em;color:#666'>appears at: ";
-            foreach ($refs as $r) {
-                $refhtml .= self::esc($r['path']) . "@" . self::esc(substr($r['commit_sha'], 0, 9)) . ($r['is_current'] ? " <em>(current)</em>" : "") . " &nbsp; ";
-            }
-            $refhtml .= "</p>\n";
+            $paths = array(); $isCur = false;
+            foreach ($refs as $r) { $paths[$r['path']] = 1; if ($r['is_current']) { $isCur = true; } }
+            $ncommits = count($db->query("SELECT commit_sha FROM code_refs WHERE hash=" . $db->quote($hash))->fetchAll());
+            $refhtml = "<p style='font-size:.85em;color:#666'>path: " . implode(", ", array_map('self::esc', array_keys($paths)))
+                     . " &middot; in " . (int) $ncommits . " commit(s)" . ($isCur ? " &middot; <em>current</em>" : "") . "</p>\n";
 
             $verhtml = "";
             if (count($hist) > 1) {

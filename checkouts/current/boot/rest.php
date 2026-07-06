@@ -30,8 +30,9 @@ function congruency_rest_dispatch() {
         foreach ($db->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name") as $r) {
             $tables[$r['name']] = 1;
         }
-        // admin-only: keep the self-hosting source/doc archive out of the public REST surface
-        foreach (array('code_blobs', 'code_refs', 'doc_blobs', 'doc_refs') as $__deny) { unset($tables[$__deny]); }
+        // admin-only: keep the self-hosting source/doc archive + the auth tables out of the public REST surface
+        foreach (array('code_blobs', 'code_refs', 'doc_blobs', 'doc_refs',
+                       'Login_Password', 'User_Group_Mappings', 'Group_Privileges') as $__deny) { unset($tables[$__deny]); }
 
         $api = (string)($_GET['api'] ?? '');
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
