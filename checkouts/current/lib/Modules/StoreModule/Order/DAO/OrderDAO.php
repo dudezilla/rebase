@@ -68,8 +68,8 @@ if(!class_exists("OrderDAO")){
 		}
 		
 		public function updateRow($rowData){
-			$this->delete($rowData['key']);
-			$this->insert($rowData);
+			$this->deleteRow($rowData['key']);   // BUG-03: deleteRow builds the WHERE clause (+ validates the key)
+			$this->insertRow($rowData);          // BUG-03: insertRow is the real insert (there is no insert())
 		}
 
 
