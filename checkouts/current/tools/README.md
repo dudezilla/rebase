@@ -64,7 +64,8 @@ four archive tables are denylisted from the public REST. Rendered by the `Source
 
 ## Gates the ratchet runs
 
-Every crank is verified against these (exit non-zero on failure):
+**Run them all with `python3 tools/gates.py`** — the ratchet gate runner: it runs every gate below (HTTP
+gates need `serve.py` up), prints a PASS/FAIL line each, and exits 1 if any fails. Individually:
 
 - **`tagcheck.py`** — renders every invocator tag standalone (`?page=tags&tag=NAME`), asserts HTTP 200 with
   no PHP fatal **or warning/notice** (24/24). `python3 tools/tagcheck.py [--base URL] [--report out.json]`.
