@@ -21,8 +21,10 @@ if (!class_exists("DatabaseInfo")) {
                 if (!defined('CONGRUENCY_SQLITE')) { return "<p>DatabaseInfo: no DB.</p>"; }
                 $db = new PDO('sqlite:' . CONGRUENCY_SQLITE);
                 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                // keep in sync with the denylist in boot/rest.php
                 $denied = array('code_blobs' => 1, 'code_refs' => 1, 'doc_blobs' => 1, 'doc_refs' => 1,
-                                'Login_Password' => 1, 'User_Group_Mappings' => 1, 'Group_Privileges' => 1);
+                                'Login_Password' => 1, 'User_Group_Mappings' => 1, 'Group_Privileges' => 1,
+                                'api_keys' => 1);
                 $tables = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
                               ->fetchAll(PDO::FETCH_COLUMN);
 
