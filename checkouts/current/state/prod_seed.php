@@ -27,7 +27,7 @@ $pdo->exec("CREATE TABLE Store_Content_Blocks (ContentID INTEGER, Content TEXT)"
 // --- current styling (verbatim from the demo) + a production nav (dev links dropped) ---
 $nav = '<nav style="margin:0 0 1.5rem;padding-bottom:.75rem;border-bottom:1px solid #ccc">'
      . '<a href="?page=catalog">home</a></nav>';
-$style = 'body{font-family:Georgia,serif;max-width:640px;margin:3rem auto;padding:0 1rem;'
+$style = 'body{font-family:Georgia,serif;max-width:960px;margin:3rem auto;padding:0 1rem;'
        . 'line-height:1.6;color:#222;background:#f7f4ee}a{color:#8a5a1a}'
        . 'h1{font-weight:normal}code{background:#eae5d8;padding:1px 4px}';
 
