@@ -78,6 +78,16 @@ breaking them. Generic CRUD is the internal/experimental path.
 this, no login cookie). Unauthenticated write → `401`. REST dispatches from `router.php` *after* the
 session/POM boot (output-buffered for clean JSON headers) so it can check `UserPrivilegeSet::logged_in()`.
 
+### Process authorization ("a ticket authorizes the start of a process")
+The mechanically-allocated ticket id (the BUG-0084 cure — SQLite `AUTOINCREMENT`, never inferred, never
+colliding) **is a process's uid/authorization**. `jazz_telemetry.authorize_process(name, kind=…, **meta) ->
+tid` mints a ticket in `AUTHORIZED` state (carrying `pid`/`host`/`kind`); `process_status(tid, 'RUNNING' |
+'DONE' | 'FAILED')` walks the lifecycle; `processes(status=…)` lists them. Over HTTP it's pure data — three
+`api_routes` rows: `?route=authorize_process` (POST/token → returns the tid), `?route=process_status`
+(POST/token), `?route=processes.running` (GET/public). A spawner mints one before start, **refuses to start
+without it**, and carries the id (e.g. env `JAZZ_PROCESS_TICKET`) so heartbeat/signals/telemetry all key on
+the same authorizing ticket. Rendered at `?page=tickets` (process tickets show by their lifecycle status).
+
 ## Self-hosting — the CMS renders its own running source + docs
 `?page=source` and `?page=docs` browse the CMS's own source and documentation, mirrored into the DB on
 every crank. They are **admin-only by design** (the `ADMIN_GATED` const on `SourceList`/`DocList`, checked
