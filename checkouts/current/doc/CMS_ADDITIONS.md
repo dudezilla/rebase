@@ -65,6 +65,10 @@ is reachable:
 - `PUT|PATCH ?api=<table>&id=` — update (needs a single-column pk; the pk itself is protected)
 - `DELETE ?api=<table>&id=` — delete one row (needs a single-column pk + `?id=`)
 
+**Reads are public; writes (`POST`/`PUT`/`PATCH`/`DELETE`) require the admin login** — an unauthenticated
+write returns `401`. REST now dispatches from `router.php` *after* the session/POM boot (output-buffered so
+it can still send clean JSON headers), so it can check `UserPrivilegeSet::logged_in()`.
+
 ## Self-hosting — the CMS renders its own running source + docs
 `?page=source` and `?page=docs` browse the CMS's own source and documentation, mirrored into the DB on
 every crank. They are **admin-only by design** (the `ADMIN_GATED` const on `SourceList`/`DocList`, checked

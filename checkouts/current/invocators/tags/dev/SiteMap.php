@@ -45,7 +45,8 @@ if (!class_exists("SiteMap")) {
                     $text = isset($label[$id]) ? $label[$id] : $id;
                     $links[] = "<a href='?page=" . self::esc($id) . "'>" . self::esc($text) . "</a>";
                 }
-                return implode(" &nbsp;&middot;&nbsp; ", $links);
+                return "<span style='text-transform:uppercase;letter-spacing:.04em'>"
+                     . implode(" &nbsp;&middot;&nbsp; ", $links) . "</span>";
             } catch (\Throwable $e) {
                 return "<!-- SiteMap error: " . self::esc($e->getMessage()) . " -->";
             }

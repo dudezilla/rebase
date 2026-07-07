@@ -5,19 +5,21 @@ Congruency is free software, licensed under the GNU GPLv2 or later.
 See the LICENSE file in the project root for full license terms.
 */
 /*
- * rest.php — a generic READ-ONLY REST interface over every table in the unified
- * DB (CONGRUENCY_SQLITE). Dispatched by boot/router.php when ?api is present:
+ * rest.php — a generic REST interface over every table in the unified DB (CONGRUENCY_SQLITE), minus an
+ * admin denylist (the self-hosting archive + the auth tables). Dispatched by boot/router.php when ?api is
+ * present — AFTER the session/POM/ClassLoader boot, so it can check the admin login:
  *
- *   ?api=tables              -> { "tables": [ ... ] }        (discovery)
- *   ?api=<table>             -> { table,total,page,per,pages,rows:[...] }   (paginated)
- *   ?api=<table>&p=2&per=25  -> page 2, 25 rows
- *   ?api=<table>&id=<pk>     -> a single row by primary key
+ *   GET  ?api=tables              -> { "tables": [ ... ] }        (discovery)
+ *   GET  ?api=<table>[&p=&per=]   -> { table,total,page,per,pages,rows:[...] }   (paginated)
+ *   GET  ?api=<table>&id=<pk>     -> a single row by primary key
+ *   POST/PUT/PATCH/DELETE ?api=   -> create / update / delete
  *
- * The table name is always validated against sqlite_master before use (allowlist),
- * so it can't be used for injection. Writes (POST/PUT/DELETE) are intentionally NOT
- * implemented yet — see ticket #47.
+ * The table name is always validated against sqlite_master before use (allowlist), so it can't be used for
+ * injection. READS are public; WRITES (POST/PUT/PATCH/DELETE) require the admin login
+ * (UserPrivilegeSet::logged_in()) — an unauthenticated write gets 401.
  */
 function congruency_rest_dispatch() {
+    if (ob_get_level()) { ob_clean(); }                 // drop buffered boot whitespace so JSON headers/body are clean
     header('Content-Type: application/json');
     header('Access-Control-Allow-Origin: *');
     $out = null;
@@ -36,6 +38,15 @@ function congruency_rest_dispatch() {
 
         $api = (string)($_GET['api'] ?? '');
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+
+        // Writes require the admin login; reads stay public.
+        if (in_array($method, array('POST', 'PUT', 'PATCH', 'DELETE'), true)
+            && (!class_exists('UserPrivilegeSet') || !UserPrivilegeSet::logged_in())) {
+            http_response_code(401);
+            echo json_encode(array('error' => 'admin login required for writes', 'method' => $method,
+                                   'hint' => 'log in (e.g. via the Login form), then retry')) . "\n";
+            return true;
+        }
 
         if ($method === 'POST' && isset($tables[$api])) {
             // CREATE: insert a row from the JSON body; only real columns are used (rest ignored).
