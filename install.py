@@ -237,7 +237,7 @@ def do_checkout_version(version):
 
 
 def do_provision_php():
-    return run(["python3", os.path.join(HERE, "checkouts", "current", "tools", "provision_php.py")], "provision_php")
+    return run(["python3", os.path.join(HERE, "checkouts", "current", "congruency", "tools", "provision_php.py")], "provision_php")
 
 
 def _state_spec():
@@ -274,7 +274,7 @@ def do_state(version):
 def do_standup():
     # HTTP-200 stand-up gate that writes NO tracked files (serve.py --verify) — used for the
     # --no-verify path (boot_www would modify fixes/index.json and dirty the tree).
-    return run(["python3", os.path.join(HERE, "checkouts", "current", "tools", "serve.py"), "--verify"],
+    return run(["python3", os.path.join(HERE, "checkouts", "current", "congruency", "tools", "serve.py"), "--verify"],
                "serve --verify")
 
 
