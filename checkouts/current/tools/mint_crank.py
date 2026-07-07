@@ -14,8 +14,8 @@ then fail-fast):
     precondition  on `source`, tracked-clean (no fork)
     inject        copy the python patch -> checkouts/current/fixes/<name>.py  (must compile)
     run           python3 <injected>                                          (exit 0)
-    capture       add -A + commit + version-4.05x tag on `source` (reuses compute_next_version)
-    state         make_state.py --version <ver>   (state:database.tar.xz + state-<ver> tag)
+    state         make_state.py -> in-tree checkouts/current/state/database.tar.xz (rides in the crank)
+    capture       add -A + commit + version-4.05x tag on `source` (db + install.json in the version commit)
     verify        tooling/congruencey-tests/verify                            (0 failed)
 
 Push is a SEPARATE release step (ticket #6) — the mint stays local. python only, registry-gated.
@@ -209,13 +209,16 @@ def step_capture(message):
             "install_config": "install.json"}
 
 
-def step_state(version):
-    r = run_py(os.path.join(HERE, "make_state.py"), "--version", version)
+def step_state():
+    """Produce the crank's state as an in-tree database.tar.xz (no side branch). Runs BEFORE
+    capture so `add -A` folds the db into the version commit — the crank carries its own state."""
+    r = run_py(os.path.join(HERE, "make_state.py"))
     if r.returncode != 0:
         raise Unexpected("make_state failed: %s" % (r.stderr or r.stdout).strip()[-400:])
-    if git("cat-file", "-e", "state:database.tar.xz").returncode != 0:
-        raise Unexpected("state:database.tar.xz not committed")
-    return {"state_ref": "state:database.tar.xz"}
+    artifact = os.path.join(ROOT, "checkouts", "current", "state", "database.tar.xz")
+    if not os.path.isfile(artifact):
+        raise Unexpected("make_state produced no in-tree database.tar.xz at %s" % artifact)
+    return {"artifact": "checkouts/current/state/database.tar.xz", "bytes": os.path.getsize(artifact)}
 
 
 def step_verify():
@@ -271,8 +274,8 @@ def main():
     do("precondition", lambda: step_precondition(current))
     dest = do("inject", lambda: step_inject(a.patch, name))
     do("run patch", lambda: step_run(dest))
-    cap = do("capture (commit + tag)", lambda: step_capture(message))
-    do("state", lambda: step_state(cap["version"]))
+    do("state (in-tree db)", step_state)                    # produce db BEFORE capture...
+    cap = do("capture (commit + tag)", lambda: step_capture(message))   # ...so it rides in the version commit
     do("verify", lambda: step_verify())
 
     if T:

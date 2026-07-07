@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
-"""make_state.py — deterministically (re)create this crank's state and commit it to the
-`state` side-branch.
+"""make_state.py — produce this crank's state as an in-tree database.tar.xz.
 
-Per checkouts/note-for-claude the DB ships compressed and is installed on checkout. This is
-the missing PRODUCER: it runs the committed seed generator under the provisioned php to
-build a fresh congruency.sqlite, tars it (with seed.php) into database.tar.xz, and commits
-that single blob to the `state` branch at its root (state:database.tar.xz) — via git PLUMBING
-only (hash-object/read-tree/write-tree/commit-tree/update-ref), so the working tree never
-switches. Idempotent (bug #3): re-commits only when the DB changes. With --version, tags the
-state commit `state-<version>` so it's addressable by the matching source version.
+State no longer lives on a `state` side-branch: it RIDES IN the version commit (the crank).
+This PRODUCER snapshots the big unified database named by STATE.json `source_db`
+(~/.jazz/congruency.sqlite) via sqlite's WAL-safe online backup, tars it into the tracked
+`artifact` (checkouts/current/state/database.tar.xz), and leaves it in the working tree —
+mint_crank's `add -A` captures it as part of the version. The legacy `seed` generator is a
+fallback only. On checkout, install.py extracts the in-tree tarball into the state dir.
 
 python only, registry-gated (throws if it can't see registry.json), auto bug-report on
 exception (Variant-A), best-effort jazz telemetry.
 
-    python3 checkouts/current/tools/make_state.py [--version X] [--no-commit]
+    python3 checkouts/current/tools/make_state.py
 """
 import argparse
 import json
@@ -173,78 +171,27 @@ def build_tarball(reg, php, tmp):
     return tar_path, tables
 
 
-def commit_to_state_branch(reg, tar_path, version, side_branch="state"):
-    """Commit the tarball to <side_branch>:database.tar.xz (single file at root) via plumbing only —
-    no checkout/worktree. Idempotent (bug #3): re-commit only when the blob changes. When a `version`
-    is given, tag the resulting state commit `state-<version>` so it's addressable by source version."""
-    root = reg["__root__"]
-
-    def git(args, env=None):
-        return subprocess.run(["git"] + args, cwd=root, capture_output=True, text=True, env=env)
-
-    blob = git(["hash-object", "-w", tar_path]).stdout.strip()
-    if not blob:
-        raise RuntimeError("git hash-object failed for %s" % tar_path)
-
-    ref = "refs/heads/%s" % side_branch
-    head = git(["rev-parse", "--verify", "-q", ref]).stdout.strip() or None
-    existing = git(["rev-parse", "-q", "--verify", "%s:database.tar.xz" % side_branch]).stdout.strip()
-
-    if existing == blob and head:
-        target, note = head, "(unchanged)"                 # DB didn't change -> no new commit
-    else:
-        tmpidx = tar_path + ".idx"
-        env = dict(os.environ, GIT_INDEX_FILE=tmpidx,
-                   GIT_AUTHOR_NAME="ratchet", GIT_AUTHOR_EMAIL="ratchet@congruency.local",
-                   GIT_COMMITTER_NAME="ratchet", GIT_COMMITTER_EMAIL="ratchet@congruency.local")
-        try:
-            git(["read-tree", head] if head else ["read-tree", "--empty"], env=env)
-            u = git(["update-index", "--add", "--cacheinfo", "100644,%s,database.tar.xz" % blob], env=env)
-            if u.returncode != 0:
-                raise RuntimeError("update-index: %s" % u.stderr.strip())
-            tree = git(["write-tree"], env=env).stdout.strip()
-            if not tree:
-                raise RuntimeError("write-tree produced no tree")
-            msg = "state: database.tar.xz%s" % ((" (version-%s)" % version) if version else "")
-            ct = ["commit-tree", tree, "-m", msg] + (["-p", head] if head else [])
-            commit = git(ct, env=env).stdout.strip()
-            if not commit:
-                raise RuntimeError("commit-tree failed")
-            if git(["update-ref", ref, commit]).returncode != 0:
-                raise RuntimeError("update-ref failed")
-            target, note = commit, commit[:10]
-        finally:
-            try:
-                os.remove(tmpidx)
-            except OSError:
-                pass
-
-    state_tag = None
-    if version and target:                                  # make every source version resolvable
-        state_tag = "state-%s" % version
-        git(["tag", "-f", state_tag, target])
-    return {"branch": side_branch, "path": "database.tar.xz", "blob": blob[:10],
-            "commit": note, "state_tag": state_tag, "parent": (head or "(orphan)")[:10]}
-
-
 def main():
-    ap = argparse.ArgumentParser(description="produce + store state on the single `state` branch")
-    ap.add_argument("--version", default=None, help="source version this state matches (tags state-<version>)")
-    ap.add_argument("--no-commit", action="store_true", help="build + verify the tarball but don't commit it")
+    ap = argparse.ArgumentParser(description="produce this crank's state as an in-tree database.tar.xz")
+    # State no longer lives on a side branch — it rides IN the version commit (the crank). The old
+    # `state` branch and `state-*` tags are gone; make_state just writes the artifact into the tree,
+    # and mint_crank captures it as part of the version. --version kept only for call-site compat.
+    ap.add_argument("--version", default=None, help="accepted for compatibility; state now rides in the crank")
     a = ap.parse_args()
 
     reg = load_registry()
     php = find_php(reg)
     spec = json.load(open(STATE_SPEC)) if os.path.isfile(STATE_SPEC) else {}
-    side = spec.get("side_branch", "state")
+    artifact = os.path.join(reg["__root__"], spec.get("artifact", "checkouts/current/state/database.tar.xz"))
 
     T, _ = telemetry_handles(reg)
     t0 = time.time()
     with tempfile.TemporaryDirectory() as tmp:
         tar_path, tables = build_tarball(reg, php, tmp)
-        result = {"version": a.version, "tables": tables, "artifact_bytes": os.path.getsize(tar_path)}
-        if not a.no_commit:
-            result.update(commit_to_state_branch(reg, tar_path, a.version, side))
+        os.makedirs(os.path.dirname(artifact), exist_ok=True)
+        shutil.copy2(tar_path, artifact)           # state rides IN the crank; captured by mint's add -A
+    result = {"version": a.version, "artifact": os.path.relpath(artifact, reg["__root__"]),
+              "artifact_bytes": os.path.getsize(artifact), "tables": tables}
     if T:
         T.emit("make_state", status="ok", ms=(time.time() - t0) * 1000.0, version=a.version)
     print(json.dumps({"ok": True, **result}, indent=2))
