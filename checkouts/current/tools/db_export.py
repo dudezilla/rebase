@@ -8,6 +8,7 @@ default -- the `events` tracker log and the auth tables (Login_Password/User_Gro
 is kept: the browsable version history is the point.
 
     python3 tools/db_export.py                 # -> state/seed.sql (+ .xz); events + auth excluded
+    python3 tools/db_export.py --keep-auth     # keep the auth tables (bake in the demo admin), drop events
     python3 tools/db_export.py --keep-events   # include the tracker event log
     python3 tools/db_export.py --all           # include everything (auth + events)
 
@@ -116,16 +117,20 @@ def main():
     global ROOT
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--keep-events", action="store_true", help="include the tracker event log")
+    ap.add_argument("--keep-auth", action="store_true", help="include the auth tables (bakes in the demo admin)")
     ap.add_argument("--all", action="store_true", help="include everything (auth + events)")
     a = ap.parse_args()
     reg = None
     try:
         reg = load_registry()
         ROOT = reg["__root__"]
+        auth = ("Login_Password", "User_Group_Mappings", "Group_Privileges")
         if a.all:
             exclude = ()
         else:
-            exclude = tuple(t for t in DEFAULT_EXCLUDE if not (a.keep_events and t == "events"))
+            exclude = tuple(t for t in DEFAULT_EXCLUDE
+                            if not (a.keep_events and t == "events")
+                            and not (a.keep_auth and t in auth))
         seed, nbytes, dropped = export(reg, exclude)
         rel = os.path.relpath(seed, reg["__root__"])
         print("db_export: wrote %s (%.2f MB text, %.2f MB xz); excluded: %s" % (

@@ -92,9 +92,10 @@ curl cookie jars); frozen/vendored trees excluded. The four archive tables (and 
 
 ## Tooling (`tools/`)
 - `ingest_self.py` — mirrors the running source + docs into the DB each crank (see Self-hosting, above).
-- `db_export.py` — dump the DB to `state/seed.sql` (git-viewable text) + `.xz`; excludes `events` + the auth
-  tables by default (`--all`/`--keep-events` to override). **Manual — not run on any crank.** `state/seed.sql`
-  is the default showcase DB.
+- `db_export.py` — dump the DB to `state/seed.sql` (git-viewable text) + `.xz`; excludes `events` by default
+  (`--keep-auth` keeps the auth tables, `--keep-events`/`--all` also available). **Manual — not run on any
+  crank.** The committed `state/seed.sql` is the default showcase DB, built with `--keep-auth` so the demo
+  admin (login `admin`) is baked in and the write forms work out of the box.
 - `db_import.py` — rebuild a DB from the seed (`--to <path>`, `--verify`); refuses to clobber without `--force`,
   never touches the live DB implicitly.
 - `doc_watch.py` — files a `documentation` ticket when a commit changes code but no doc (post-commit hook).
