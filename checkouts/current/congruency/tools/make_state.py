@@ -11,7 +11,7 @@ fallback only. On checkout, install.py extracts the in-tree tarball into the sta
 python only, registry-gated (throws if it can't see registry.json), auto bug-report on
 exception (Variant-A), best-effort jazz telemetry.
 
-    python3 checkouts/current/tools/make_state.py
+    python3 checkouts/current/congruency/tools/make_state.py
 """
 import argparse
 import json
@@ -26,9 +26,9 @@ import time
 import traceback
 from datetime import datetime
 
-HERE = os.path.dirname(os.path.abspath(__file__))          # checkouts/current/tools
-SOURCE = os.path.dirname(HERE)                             # checkouts/current
-STATE = os.path.join(SOURCE, "state")
+HERE = os.path.dirname(os.path.abspath(__file__))          # checkouts/current/congruency/tools
+SOURCE = os.path.dirname(HERE)                             # checkouts/current/congruency (the CMS app root)
+STATE = os.path.join(os.path.dirname(SOURCE), "state")     # checkouts/current/state (sibling of congruency)
 STATE_SPEC = os.path.join(STATE, "STATE.json")
 
 
@@ -132,14 +132,21 @@ def build_tarball(reg, php, tmp):
 
     source_db = spec.get("source_db")
     src_path = os.path.expanduser(source_db) if source_db else None
+    installed = os.path.join(STATE, "congruency.sqlite")       # the currently-installed db
     if src_path and os.path.isfile(src_path):
-        _snapshot_sqlite(src_path, sqlite_tmp)                  # snapshot the BIG db
+        _snapshot_sqlite(src_path, sqlite_tmp)                  # 1) snapshot the configured source db
+        members = [(sqlite_tmp, "congruency.sqlite")]
+    elif os.path.isfile(installed):
+        # 2) source_db absent -> re-snapshot the db that was INSTALLED into the crank (install the
+        # database on every crank). Never re-fabricate: the installed db is the source of truth.
+        _snapshot_sqlite(installed, sqlite_tmp)
         members = [(sqlite_tmp, "congruency.sqlite")]
     else:
-        # legacy fallback: fabricate from the seed generator (the old stub path)
+        # 3) last-resort legacy fallback: fabricate from the seed generator (the old stub path)
         seed_src = os.path.join(reg["__root__"], spec.get("seed", "tooling/congruencey-harness/seed.php"))
         if not os.path.isfile(seed_src):
-            raise FileNotFoundError("no source_db (%s) and seed generator missing: %s" % (src_path, seed_src))
+            raise FileNotFoundError("no source_db (%s), no installed db (%s), and seed generator missing: %s"
+                                    % (src_path, installed, seed_src))
         seed_tmp = os.path.join(tmp, "seed.php")
         shutil.copy2(seed_src, seed_tmp)
         r = subprocess.run([php, seed_tmp], cwd=tmp, capture_output=True, text=True, timeout=60)

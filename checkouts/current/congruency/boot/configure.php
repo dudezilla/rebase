@@ -39,7 +39,7 @@ foreach ($__data as $__name => $__value) {
 if (!defined('SLASH'))               { define('SLASH', '/'); }
 if (!defined('PLATFORMROOT'))        { define('PLATFORMROOT', SLASH); }
 if (!defined('ABS_PATH'))            { define('ABS_PATH', str_replace(chr(92), '/', dirname(__DIR__)) . '/'); }
-if (!defined('CONGRUENCY_SQLITE'))   { define('CONGRUENCY_SQLITE', ABS_PATH . 'state' . SLASH . 'congruency.sqlite'); }
+if (!defined('CONGRUENCY_SQLITE'))   { define('CONGRUENCY_SQLITE', dirname(rtrim(ABS_PATH, SLASH)) . SLASH . 'state' . SLASH . 'congruency.sqlite'); }  // state is a sibling of the app root (checkouts/current/state)
 if (!defined('TAGS_DIR'))            { define('TAGS_DIR', ABS_PATH . 'invocators' . SLASH . 'tags' . SLASH); }
 if (!defined('CONTENT_DIR'))         { define('CONTENT_DIR', ABS_PATH . 'content' . SLASH . 'content' . SLASH); }
 if (!defined('CLASS_LOADER_DIR'))    { define('CLASS_LOADER_DIR', ABS_PATH . 'lib' . SLASH . 'ClassLoader' . SLASH); }

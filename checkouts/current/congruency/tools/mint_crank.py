@@ -7,12 +7,12 @@ defines the next version. No branch-per-crank: a crank is a commit + tag IN PLAC
 the fixes/*.py "ratchet link" discipline into one operation.
 
     # precondition: on the `source` branch, tracked-clean, php provisioned
-    python3 checkouts/current/tools/mint_crank.py --patch /path/to/turn_xyz.py [--name xyz] [-m MSG]
+    python3 checkouts/current/congruency/tools/mint_crank.py --patch /path/to/turn_xyz.py [--name xyz] [-m MSG]
 
 Steps (each records a BUG EVENT on ANY unexpected outcome — exception OR expected!=actual —
 then fail-fast):
     precondition  on `source`, tracked-clean (no fork)
-    inject        copy the python patch -> checkouts/current/fixes/<name>.py  (must compile)
+    inject        copy the python patch -> checkouts/current/congruency/fixes/<name>.py  (must compile)
     run           python3 <injected>                                          (exit 0)
     state         make_state.py -> in-tree checkouts/current/state/database.tar.xz (rides in the crank)
     capture       add -A + commit + version-4.05x tag on `source` (db + install.json in the version commit)
@@ -30,7 +30,7 @@ import time
 import traceback
 from datetime import datetime
 
-HERE = os.path.dirname(os.path.abspath(__file__))          # checkouts/current/tools
+HERE = os.path.dirname(os.path.abspath(__file__))          # checkouts/current/congruency/tools
 SOURCE = os.path.dirname(HERE)                             # checkouts/current
 FIXES = os.path.join(SOURCE, "fixes")
 VERSIONING = os.path.join(SOURCE, "versioning")

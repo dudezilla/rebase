@@ -26,7 +26,7 @@ def find_versioning():
     """Locate the versioning/ dir (holding ops/) by discovery, relative to HERE.
 
     No hard-coded commit hash. Preference order:
-      1. the CURRENT checkout — checkouts/current/versioning (what the tree tracks);
+      1. the CURRENT checkout — checkouts/current/congruency/versioning (what the tree tracks);
       2. versioning/ beside this file;
       3. any <entry>/versioning one level down (legacy flat layout);
       4. a bounded recursive search, shallowest match first, ignoring the tooling/

@@ -7,7 +7,7 @@
 require __DIR__ . '/coverage.php';
 error_reporting(E_ALL & ~E_WARNING);   // the no-match path reads $result[0] (undefined) by design
 
-$SRC = dirname(__DIR__, 2) . '/checkouts/current';   // repo/checkouts/current — relocatable, no hard-coded ~ path
+$SRC = dirname(__DIR__, 2) . '/checkouts/current/congruency';   // repo/checkouts/current/congruency — relocatable, no hard-coded ~ path
 $target = $SRC . '/lib/IOControl/Validators/ValidateFields.php';
 $src = file_get_contents($target);
 $inst = cov_instrument($src, $branches);

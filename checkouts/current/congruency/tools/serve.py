@@ -3,7 +3,7 @@
 
 Reconstruction of the old ~/congruencey-harness as the source's own tool. It boots the
 CMS under PHP's built-in web server using the relocatable new-tree bootstrap
-(../boot/router.php), served from the congruency source root (checkouts/current). This
+(../boot/router.php), served from the congruency source root (checkouts/current/congruency). This
 replaces the old bash `serve`/`verify` scripts, which note-for-claude forbids.
 
     python3 tools/serve.py                # serve on 0.0.0.0:8899   (Ctrl-C to stop)
@@ -30,10 +30,10 @@ import urllib.error
 import urllib.request
 from datetime import datetime
 
-HERE = os.path.dirname(os.path.abspath(__file__))          # checkouts/current/tools
-SOURCE = os.path.dirname(HERE)                             # checkouts/current
+HERE = os.path.dirname(os.path.abspath(__file__))          # checkouts/current/congruency/tools
+SOURCE = os.path.dirname(HERE)                             # checkouts/current/congruency (the CMS app root)
 ROUTER = os.path.join("boot", "router.php")               # relative to SOURCE (cwd at serve time)
-STATE = os.path.join(SOURCE, "state")
+STATE = os.path.join(os.path.dirname(SOURCE), "state")     # checkouts/current/state (sibling of congruency)
 SQLITE = os.path.join(STATE, "congruency.sqlite")
 DB_TAR = os.path.join(STATE, "database.tar.xz")
 DEFAULT_PORT = 8899
@@ -100,7 +100,7 @@ def find_php(reg):
         return cand
     raise FileNotFoundError(
         "php not found (checked $CONGRUENCEY_PHP and %s). Provision it first: "
-        "python3 checkouts/current/tools/provision_php.py" % cand)
+        "python3 checkouts/current/congruency/tools/provision_php.py" % cand)
 
 
 def ensure_db():

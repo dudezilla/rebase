@@ -1,9 +1,0 @@
-{
-  "CONGRUENCY_SQLITE": "/srv/site/state/congruency.sqlite",
-  "CONGRUENCY_PORT": 8080,
-  "CONGRUENCY_HOST": "0.0.0.0",
-  "EMAIL_RECIPIANTS": "admin@example.com",
-  "ORDER_SUBJECT_HEADER": "You have a new order",
-  "MYSQL_STORE_DATABASE": "CONGRUENCY_STORE",
-  "USELOG_DEBUG": false
-}

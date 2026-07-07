@@ -8,7 +8,7 @@ of FAILED suites (0 = all good). Emits a run_verify-parseable summary line:
     N suites passed, M failed
 
 Suites:
-  * stand_up     boot the CMS (checkouts/current/boot/router.php) on the provisioned php
+  * stand_up     boot the CMS (checkouts/current/congruency/boot/router.php) on the provisioned php
                  and assert HTTP 200 / no fatal on real pages          [the pass/fail gate]
   * bug_catalog  run tooling/congruencey-bugs/harness.php against the real source; report
                  how many of the 15 catalogued bugs still reproduce (this source is the
@@ -32,7 +32,7 @@ import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))                 # tooling/congruencey-tests
 MONO = os.path.dirname(os.path.dirname(HERE))                     # repo/package root
-SOURCE = os.path.join(MONO, "checkouts", "current")              # the congruency source (winner)
+SOURCE = os.path.join(MONO, "checkouts", "current", "congruency")   # the congruency source (winner)
 BUGS_HARNESS = os.path.join(MONO, "tooling", "congruencey-bugs", "harness.php")
 COVERAGE = os.path.join(MONO, "tooling", "coverage")
 ROUTER = os.path.join("boot", "router.php")                      # relative to SOURCE (cwd)

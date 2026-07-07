@@ -153,7 +153,7 @@ def main():
 
     rel = os.path.relpath(dest, mono)
     ensure_gitignore(mono, rel)
-    subprocess.run(["git", "add", ".gitignore", "checkouts/current/tools/provision_php.py"],
+    subprocess.run(["git", "add", ".gitignore", "checkouts/current/congruency/tools/provision_php.py"],
                    cwd=mono, capture_output=True, text=True)
 
     result = {
