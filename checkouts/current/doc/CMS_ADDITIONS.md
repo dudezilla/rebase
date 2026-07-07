@@ -78,6 +78,14 @@ breaking them. Generic CRUD is the internal/experimental path.
 this, no login cookie). Unauthenticated write → `401`. REST dispatches from `router.php` *after* the
 session/POM boot (output-buffered for clean JSON headers) so it can check `UserPrivilegeSet::logged_in()`.
 
+**Optional Vault-validated auth** (`boot/vault.php`): when `VAULT_ADDR` + `VAULT_TOKEN` + `VAULT_AUTH_PATH`
+are set (`install.json` or env), the App holds a Vault token and **checks Vault** — a presented
+`X-Api-Key`/`?key=` is authorized if it matches the token field of the secret at `VAULT_AUTH_PATH` (KV v1 or
+v2), so the shared auth secret lives in **Vault, not at rest in the CMS DB**. Graceful: unconfigured or Vault
+unreachable → the check is skipped and the `api_keys`/session paths still apply. `VAULT_TOKEN` stays in env /
+deploy-local `install.json` (never committed); `VAULT_TOKEN_FIELD` names the field (default `token`).
+`congruency_vault_get($path)` is also reusable (e.g. to source the admin password from Vault at deploy).
+
 ### Process authorization ("a ticket authorizes the start of a process")
 The mechanically-allocated ticket id (the BUG-0084 cure — SQLite `AUTOINCREMENT`, never inferred, never
 colliding) **is a process's uid/authorization**. `jazz_telemetry.authorize_process(name, kind=…, **meta) ->

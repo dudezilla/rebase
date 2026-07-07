@@ -23,6 +23,8 @@ See the LICENSE file in the project root for full license terms.
  * authored + trusted, consumer :params are always bound (prepared) — no injection.
  */
 
+require_once __DIR__ . '/vault.php';   // optional Vault-validated authorization (graceful when unconfigured)
+
 /* authorization: admin session OR a valid API key (X-Api-Key header / ?key=, looked up in api_keys). */
 function congruency_rest_apikey($db) {
     $key = isset($_SERVER['HTTP_X_API_KEY']) ? (string) $_SERVER['HTTP_X_API_KEY'] : (string) ($_GET['key'] ?? '');
@@ -35,7 +37,14 @@ function congruency_rest_apikey($db) {
 }
 function congruency_rest_authorized($db) {
     if (class_exists('UserPrivilegeSet') && UserPrivilegeSet::logged_in()) { return true; }
-    return congruency_rest_apikey($db) !== false;
+    if (congruency_rest_apikey($db) !== false) { return true; }
+    // Vault-validated: when Vault is configured, the App checks the presented token against its authorization
+    // secret in Vault — so the shared secret lives in Vault, not at rest in the CMS DB. Off/unreachable -> skip.
+    if (function_exists('congruency_vault_authorizes')) {
+        $presented = isset($_SERVER['HTTP_X_API_KEY']) ? (string) $_SERVER['HTTP_X_API_KEY'] : (string) ($_GET['key'] ?? '');
+        if ($presented !== '' && congruency_vault_authorizes($presented)) { return true; }
+    }
+    return false;
 }
 
 /* data-driven named route: run one row of api_routes with bound :params. The route's SQL is admin-authored

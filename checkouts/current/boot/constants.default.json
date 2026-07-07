@@ -43,5 +43,9 @@
   "USELOG_SECURITY": true,
   "LOGUSER_SERVER": "localhost",
   "LOGUSER_LOGIN": "logUser",
-  "LOGUSER_PASSWORD": "logloglog"
+  "LOGUSER_PASSWORD": "logloglog",
+
+  "VAULT_ADDR": "",
+  "VAULT_AUTH_PATH": "",
+  "VAULT_TOKEN_FIELD": "token"
 }
