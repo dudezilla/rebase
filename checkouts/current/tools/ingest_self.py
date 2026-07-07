@@ -201,6 +201,7 @@ def ensure_pages(db):
         "source":      ("Source · Congruency", "The CMS's own running source", "<<<SourceList>>>"),
         "docs":        ("Documentation · Congruency", "The CMS's own documentation", "<<<DocList>>>"),
         "annotations": ("Annotations · Congruency", "The tag->target layer (flags + categories)", "<<<Annotations>>>"),
+        "database":    ("Database · Congruency", "The unified DB — every table, row counts, browsable", "<<<DatabaseInfo>>>"),
     }
     for did, (title, desc, tag) in pages.items():
         if db.execute("SELECT 1 FROM Documents WHERE DocumentID=?", (did,)).fetchone():
@@ -249,7 +250,7 @@ def main():
         if a.ensure_pages:
             ensure_pages(db)
             db.commit()
-            print("ensure-pages: source/docs/annotations Documents ensured; tables created")
+            print("ensure-pages: entry Documents ensured (source/docs/annotations/database); tables created")
             return 0
 
         try:

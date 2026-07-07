@@ -19,6 +19,7 @@ Server-rendered `Tag_Interface` classes. New:
 | `<<<TicketList>>>` | `?page=tickets` | renders the `tickets` table (OPEN first) |
 | `<<<MemoryList>>>` | `?page=memories` | **top-level** tag; the controller (Claude) tool-use log — merges the `memories` table + the live gate log `~/.MCP/gate-memories.json`, reverse-chronological, **paginated** (`?p=`) |
 | `<<<SiteMap>>>` | nav | the nav, generated from `Documents` (Pages · Tags · …) |
+| `<<<DatabaseInfo>>>` | `?page=database` | the DB self-described — every table, row count, and a `?api=<table>` browse link (admin-only tables marked) |
 | `<<<Style>>>` | every page `<head>` | **the single site stylesheet** — one place for the whole look; full-width (no max-width), nav all-caps, code/pre/table styling. Templates embed `<<<Style>>>` not an inline `<style>`. Reading pages (catalog/about/invalid, and the DocList doc view) opt into `class="prose"` (`max-width:70ch`) for a comfortable measure; data/code pages stay full-width |
 | `<<<PageList>>>` | `?page=pages` | index of every page |
 | `<<<TagList>>>` | `?page=tags` | gallery of every tag; `?tag=NAME` renders that tag (re-entrancy guarded) |
@@ -91,6 +92,11 @@ curl cookie jars); frozen/vendored trees excluded. The four archive tables (and 
 
 ## Tooling (`tools/`)
 - `ingest_self.py` — mirrors the running source + docs into the DB each crank (see Self-hosting, above).
+- `db_export.py` — dump the DB to `state/seed.sql` (git-viewable text) + `.xz`; excludes `events` + the auth
+  tables by default (`--all`/`--keep-events` to override). **Manual — not run on any crank.** `state/seed.sql`
+  is the default showcase DB.
+- `db_import.py` — rebuild a DB from the seed (`--to <path>`, `--verify`); refuses to clobber without `--force`,
+  never touches the live DB implicitly.
 - `doc_watch.py` — files a `documentation` ticket when a commit changes code but no doc (post-commit hook).
 - `serve.py` — the dev server. `crawl.py` — BFS site spider → broken-link report (uses `?api=Documents`
   as the page oracle; expect exactly **1** broken = the deliberate `?page=nope` demo on `about`).
