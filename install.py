@@ -4,7 +4,7 @@
 `main` carries no source tree — only this installer. Running it:
   1. checks out the `source` version tag `version-<X>` (detached — materializes source@X),
   2. provisions the php runtime,
-  3. installs the matching STATE from the `state` branch (state-<X> tag, else newest <=X, else HEAD),
+  3. installs the STATE that rides IN the version commit (checkouts/current/state/database.tar.xz),
   4. stands the CMS up and verifies,
 recording telemetry per step and catching any bug thrown (Variant-A bug-report + jazz ticket).
 
@@ -245,40 +245,18 @@ def _state_spec():
     return json.load(open(p)) if os.path.isfile(p) else {}
 
 
-def _resolve_state_ref(version):
-    """State for a source version: state-<version> tag, else newest state-<Y<=version>, else the
-    state-branch HEAD (state:database.tar.xz)."""
-    side = _state_spec().get("side_branch", "state")
-    if git("rev-parse", "-q", "--verify", "state-%s" % version).returncode == 0:
-        return "state-%s:database.tar.xz" % version
-    tgt = _vkey(version)
-    cands = [(k, t) for t in git("tag", "-l", "state-*").stdout.split()
-             for k in [_vkey(t[len("state-"):])] if k and tgt and k <= tgt]
-    if cands:
-        return "%s:database.tar.xz" % sorted(cands)[-1][1]
-    if git("cat-file", "-e", "%s:database.tar.xz" % side).returncode == 0:
-        return "%s:database.tar.xz" % side
-    raise RuntimeError("no state found for version %s" % version)
-
-
 def do_state(version):
+    """Materialize state from the db that RIDES IN the version commit (state merged into the
+    crank — no state branch): the checkout put checkouts/current/state/database.tar.xz in the
+    tree; extract it into the state dir (gitignored artifacts only, tree stays clean)."""
     expect = set(_state_spec().get("expect_tables", []))
-    ref = _resolve_state_ref(version)
-
-    # Materialize state from the side-branch tarball into the gitignored artifacts only
-    # (never touch tracked files -> the working tree stays clean).
     state_dir = os.path.join(HERE, "checkouts", "current", "state")
-    with tempfile.NamedTemporaryFile(suffix=".tar.xz", delete=False) as tf:
-        tmp = tf.name
-    try:
-        with open(tmp, "wb") as fh:
-            r = subprocess.run(["git", "show", ref], cwd=HERE, stdout=fh)
-        if r.returncode != 0:
-            raise RuntimeError("git show %s failed" % ref)
-        with tarfile.open(tmp, "r:xz") as t:
-            t.extractall(state_dir, filter="data")
-    finally:
-        os.remove(tmp)
+    tarball = os.path.join(state_dir, "database.tar.xz")
+    if not os.path.isfile(tarball):
+        raise RuntimeError("version %s carries no in-tree database.tar.xz "
+                           "(state now rides in the version commit — re-mint this version)" % version)
+    with tarfile.open(tarball, "r:xz") as t:
+        t.extractall(state_dir, filter="data")
 
     import sqlite3
     sqlite = os.path.join(state_dir, "congruency.sqlite")
@@ -290,7 +268,7 @@ def do_state(version):
     missing = expect - tables
     if missing:
         raise RuntimeError("installed state missing tables: %s" % sorted(missing))
-    return {"source": ref, "tables": sorted(tables)}
+    return {"source": "in-tree database.tar.xz", "tables": sorted(tables)}
 
 
 def do_standup():
