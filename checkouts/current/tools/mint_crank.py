@@ -151,6 +151,25 @@ def step_run(dest):
     return {"stdout_tail": (r.stdout or "").strip().splitlines()[-3:]}
 
 
+def write_install_config(root, version, no_verify=False, return_to_main=False):
+    """Emit the version's install.json at the repo root so it is committed INTO the version tag.
+
+    Instrumentation counterpart to the ratchet's install.py: extracts the version + install
+    arguments to JSON ahead of time so `python3 install.py` needs no hand-typed args. Kept in
+    lockstep with install.py's canonical_config()."""
+    import json
+    cfg = {
+        "version": version,
+        "no_verify": bool(no_verify),
+        "return_to_main": bool(return_to_main),
+        "generated_by": "mint_crank.py (instrumentation)",
+    }
+    with open(os.path.join(root, "install.json"), "w") as fh:
+        json.dump(cfg, fh, indent=2)
+        fh.write("\n")
+    return cfg
+
+
 def step_capture(message):
     """Capture the patch as the next version — LEAN single-repo path.
 
@@ -164,13 +183,20 @@ def step_capture(message):
     from version_source import compute_next_version
 
     g = Git(identity={"name": "ratchet", "email": "ratchet@congruency.local"}, echo=False)
-    g.run(["add", "-A"], ROOT, write=True)
-    if not (g.query(["diff", "--cached", "--name-only"], ROOT) or "").strip():
-        raise Unexpected("nothing staged — the patch produced no change to capture")
 
+    # Compute the version FIRST (reads live tags only — no staging needed), then emit this
+    # version's install.json so it is CAPTURED IN the version commit — instrumentation, prior
+    # to pushing. The ratchet's install.py reads `version-<v>:install.json` for the version +
+    # args, so nobody hand-types them and it runs on any machine.
     tags_before = set(git("tag", "-l", "version-*").stdout.split())
     version = compute_next_version(g, ROOT)                     # python-computed from live tags
     tag = "version-%s" % version
+    write_install_config(ROOT, version)
+
+    g.run(["add", "-A"], ROOT, write=True)                     # stages the patch + install.json
+    if not (g.query(["diff", "--cached", "--name-only"], ROOT) or "").strip():
+        raise Unexpected("nothing staged — the patch produced no change to capture")
+
     before = g.query(["rev-parse", "HEAD"], ROOT)
     g.run(["commit", "-m", message], ROOT, write=True)
     after = g.query(["rev-parse", "HEAD"], ROOT)
@@ -179,7 +205,8 @@ def step_capture(message):
     g.run(["tag", "-a", tag, "-m", "Release %s" % version], ROOT, write=True)
     if tag not in (set(git("tag", "-l", "version-*").stdout.split()) - tags_before):
         raise Unexpected("expected new tag %s to be created" % tag)
-    return {"version": version, "tag": tag, "committed_in": ["congruencey"], "commit": after[:10]}
+    return {"version": version, "tag": tag, "committed_in": ["congruencey"], "commit": after[:10],
+            "install_config": "install.json"}
 
 
 def step_state(version):
