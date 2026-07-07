@@ -27,6 +27,17 @@ A fresh, functional-but-empty starter: a landing/intro (keyed `catalog`, the Con
 mandatory `invalid` 404, current Georgia styling, empty store tables. NO dev content (no bug pages, no
 demo products/order-wizard). Add your pages/catalog/features on top.
 
+**Admin at deploy time:** the stub ships **no credential**. To provision an admin, set `CONGRUENCY_ADMIN_LOGIN`
++ `CONGRUENCY_ADMIN_PASSWORD` in the environment — `deploy.py` runs `prod_seed.php` with the inherited env
+(`env=dict(os.environ, …)`), so it injects that admin and the write forms + REST writes work:
+
+```
+CONGRUENCY_ADMIN_LOGIN=admin CONGRUENCY_ADMIN_PASSWORD=… python3 deploy.py --target /srv/site --version X
+```
+
+No env → no admin (read-only public site). Rotate or add a login on any DB later with
+`tools/set_admin.py --db <path> --login <L> --generate` (stored plaintext — the 2006 auth compares plaintext).
+
 See `DEPENDENCIES.md` for runtime deps + process changes, and `checkouts/current/ARCHITECTURE.md` for the
 CMS internals.
 

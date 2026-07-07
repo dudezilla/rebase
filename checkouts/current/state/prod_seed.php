@@ -56,6 +56,25 @@ $doc = $pdo->prepare("INSERT INTO Documents (DocumentID, TemplateID, Title, Desc
 $doc->execute(array('catalog', 1, 'Welcome', 'home', 0));     // landing (Controller default page)
 $doc->execute(array('invalid', 99, 'Page not found', '404', 0));  // mandatory 404 fallback
 
-echo json_encode(array("ok" => true, "db" => $db,
+// Deploy-time admin (optional): if CONGRUENCY_ADMIN_LOGIN + CONGRUENCY_ADMIN_PASSWORD are in the environment,
+// provision that admin so a fresh production deploy can use the write forms. NO credential ships in git — the
+// deployer injects one at deploy time, e.g.
+//   CONGRUENCY_ADMIN_LOGIN=admin CONGRUENCY_ADMIN_PASSWORD=... python3 deploy.py --target /srv/site --version X
+// deploy.py runs this script with env=dict(os.environ, ...), so the vars pass through. Stored plaintext (the
+// 2006 auth compares plaintext); rotate later with tools/set_admin.py.
+$adminLogin = getenv('CONGRUENCY_ADMIN_LOGIN');
+$adminPass  = getenv('CONGRUENCY_ADMIN_PASSWORD');
+$adminNote  = 'none (set CONGRUENCY_ADMIN_LOGIN/PASSWORD to inject one)';
+if ($adminLogin !== false && $adminLogin !== '' && $adminPass !== false && $adminPass !== '') {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS Login_Password (Login TEXT, Password TEXT)");
+    $pdo->exec("CREATE TABLE IF NOT EXISTS User_Group_Mappings (Login TEXT, Group_ID INTEGER)");
+    $pdo->exec("CREATE TABLE IF NOT EXISTS Group_Privileges (Group_ID INTEGER, Module TEXT, Value TEXT)");
+    $pdo->prepare("INSERT INTO Login_Password (Login, Password) VALUES (?, ?)")->execute([$adminLogin, $adminPass]);
+    $pdo->prepare("INSERT INTO User_Group_Mappings (Login, Group_ID) VALUES (?, 1)")->execute([$adminLogin]);
+    $pdo->exec("INSERT INTO Group_Privileges (Group_ID, Module, Value) VALUES (1, 'admin', '1')");
+    $adminNote = $adminLogin;
+}
+
+echo json_encode(array("ok" => true, "db" => $db, "admin" => $adminNote,
                        "documents" => array("catalog", "invalid"),
                        "tables" => array("Document_Templates", "Documents", "Products", "Categories", "Store_Content_Blocks")));

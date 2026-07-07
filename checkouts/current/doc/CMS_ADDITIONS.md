@@ -98,6 +98,9 @@ curl cookie jars); frozen/vendored trees excluded. The four archive tables (and 
   admin (login `admin`) is baked in and the write forms work out of the box.
 - `db_import.py` — rebuild a DB from the seed (`--to <path>`, `--verify`); refuses to clobber without `--force`,
   never touches the live DB implicitly.
+- `set_admin.py` — provision/rotate an admin login in a DB (`--db --login --password|--generate`); for
+  deploy-time injection (or `prod_seed.php` picks up `CONGRUENCY_ADMIN_LOGIN`/`_PASSWORD` at deploy) so no
+  credential ships in git.
 - `doc_watch.py` — files a `documentation` ticket when a commit changes code but no doc (post-commit hook).
 - `serve.py` — the dev server. `crawl.py` — BFS site spider → broken-link report (uses `?api=Documents`
   as the page oracle; expect exactly **1** broken = the deliberate `?page=nope` demo on `about`).
