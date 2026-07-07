@@ -1,0 +1,383 @@
+[
+    {
+        "name": "A",
+        "source_args": [],
+        "tag": "<<<A>>>",
+        "doc": "content start <<<A>>> content end",
+        "scanned": [
+            "<<<A>>>"
+        ],
+        "parsed": [
+            {
+                "name": "A",
+                "args": []
+            }
+        ]
+    },
+    {
+        "name": "Foo",
+        "source_args": [
+            "a"
+        ],
+        "tag": "<<<Foo(a)>>>",
+        "doc": "content start <<<Foo(a)>>> content end",
+        "scanned": [
+            "<<<Foo(a)>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Foo",
+                "args": [
+                    "a"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Item",
+        "source_args": [
+            "a",
+            "b"
+        ],
+        "tag": "<<<Item(a)(b)>>>",
+        "doc": "content start <<<Item(a)(b)>>> content end",
+        "scanned": [
+            "<<<Item(a)(b)>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Item",
+                "args": [
+                    "b",
+                    "a"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Login",
+        "source_args": [
+            "user",
+            "pass"
+        ],
+        "tag": "<<<Login(user)(pass)>>>",
+        "doc": "content start <<<Login(user)(pass)>>> content end",
+        "scanned": [
+            "<<<Login(user)(pass)>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Login",
+                "args": [
+                    "pass",
+                    "user"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Under_score",
+        "source_args": [
+            "x"
+        ],
+        "tag": "<<<Under_score(x)>>>",
+        "doc": "content start <<<Under_score(x)>>> content end",
+        "scanned": [
+            "<<<Under_score(x)>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Under_score",
+                "args": [
+                    "x"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Cat",
+        "source_args": [
+            "c",
+            "d",
+            "e"
+        ],
+        "tag": "<<<Cat(c)(d)(e)>>>",
+        "doc": "content start <<<Cat(c)(d)(e)>>> content end",
+        "scanned": [
+            "<<<Cat(c)(d)(e)>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Cat",
+                "args": [
+                    "e",
+                    "d",
+                    "c"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Solo",
+        "source_args": [
+            "only"
+        ],
+        "tag": "<<<Solo(only)>>>",
+        "doc": "content start <<<Solo(only)>>> content end",
+        "scanned": [
+            "<<<Solo(only)>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Solo",
+                "args": [
+                    "only"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "mixCase",
+        "source_args": [
+            "w",
+            "w2"
+        ],
+        "tag": "<<<mixCase(w)(w2)>>>",
+        "doc": "content start <<<mixCase(w)(w2)>>> content end",
+        "scanned": [
+            "<<<mixCase(w)(w2)>>>"
+        ],
+        "parsed": [
+            {
+                "name": "mixCase",
+                "args": [
+                    "w2",
+                    "w"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Order",
+        "source_args": [
+            "cart",
+            "confirm"
+        ],
+        "tag": "<<<Order(cart)(confirm)>>>",
+        "doc": "content start <<<Order(cart)(confirm)>>> content end",
+        "scanned": [
+            "<<<Order(cart)(confirm)>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Order",
+                "args": [
+                    "confirm",
+                    "cart"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Show",
+        "source_args": [
+            ""
+        ],
+        "tag": "<<<Show()>>>",
+        "doc": "content start <<<Show()>>> content end",
+        "scanned": [
+            "<<<Show()>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Show",
+                "args": [
+                    ""
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Empty",
+        "source_args": [],
+        "tag": "<<<Empty>>>",
+        "doc": "content start <<<Empty>>> content end",
+        "scanned": [
+            "<<<Empty>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Empty",
+                "args": []
+            }
+        ]
+    },
+    {
+        "name": "Wide",
+        "source_args": [
+            "a",
+            "b",
+            "c",
+            "d",
+            "e",
+            "f"
+        ],
+        "tag": "<<<Wide(a)(b)(c)(d)(e)(f)>>>",
+        "doc": "content start <<<Wide(a)(b)(c)(d)(e)(f)>>> content end",
+        "scanned": [
+            "<<<Wide(a)(b)(c)(d)(e)(f)>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Wide",
+                "args": [
+                    "f",
+                    "e",
+                    "d",
+                    "c",
+                    "b",
+                    "a"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "One",
+        "source_args": [
+            "single"
+        ],
+        "tag": "<<<One(single)>>>",
+        "doc": "content start <<<One(single)>>> content end",
+        "scanned": [
+            "<<<One(single)>>>"
+        ],
+        "parsed": [
+            {
+                "name": "One",
+                "args": [
+                    "single"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Nums",
+        "source_args": [
+            "1",
+            "22",
+            "333"
+        ],
+        "tag": "<<<Nums(1)(22)(333)>>>",
+        "doc": "content start <<<Nums(1)(22)(333)>>> content end",
+        "scanned": [
+            "<<<Nums(1)(22)(333)>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Nums",
+                "args": [
+                    "333",
+                    "22",
+                    "1"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Deep_Under",
+        "source_args": [
+            "a_b",
+            "c_d",
+            "e_f"
+        ],
+        "tag": "<<<Deep_Under(a_b)(c_d)(e_f)>>>",
+        "doc": "content start <<<Deep_Under(a_b)(c_d)(e_f)>>> content end",
+        "scanned": [
+            "<<<Deep_Under(a_b)(c_d)(e_f)>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Deep_Under",
+                "args": [
+                    "e_f",
+                    "c_d",
+                    "a_b"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Z",
+        "source_args": [
+            "q"
+        ],
+        "tag": "<<<Z(q)>>>",
+        "doc": "content start <<<Z(q)>>> content end",
+        "scanned": [
+            "<<<Z(q)>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Z",
+                "args": [
+                    "q"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Login",
+        "source_args": [
+            "user",
+            "pass"
+        ],
+        "tag": "<<<Login(user)(pass)>>>",
+        "doc": "content start <<<Login(user)(pass)>>> content end",
+        "scanned": [
+            "<<<Login(user)(pass)>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Login",
+                "args": [
+                    "pass",
+                    "user"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Catalog",
+        "source_args": [
+            "root"
+        ],
+        "tag": "<<<Catalog(root)>>>",
+        "doc": "content start <<<Catalog(root)>>> content end",
+        "scanned": [
+            "<<<Catalog(root)>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Catalog",
+                "args": [
+                    "root"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "Logout",
+        "source_args": [],
+        "tag": "<<<Logout>>>",
+        "doc": "content start <<<Logout>>> content end",
+        "scanned": [
+            "<<<Logout>>>"
+        ],
+        "parsed": [
+            {
+                "name": "Logout",
+                "args": []
+            }
+        ]
+    }
+]

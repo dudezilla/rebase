@@ -1,0 +1,449 @@
+[
+    {
+        "input": "<<<Title>>>",
+        "state": {
+            "name": "Title",
+            "args": []
+        },
+        "rendered": {
+            "xml": "<tag name=\"Title\"></tag>",
+            "html": "<div class=\"tag\" data-name=\"Title\"></div>",
+            "json": "{\"tag\":\"Title\",\"args\":[]}",
+            "yaml": "tag: Title\nargs: []\n"
+        }
+    },
+    {
+        "input": "<<<Body(content)>>>",
+        "state": {
+            "name": "Body",
+            "args": [
+                "content"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"Body\"><arg>content</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Body\"><span class=\"arg\">content</span></div>",
+            "json": "{\"tag\":\"Body\",\"args\":[\"content\"]}",
+            "yaml": "tag: Body\nargs:\n  - content\n"
+        }
+    },
+    {
+        "input": "<<<Logout>>>",
+        "state": {
+            "name": "Logout",
+            "args": []
+        },
+        "rendered": {
+            "xml": "<tag name=\"Logout\"></tag>",
+            "html": "<div class=\"tag\" data-name=\"Logout\"></div>",
+            "json": "{\"tag\":\"Logout\",\"args\":[]}",
+            "yaml": "tag: Logout\nargs: []\n"
+        }
+    },
+    {
+        "input": "<<<ItemList(catalog)(page)(admin)>>>",
+        "state": {
+            "name": "ItemList",
+            "args": [
+                "admin",
+                "page",
+                "catalog"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"ItemList\"><arg>admin</arg><arg>page</arg><arg>catalog</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"ItemList\"><span class=\"arg\">admin</span><span class=\"arg\">page</span><span class=\"arg\">catalog</span></div>",
+            "json": "{\"tag\":\"ItemList\",\"args\":[\"admin\",\"page\",\"catalog\"]}",
+            "yaml": "tag: ItemList\nargs:\n  - admin\n  - page\n  - catalog\n"
+        }
+    },
+    {
+        "input": "<<<Login(user)(pass)>>>",
+        "state": {
+            "name": "Login",
+            "args": [
+                "pass",
+                "user"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"Login\"><arg>pass</arg><arg>user</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Login\"><span class=\"arg\">pass</span><span class=\"arg\">user</span></div>",
+            "json": "{\"tag\":\"Login\",\"args\":[\"pass\",\"user\"]}",
+            "yaml": "tag: Login\nargs:\n  - pass\n  - user\n"
+        }
+    },
+    {
+        "input": "<<<Order(cart)(user)(confirm)>>>",
+        "state": {
+            "name": "Order",
+            "args": [
+                "confirm",
+                "user",
+                "cart"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"Order\"><arg>confirm</arg><arg>user</arg><arg>cart</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Order\"><span class=\"arg\">confirm</span><span class=\"arg\">user</span><span class=\"arg\">cart</span></div>",
+            "json": "{\"tag\":\"Order\",\"args\":[\"confirm\",\"user\",\"cart\"]}",
+            "yaml": "tag: Order\nargs:\n  - confirm\n  - user\n  - cart\n"
+        }
+    },
+    {
+        "input": "<<<Catalog(root)>>>",
+        "state": {
+            "name": "Catalog",
+            "args": [
+                "root"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"Catalog\"><arg>root</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Catalog\"><span class=\"arg\">root</span></div>",
+            "json": "{\"tag\":\"Catalog\",\"args\":[\"root\"]}",
+            "yaml": "tag: Catalog\nargs:\n  - root\n"
+        }
+    },
+    {
+        "input": "<<<ShowPost(post_42)>>>",
+        "state": {
+            "name": "ShowPost",
+            "args": [
+                "post_42"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"ShowPost\"><arg>post_42</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"ShowPost\"><span class=\"arg\">post_42</span></div>",
+            "json": "{\"tag\":\"ShowPost\",\"args\":[\"post_42\"]}",
+            "yaml": "tag: ShowPost\nargs:\n  - post_42\n"
+        }
+    },
+    {
+        "input": "<<<Controls(admin)(edit)>>>",
+        "state": {
+            "name": "Controls",
+            "args": [
+                "edit",
+                "admin"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"Controls\"><arg>edit</arg><arg>admin</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Controls\"><span class=\"arg\">edit</span><span class=\"arg\">admin</span></div>",
+            "json": "{\"tag\":\"Controls\",\"args\":[\"edit\",\"admin\"]}",
+            "yaml": "tag: Controls\nargs:\n  - edit\n  - admin\n"
+        }
+    },
+    {
+        "input": "<<<price_maker(item_1)>>>",
+        "state": {
+            "name": "price_maker",
+            "args": [
+                "item_1"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"price_maker\"><arg>item_1</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"price_maker\"><span class=\"arg\">item_1</span></div>",
+            "json": "{\"tag\":\"price_maker\",\"args\":[\"item_1\"]}",
+            "yaml": "tag: price_maker\nargs:\n  - item_1\n"
+        }
+    },
+    {
+        "input": "<<<CategoryView(cat_5)>>>",
+        "state": {
+            "name": "CategoryView",
+            "args": [
+                "cat_5"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"CategoryView\"><arg>cat_5</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"CategoryView\"><span class=\"arg\">cat_5</span></div>",
+            "json": "{\"tag\":\"CategoryView\",\"args\":[\"cat_5\"]}",
+            "yaml": "tag: CategoryView\nargs:\n  - cat_5\n"
+        }
+    },
+    {
+        "input": "<<<PriceChanger(item)(new_price)>>>",
+        "state": {
+            "name": "PriceChanger",
+            "args": [
+                "new_price",
+                "item"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"PriceChanger\"><arg>new_price</arg><arg>item</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"PriceChanger\"><span class=\"arg\">new_price</span><span class=\"arg\">item</span></div>",
+            "json": "{\"tag\":\"PriceChanger\",\"args\":[\"new_price\",\"item\"]}",
+            "yaml": "tag: PriceChanger\nargs:\n  - new_price\n  - item\n"
+        }
+    },
+    {
+        "input": "<<<ProductView(prod_9)>>>",
+        "state": {
+            "name": "ProductView",
+            "args": [
+                "prod_9"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"ProductView\"><arg>prod_9</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"ProductView\"><span class=\"arg\">prod_9</span></div>",
+            "json": "{\"tag\":\"ProductView\",\"args\":[\"prod_9\"]}",
+            "yaml": "tag: ProductView\nargs:\n  - prod_9\n"
+        }
+    },
+    {
+        "input": "<<<ShowOrders(user)>>>",
+        "state": {
+            "name": "ShowOrders",
+            "args": [
+                "user"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"ShowOrders\"><arg>user</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"ShowOrders\"><span class=\"arg\">user</span></div>",
+            "json": "{\"tag\":\"ShowOrders\",\"args\":[\"user\"]}",
+            "yaml": "tag: ShowOrders\nargs:\n  - user\n"
+        }
+    },
+    {
+        "input": "<<<Admin_Links(admin)>>>",
+        "state": {
+            "name": "Admin_Links",
+            "args": [
+                "admin"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"Admin_Links\"><arg>admin</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Admin_Links\"><span class=\"arg\">admin</span></div>",
+            "json": "{\"tag\":\"Admin_Links\",\"args\":[\"admin\"]}",
+            "yaml": "tag: Admin_Links\nargs:\n  - admin\n"
+        }
+    },
+    {
+        "input": "<<<ToggleLogin(state)>>>",
+        "state": {
+            "name": "ToggleLogin",
+            "args": [
+                "state"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"ToggleLogin\"><arg>state</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"ToggleLogin\"><span class=\"arg\">state</span></div>",
+            "json": "{\"tag\":\"ToggleLogin\",\"args\":[\"state\"]}",
+            "yaml": "tag: ToggleLogin\nargs:\n  - state\n"
+        }
+    },
+    {
+        "input": "<<<ConfigFormTag(step_1)>>>",
+        "state": {
+            "name": "ConfigFormTag",
+            "args": [
+                "step_1"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"ConfigFormTag\"><arg>step_1</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"ConfigFormTag\"><span class=\"arg\">step_1</span></div>",
+            "json": "{\"tag\":\"ConfigFormTag\",\"args\":[\"step_1\"]}",
+            "yaml": "tag: ConfigFormTag\nargs:\n  - step_1\n"
+        }
+    },
+    {
+        "input": "<<<FormTag(form_a)>>>",
+        "state": {
+            "name": "FormTag",
+            "args": [
+                "form_a"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"FormTag\"><arg>form_a</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"FormTag\"><span class=\"arg\">form_a</span></div>",
+            "json": "{\"tag\":\"FormTag\",\"args\":[\"form_a\"]}",
+            "yaml": "tag: FormTag\nargs:\n  - form_a\n"
+        }
+    },
+    {
+        "input": "<<<OrderFormTag(cart)>>>",
+        "state": {
+            "name": "OrderFormTag",
+            "args": [
+                "cart"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"OrderFormTag\"><arg>cart</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"OrderFormTag\"><span class=\"arg\">cart</span></div>",
+            "json": "{\"tag\":\"OrderFormTag\",\"args\":[\"cart\"]}",
+            "yaml": "tag: OrderFormTag\nargs:\n  - cart\n"
+        }
+    },
+    {
+        "input": "<<<OrdererTag(finalize)>>>",
+        "state": {
+            "name": "OrdererTag",
+            "args": [
+                "finalize"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"OrdererTag\"><arg>finalize</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"OrdererTag\"><span class=\"arg\">finalize</span></div>",
+            "json": "{\"tag\":\"OrdererTag\",\"args\":[\"finalize\"]}",
+            "yaml": "tag: OrdererTag\nargs:\n  - finalize\n"
+        }
+    },
+    {
+        "input": "<<<BugReport>>>",
+        "state": {
+            "name": "BugReport",
+            "args": []
+        },
+        "rendered": {
+            "xml": "<tag name=\"BugReport\"></tag>",
+            "html": "<div class=\"tag\" data-name=\"BugReport\"></div>",
+            "json": "{\"tag\":\"BugReport\",\"args\":[]}",
+            "yaml": "tag: BugReport\nargs: []\n"
+        }
+    },
+    {
+        "input": "<<<PriceMakerControl(x)>>>",
+        "state": {
+            "name": "PriceMakerControl",
+            "args": [
+                "x"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"PriceMakerControl\"><arg>x</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"PriceMakerControl\"><span class=\"arg\">x</span></div>",
+            "json": "{\"tag\":\"PriceMakerControl\",\"args\":[\"x\"]}",
+            "yaml": "tag: PriceMakerControl\nargs:\n  - x\n"
+        }
+    },
+    {
+        "input": "<<<Config_Form_Invocator(step)>>>",
+        "state": {
+            "name": "Config_Form_Invocator",
+            "args": [
+                "step"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"Config_Form_Invocator\"><arg>step</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Config_Form_Invocator\"><span class=\"arg\">step</span></div>",
+            "json": "{\"tag\":\"Config_Form_Invocator\",\"args\":[\"step\"]}",
+            "yaml": "tag: Config_Form_Invocator\nargs:\n  - step\n"
+        }
+    },
+    {
+        "input": "<<<Order_Form_Invocator(cart)>>>",
+        "state": {
+            "name": "Order_Form_Invocator",
+            "args": [
+                "cart"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"Order_Form_Invocator\"><arg>cart</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Order_Form_Invocator\"><span class=\"arg\">cart</span></div>",
+            "json": "{\"tag\":\"Order_Form_Invocator\",\"args\":[\"cart\"]}",
+            "yaml": "tag: Order_Form_Invocator\nargs:\n  - cart\n"
+        }
+    },
+    {
+        "input": "<<<Orderer_Invocator(final)>>>",
+        "state": {
+            "name": "Orderer_Invocator",
+            "args": [
+                "final"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"Orderer_Invocator\"><arg>final</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Orderer_Invocator\"><span class=\"arg\">final</span></div>",
+            "json": "{\"tag\":\"Orderer_Invocator\",\"args\":[\"final\"]}",
+            "yaml": "tag: Orderer_Invocator\nargs:\n  - final\n"
+        }
+    },
+    {
+        "input": "<<<Catalog_Controller(root)>>>",
+        "state": {
+            "name": "Catalog_Controller",
+            "args": [
+                "root"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"Catalog_Controller\"><arg>root</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"Catalog_Controller\"><span class=\"arg\">root</span></div>",
+            "json": "{\"tag\":\"Catalog_Controller\",\"args\":[\"root\"]}",
+            "yaml": "tag: Catalog_Controller\nargs:\n  - root\n"
+        }
+    },
+    {
+        "input": "<<<BugDemo(sqli)>>>",
+        "state": {
+            "name": "BugDemo",
+            "args": [
+                "sqli"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"BugDemo\"><arg>sqli</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"BugDemo\"><span class=\"arg\">sqli</span></div>",
+            "json": "{\"tag\":\"BugDemo\",\"args\":[\"sqli\"]}",
+            "yaml": "tag: BugDemo\nargs:\n  - sqli\n"
+        }
+    },
+    {
+        "input": "<<<TitleTag>>>",
+        "state": {
+            "name": "TitleTag",
+            "args": []
+        },
+        "rendered": {
+            "xml": "<tag name=\"TitleTag\"></tag>",
+            "html": "<div class=\"tag\" data-name=\"TitleTag\"></div>",
+            "json": "{\"tag\":\"TitleTag\",\"args\":[]}",
+            "yaml": "tag: TitleTag\nargs: []\n"
+        }
+    },
+    {
+        "input": "<<<BodyTag>>>",
+        "state": {
+            "name": "BodyTag",
+            "args": []
+        },
+        "rendered": {
+            "xml": "<tag name=\"BodyTag\"></tag>",
+            "html": "<div class=\"tag\" data-name=\"BodyTag\"></div>",
+            "json": "{\"tag\":\"BodyTag\",\"args\":[]}",
+            "yaml": "tag: BodyTag\nargs: []\n"
+        }
+    },
+    {
+        "input": "<<<ContentTag(post_9)>>>",
+        "state": {
+            "name": "ContentTag",
+            "args": [
+                "post_9"
+            ]
+        },
+        "rendered": {
+            "xml": "<tag name=\"ContentTag\"><arg>post_9</arg></tag>",
+            "html": "<div class=\"tag\" data-name=\"ContentTag\"><span class=\"arg\">post_9</span></div>",
+            "json": "{\"tag\":\"ContentTag\",\"args\":[\"post_9\"]}",
+            "yaml": "tag: ContentTag\nargs:\n  - post_9\n"
+        }
+    }
+]
