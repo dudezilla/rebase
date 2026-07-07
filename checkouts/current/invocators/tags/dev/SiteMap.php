@@ -31,7 +31,7 @@ if (!class_exists("SiteMap")) {
                 // home/about/order-wizard dropped from the nav (still reachable via Pages);
                 // the nav now leads with Pages (all pages) and Tags (all tags).
                 $block = array('invalid' => 1, 'thanks' => 1, 'ticketDone' => 1, 'tagDone' => 1, 'order' => 1,
-                               'catalog' => 1, 'about' => 1, 'config' => 1);
+                               'catalog' => 1, 'about' => 1, 'config' => 1, 'categoryDone' => 1, 'annotateDone' => 1);
                 $label = array('pages' => 'Pages', 'tags' => 'Tags', 'bugs' => 'bug report',
                                'source' => 'Source', 'docs' => 'Docs', 'annotations' => 'Annotations');
                 $order = array('pages', 'tags', 'bugs', 'forms', 'tickets', 'memories', 'source', 'docs', 'annotations');

@@ -110,13 +110,8 @@ $pdo->exec("CREATE TABLE forms (
 $formEl = $pdo->prepare("INSERT INTO forms
     (name, formName, elementString, implements, selection, required, `order`)
     VALUES (?,?,?,?,?,?,?)");
-// contact form: two text fields + a big text area
-$formEl->execute(['fullName', 'contact', '', 'TextField',  'Your name:',    1, 1]);
-$formEl->execute(['email',    'contact', '', 'TextField',  'Email address:',1, 2]);
-$formEl->execute(['message',  'contact', '', 'TextBox',    'Your message:', 0, 3]);
-// poll form: a radio select whose options come from the <<..>> element string
-$formEl->execute(['flavour', 'poll', '<<Vanilla>><<Chocolate>><<Strawberry>>',
-                  'RadioSelect', 'Pick a flavour:', 1, 1]);
+// (the contact/flavour-poll demo forms were removed — the running device provisions real admin forms
+//  instead: NewCategoryForm, AnnotateForm, TicketForm, TagPageForm, each with a handler that does work)
 
 // ---- The config -> order wizard: two single-submit forms chained by action.
 // ConfigForm-6's FCE element sets the form action to ?page=order (the chain),
@@ -147,21 +142,16 @@ $pdo->exec("CREATE TABLE orders (
     clientEmail TEXT, unixKey INTEGER, date TEXT)");
 
 $formsPage = page($nav, $style,
-    '<h1>Forms, live</h1>'
-  . '<p>These are real forms assembled by the resurrected form builder: '
-  . '<code>FormManager</code> &rarr; <code>StandardForm</code> &rarr; the form '
-  . 'elements, all read from a <code>forms</code> table and rendered by a '
-  . '<code>&lt;&lt;&lt;FormTag&gt;&gt;&gt;</code> component. Submit them and they '
-  . 'validate and remember your input.</p>'
-  . '<h2 style="font-weight:normal">Contact</h2>'
-  . '<<<FormTag(contact)>>>'
-  . '<h2 style="font-weight:normal">Flavour poll <span style="font-size:.7em;color:#888">'
-  . '(RadioSelect &mdash; the <code>split()</code>-fixed path)</span></h2>'
-  . '<<<FormTag(poll)>>>');
+    '<h1>Admin forms</h1>'
+  . '<p>The resurrected form builder (<code>FormManager</code> &rarr; <code>StandardForm</code> &rarr; '
+  . 'the form elements, read from the <code>forms</code> table, rendered by '
+  . '<code>&lt;&lt;&lt;FormTag&gt;&gt;&gt;</code>) powers the running device&#39;s admin forms &mdash; '
+  . 'New Category, Annotate anything, Ticket, Tag-a-page &mdash; each with a handler that does real '
+  . 'admin work. The old contact / flavour-poll demos were removed.</p>');
 
 $pdo->prepare("INSERT INTO Document_Templates (TemplateID, Content) VALUES (5, ?)")->execute([$formsPage]);
 $pdo->prepare("INSERT INTO Documents (DocumentID, TemplateID, Title, Description, ContentID)
-               VALUES ('forms', 5, ?, ?, 5)")->execute(['Forms &middot; Congruency', 'Live form demo']);
+               VALUES ('forms', 5, ?, ?, 5)")->execute(['Admin forms &middot; Congruency', 'Admin forms']);
 
 // Wizard pages: config (step 1) chains via its action to order (step 2).
 $configPage = page($nav, $style,

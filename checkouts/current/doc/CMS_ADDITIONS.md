@@ -8,7 +8,8 @@ Everything below is served by the CMS itself, zero-JavaScript, against the unifi
 A page is a `Documents` row `(DocumentID, TemplateID, Title, Description, ContentID)` joined to a
 `Document_Templates` row `(TemplateID, Content)`; the template's `Content` is HTML with `<<<Tag>>>`
 markers the engine executes. New pages this session: `tickets`, `memories`, `pages`, `tags`,
-`ticketDone`, `tagDone`. The order-wizard pages (`config`/`order`/`thanks`) were removed.
+`ticketDone`, `tagDone`, `source`, `docs`, `annotations`, `categoryDone`, `annotateDone`. The order-wizard
+pages (`config`/`order`/`thanks`) and the contact/flavour-poll form demos were removed.
 
 ## Tags (invocators)
 Server-rendered `Tag_Interface` classes. New:
@@ -34,6 +35,14 @@ requests by the POM-in-session — `router.php` does `session_start()`; the POM 
 (boolean; TicketForm's `urgent` → `severity=high`), `NumberField` + `DateField` (typed inputs with min/max
 validation), and `MultiSelect` (array-valued checkbox group). All live in
 `lib/Modules/Constructs/Form/FormElements/BasicElements/` and JSON-round-trip through the POM.
+
+**Admin forms** (`?page=forms`, "Admin forms" — the contact/flavour-poll *demos* were removed): every form
+now does real admin work. **NewCategoryForm** → `NewCategoryHandler` (`?page=categoryDone`) creates a
+`Categories` row (grows the tag vocabulary); **AnnotateForm** → `AnnotateHandler` (`?page=annotateDone`)
+writes the `annotations` layer for any `source`/`page`/`doc`/`ticket` target (the general front door the
+inline flag + page-tagger are presets of). Plus the existing **TicketForm** (`?page=tickets`) and
+**TagPageForm** (`?page=pages`). Handler pages (`categoryDone`/`annotateDone`) are nav-blocked like
+`ticketDone`/`tagDone`.
 
 ## Categories as page tags (on the abstract `annotations` layer)
 `Categories(key,name,description)` is the tag **vocabulary**; the page→category links now live in the
