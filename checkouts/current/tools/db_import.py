@@ -65,10 +65,12 @@ def seed_sql(reg):
     state = os.path.join(reg["__root__"], "checkouts", "current", "state")
     plain = os.path.join(state, "seed.sql")
     xz = plain + ".xz"
+    # newline="" so CRLF in blob bodies survives the read (text mode would translate \r\n -> \n, breaking
+    # the content hash — the seed is written with newline="" too).
     if os.path.isfile(plain):
-        return open(plain).read()
+        return open(plain, newline="").read()
     if os.path.isfile(xz):
-        with lzma.open(xz, "rt") as f:
+        with lzma.open(xz, "rt", newline="") as f:
             return f.read()
     raise FileNotFoundError("no state/seed.sql[.xz] -- run tools/db_export.py first")
 

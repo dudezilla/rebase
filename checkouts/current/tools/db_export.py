@@ -129,9 +129,11 @@ def export(reg, exclude, last_n=None):
         os.remove(tmp)
 
     seed = os.path.join(state, "seed.sql")
-    with open(seed, "w") as f:
+    # newline="" so CRLF in blob bodies survives the write (text mode would translate \r\n -> \n and break
+    # the content hash on round-trip; db_import reads with newline="" too).
+    with open(seed, "w", newline="") as f:
         f.write(sql)
-    with lzma.open(seed + ".xz", "wt", preset=9) as f:
+    with lzma.open(seed + ".xz", "wt", preset=9, newline="") as f:
         f.write(sql)
     return seed, len(sql.encode("utf-8")), dropped
 
