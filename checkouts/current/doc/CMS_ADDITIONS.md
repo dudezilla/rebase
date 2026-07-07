@@ -102,6 +102,10 @@ curl cookie jars); frozen/vendored trees excluded. The four archive tables (and 
 - `set_admin.py` — provision/rotate an admin login in a DB (`--db --login --password|--generate`); for
   deploy-time injection (or `prod_seed.php` picks up `CONGRUENCY_ADMIN_LOGIN`/`_PASSWORD` at deploy) so no
   credential ships in git.
+- `db_verify.py` — integrity linter: every stored blob body must hash to its git blob id
+  (`git_blob_sha(body) == hash`); `--manifest` also checks the running source (`is_current`) against git
+  HEAD. Exit 1 on any mismatch (gate-able). Blobs are stored **byte-exact** (raw bytes, no newline
+  translation) so this holds — content-addressing verified end to end.
 - `doc_watch.py` — files a `documentation` ticket when a commit changes code but no doc (post-commit hook).
 - `serve.py` — the dev server. `crawl.py` — BFS site spider → broken-link report (uses `?api=Documents`
   as the page oracle; expect exactly **1** broken = the deliberate `?page=nope` demo on `about`).

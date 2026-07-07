@@ -118,8 +118,16 @@ def ls_tree(ref):
 
 
 def blob_body(h):
-    r = git("cat-file", "blob", h)
-    return r.stdout if r.returncode == 0 else ""
+    # Read the RAW blob bytes -- NOT via git() (text=True), which does universal-newline translation and would
+    # strip \r, mutating the content so it no longer hashes to its git blob id. Decode losslessly so the stored
+    # body is byte-exact and git_blob_sha(body) == h (content-addressing stays sound; db_verify.py checks it).
+    r = subprocess.run(["git", "cat-file", "blob", h], cwd=ROOT, capture_output=True)
+    if r.returncode != 0:
+        return ""
+    try:
+        return r.stdout.decode("utf-8")
+    except UnicodeDecodeError:
+        return r.stdout.decode("utf-8", "replace")
 
 
 # ------------------------------------------------------------------ classify / write
