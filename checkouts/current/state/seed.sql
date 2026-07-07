@@ -743,130 +743,6 @@ if (!defined(''LIB''))                 { define(''LIB'', ABS_PATH . ''lib''); }
 if (!defined(''BIN''))                 { define(''BIN'', ABS_PATH . ''bin'' . SLASH); }
 if (!defined(''HARNESS''))             { define(''HARNESS'', BIN . ''Harness'' . SLASH); }
 ');
-INSERT INTO "code_blobs" VALUES('756c2bd27443597feea646d9b03371e5e714be25','php',7225,'<?php
-/*
-Copyright (C) 2006 Steven Peterson
-Congruency is free software, licensed under the GNU GPLv2 or later.
-See the LICENSE file in the project root for full license terms.
-*/
-/*
- * rest.php — a generic READ-ONLY REST interface over every table in the unified
- * DB (CONGRUENCY_SQLITE). Dispatched by boot/router.php when ?api is present:
- *
- *   ?api=tables              -> { "tables": [ ... ] }        (discovery)
- *   ?api=<table>             -> { table,total,page,per,pages,rows:[...] }   (paginated)
- *   ?api=<table>&p=2&per=25  -> page 2, 25 rows
- *   ?api=<table>&id=<pk>     -> a single row by primary key
- *
- * The table name is always validated against sqlite_master before use (allowlist),
- * so it can''t be used for injection. Writes (POST/PUT/DELETE) are intentionally NOT
- * implemented yet — see ticket #47.
- */
-function congruency_rest_dispatch() {
-    header(''Content-Type: application/json'');
-    header(''Access-Control-Allow-Origin: *'');
-    $out = null;
-    try {
-        if (!defined(''CONGRUENCY_SQLITE'')) { throw new Exception(''CONGRUENCY_SQLITE not defined''); }
-        $db = new PDO(''sqlite:'' . CONGRUENCY_SQLITE);
-        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-        $tables = array();
-        foreach ($db->query("SELECT name FROM sqlite_master WHERE type=''table'' AND name NOT LIKE ''sqlite_%'' ORDER BY name") as $r) {
-            $tables[$r[''name'']] = 1;
-        }
-
-        $api = (string)($_GET[''api''] ?? '''');
-        $method = strtoupper($_SERVER[''REQUEST_METHOD''] ?? ''GET'');
-
-        if ($method === ''POST'' && isset($tables[$api])) {
-            // CREATE: insert a row from the JSON body; only real columns are used (rest ignored).
-            $data = json_decode((string)file_get_contents(''php://input''), true);
-            if (!is_array($data)) { http_response_code(400); echo json_encode(array(''error'' => ''body must be a JSON object'')); return true; }
-            $cols = array();
-            foreach ($db->query("PRAGMA table_info(\"$api\")") as $c) { $cols[$c[''name'']] = 1; }
-            $use = array();
-            foreach ($data as $k => $v) { if (isset($cols[$k])) { $use[$k] = $v; } }
-            if (!$use) { http_response_code(400); echo json_encode(array(''error'' => ''no valid columns for '' . $api, ''columns'' => array_keys($cols))); return true; }
-            $names = array_keys($use);
-            $sql = "INSERT INTO \"$api\" (" . implode('','', array_map(function ($n) { return "\"$n\""; }, $names)) . ") "
-                 . "VALUES (" . implode('','', array_map(function ($n) { return ":$n"; }, $names)) . ")";
-            $st = $db->prepare($sql);
-            foreach ($use as $k => $v) { $st->bindValue(":$k", $v); }
-            $st->execute();
-            http_response_code(201);
-            echo json_encode(array(''created'' => true, ''table'' => $api, ''rowid'' => $db->lastInsertId(), ''used'' => $use),
-                             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
-            return true;
-        }
-
-        if (($method === ''PUT'' || $method === ''PATCH'') && isset($tables[$api])) {
-            // UPDATE by primary key: ?id=<pk>, JSON body of column=>value (real columns only).
-            $pk = null;
-            foreach ($db->query("PRAGMA table_info(\"$api\")") as $c) { if ($c[''pk'']) { $pk = $c[''name'']; } }
-            if ($pk === null || !isset($_GET[''id''])) { http_response_code(400); echo json_encode(array(''error'' => ''update needs a single-column pk and ?id='')); return true; }
-            $data = json_decode((string)file_get_contents(''php://input''), true);
-            if (!is_array($data)) { http_response_code(400); echo json_encode(array(''error'' => ''body must be a JSON object'')); return true; }
-            $cols = array();
-            foreach ($db->query("PRAGMA table_info(\"$api\")") as $c) { $cols[$c[''name'']] = 1; }
-            $use = array();
-            foreach ($data as $k => $v) { if (isset($cols[$k]) && $k !== $pk) { $use[$k] = $v; } }
-            if (!$use) { http_response_code(400); echo json_encode(array(''error'' => ''no valid columns to update'')); return true; }
-            $set = implode('', '', array_map(function ($n) { return "\"$n\" = :$n"; }, array_keys($use)));
-            $st = $db->prepare("UPDATE \"$api\" SET $set WHERE \"$pk\" = :__id");
-            foreach ($use as $k => $v) { $st->bindValue(":$k", $v); }
-            $st->bindValue(":__id", $_GET[''id'']);
-            $st->execute();
-            echo json_encode(array(''updated'' => $st->rowCount(), ''table'' => $api, ''pk'' => $pk, ''id'' => $_GET[''id''], ''set'' => $use),
-                             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
-            return true;
-        }
-
-        if ($method === ''DELETE'' && isset($tables[$api])) {
-            // DELETE a single row by primary key (?id=). No bulk deletes.
-            $pk = null;
-            foreach ($db->query("PRAGMA table_info(\"$api\")") as $c) { if ($c[''pk'']) { $pk = $c[''name'']; } }
-            if ($pk === null || !isset($_GET[''id''])) { http_response_code(400); echo json_encode(array(''error'' => ''delete needs a single-column pk and ?id='')); return true; }
-            $st = $db->prepare("DELETE FROM \"$api\" WHERE \"$pk\" = ?");
-            $st->execute(array($_GET[''id'']));
-            echo json_encode(array(''deleted'' => $st->rowCount(), ''table'' => $api, ''pk'' => $pk, ''id'' => $_GET[''id''])) . "\n";
-            return true;
-        }
-
-        if ($api === '''' || $api === ''tables'') {
-            $out = array(''tables'' => array_keys($tables));
-        } elseif (isset($tables[$api])) {
-            // primary-key column (for ?id=)
-            $pk = null;
-            foreach ($db->query("PRAGMA table_info(\"$api\")") as $c) { if ($c[''pk'']) { $pk = $c[''name'']; break; } }
-
-            if (isset($_GET[''id'']) && $pk !== null) {
-                $st = $db->prepare("SELECT * FROM \"$api\" WHERE \"$pk\" = ?");
-                $st->execute(array($_GET[''id'']));
-                $row = $st->fetch(PDO::FETCH_ASSOC);
-                if ($row === false) { http_response_code(404); $out = array(''error'' => ''not found'', ''table'' => $api, ''id'' => $_GET[''id'']); }
-                else { $out = array(''table'' => $api, ''pk'' => $pk, ''row'' => $row); }
-            } else {
-                $per = isset($_GET[''per'']) ? max(1, min(500, (int)$_GET[''per''])) : 50;
-                $pg  = isset($_GET[''p''])   ? max(1, (int)$_GET[''p'']) : 1;
-                $total = (int)$db->query("SELECT COUNT(*) FROM \"$api\"")->fetchColumn();
-                $off = ($pg - 1) * $per;
-                $rows = $db->query("SELECT * FROM \"$api\" LIMIT $per OFFSET $off")->fetchAll(PDO::FETCH_ASSOC);
-                $out = array(''table'' => $api, ''pk'' => $pk, ''total'' => $total, ''page'' => $pg, ''per'' => $per,
-                             ''pages'' => (int)ceil($total / max(1, $per)), ''rows'' => $rows);
-            }
-        } else {
-            http_response_code(404);
-            $out = array(''error'' => ''unknown table'', ''table'' => $api, ''tables'' => array_keys($tables));
-        }
-    } catch (\Throwable $e) {
-        http_response_code(500);
-        $out = array(''error'' => $e->getMessage());
-    }
-    echo json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
-    return true;
-}
-');
 INSERT INTO "code_blobs" VALUES('bc15b2eda4887801247ab9909a0bb7cdfe4e3dba','php',1663,'<?php
 /*
 Copyright (C) 2006 Steven Peterson
@@ -1414,61 +1290,6 @@ if (!class_exists("PageList")) {
                 return $out;
             } catch (\Throwable $e) {
                 return "<div class=''cy-form-error''>PageList error: " . self::esc(get_class($e) . '': '' . $e->getMessage()) . "</div>";
-            }
-        }
-    }
-}
-?>
-');
-INSERT INTO "code_blobs" VALUES('810e2006cf5680094c69fd72f8bbb1fbe767c8d1','php',2648,'<?php
-/*
-Copyright (C) 2006 Steven Peterson
-Congruency is free software, licensed under the GNU GPLv2 or later.
-See the LICENSE file in the project root for full license terms.
-*/
-/*
- * SiteMap — the "list all pages" tag, used as the site navigation.
- *
- * Implements Tag_Interface; invoked as <<<SiteMap>>>. Reads every Document
- * (page) from CONGRUENCY_SQLITE and renders an inline menu of links, so the
- * nav is generated from the pages that actually exist rather than hardcoded.
- * Terminal/internal pages (the order wizard''s tail, the 404) are blocklisted;
- * a small label map keeps the friendly names.
- */
-if (!class_exists("SiteMap")) {
-    class SiteMap implements Tag_Interface {
-
-        private $arguments;
-        public function __construct($arguments) { $this->arguments = $arguments; }
-        private static function esc($s) { return htmlspecialchars((string)$s, ENT_QUOTES); }
-
-        public function get_document() {
-            try {
-                if (!defined(''CONGRUENCY_SQLITE'')) { return "<!-- SiteMap: no DB -->"; }
-                $db = new PDO(''sqlite:'' . CONGRUENCY_SQLITE);
-                $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $have = array();
-                foreach ($db->query("SELECT DocumentID FROM Documents")->fetchAll(PDO::FETCH_COLUMN) as $id) { $have[$id] = 1; }
-
-                // home/about/order-wizard dropped from the nav (still reachable via Pages);
-                // the nav now leads with Pages (all pages) and Tags (all tags).
-                $block = array(''invalid'' => 1, ''thanks'' => 1, ''ticketDone'' => 1, ''order'' => 1,
-                               ''catalog'' => 1, ''about'' => 1, ''config'' => 1);
-                $label = array(''pages'' => ''Pages'', ''tags'' => ''Tags'', ''bugs'' => ''bug report'');
-                $order = array(''pages'', ''tags'', ''bugs'', ''forms'', ''tickets'', ''memories'');
-
-                $ids = array();
-                foreach ($order as $id) { if (isset($have[$id]) && !isset($block[$id])) { $ids[] = $id; unset($have[$id]); } }
-                foreach (array_keys($have) as $id) { if (!isset($block[$id])) { $ids[] = $id; } }  // any extras, after
-
-                $links = array();
-                foreach ($ids as $id) {
-                    $text = isset($label[$id]) ? $label[$id] : $id;
-                    $links[] = "<a href=''?page=" . self::esc($id) . "''>" . self::esc($text) . "</a>";
-                }
-                return implode(" &nbsp;&middot;&nbsp; ", $links);
-            } catch (\Throwable $e) {
-                return "<!-- SiteMap error: " . self::esc($e->getMessage()) . " -->";
             }
         }
     }
@@ -8202,300 +8023,6 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-');
-INSERT INTO "code_blobs" VALUES('1014720bc252914cac96ac0dffe966260ec94633','python',11994,'#!/usr/bin/env python3
-"""doc_watch.py -- file a "documentation may be stale" ticket when a commit changes code but no doc.
-
-An outside-the-app observer of commits. For each commit where a SCRIPT (.php/.py) changed but NO doc
-(.md/.txt) was touched in that same commit, it maps the changed code area -> the specific doc(s) likely
-now stale (a dir->doc map) and opens/append a `documentation` ticket in the unified jazz tracker
-(~/.jazz/congruency.sqlite). One OPEN ticket per doc (deduped by meta.doc); each commit is recorded once
-(meta.commits), so the standalone tool and the post-commit hook converge without duplicates.
-
-Registry-gated (walks up to registry.json), python-only, best-effort (never blocks a commit).
-
-    python3 tools/doc_watch.py                 # watermark..HEAD  (HEAD only on first run)
-    python3 tools/doc_watch.py --commit <sha>  # one commit (used by the post-commit hook)
-    python3 tools/doc_watch.py --head          # HEAD only
-    python3 tools/doc_watch.py --since <ref>   # ref..HEAD  (batch catch-up)
-    python3 tools/doc_watch.py --dry-run       # classify + print, write nothing
-    python3 tools/doc_watch.py --install-hook  # drop a post-commit hook that calls --head
-"""
-import argparse
-import json
-import os
-import subprocess
-import sys
-from datetime import datetime
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-ROOT = None   # repo root (dir of registry.json); set in main()
-
-# code areas whose change implicates a doc (longest-prefix wins per file)
-DOC_MAP = [
-    ("checkouts/current/boot/",         ["DEPENDENCIES.md", "DEPLOY.md", "checkouts/current/ARCHITECTURE.md"]),
-    ("checkouts/current/state/",        ["DEPLOY.md", "DEPENDENCIES.md"]),
-    ("checkouts/current/invocators/",   ["checkouts/current/ARCHITECTURE.md", "checkouts/current/doc/CMS_ADDITIONS.md"]),
-    ("checkouts/current/lib/",          ["checkouts/current/ARCHITECTURE.md"]),
-    ("checkouts/current/bin/",          ["checkouts/current/ARCHITECTURE.md"]),
-    ("checkouts/current/www/",          ["checkouts/current/ARCHITECTURE.md"]),
-    ("checkouts/current/tools/",        ["checkouts/current/tools/README.md"]),   # + filename special-cases
-    ("checkouts/current/versioning/",   ["checkouts/current/versioning/README.md"]),
-    ("checkouts/current/fixes/",        ["checkouts/current/fixes/README.md"]),
-    ("checkouts/current/tests/parser/", ["checkouts/current/tests/parser/README.md"]),
-    ("tracker/",                        ["tracker/SIGNALS.md"]),
-    ("tooling/coverage/",               ["tooling/coverage/README.md", "tooling/README.md"]),
-    ("tooling/pwdriver/",               ["tooling/pwdriver/README.md", "tooling/README.md"]),
-    ("ENTRY_POINT.py",                  ["README.md"]),
-    ("registry.json",                   ["README.md"]),
-    ("note-for-claude",                 ["README.md"]),
-]
-FALLBACK_CODE = "checkouts/current/ARCHITECTURE.md"     # code under the app tree with no better hit
-GENERIC = "__generic__"                                  # anything else -> a generic "review docs" ticket
-IGNORE_SUBSTR = ("tooling/congruencey/", "tooling/tournament-", "/vendor/")   # frozen / vendored snapshots
-SCRIPT_EXT = (".php", ".py")
-DOC_EXT = (".md", ".txt")
-
-
-# ---------------------------------------------------------------- registry + jazz
-def find_registry(start=HERE):
-    d = os.path.abspath(start)
-    while True:
-        cand = os.path.join(d, "registry.json")
-        if os.path.isfile(cand):
-            return cand
-        parent = os.path.dirname(d)
-        if parent == d:
-            raise FileNotFoundError("registry.json not found at/above %s" % start)
-        d = parent
-
-
-def load_registry():
-    path = find_registry()
-    reg = json.load(open(path))
-    reg["__root__"] = os.path.dirname(path)
-    return reg
-
-
-def _jazz(reg):
-    """Best-effort import of the canonical ticket writer (same package predict.py/mint_crank.py use)."""
-    for cand in (os.path.join(os.path.dirname(reg["__root__"]), "jazz_telemetry"),                    # .../packages/jazz_telemetry
-                 os.path.join(os.path.dirname(os.path.dirname(reg["__root__"])), "jazz_telemetry")):  # predict.py''s shim path
-        if os.path.isdir(cand) and cand not in sys.path:
-            sys.path.insert(0, cand)
-    try:
-        from jazz_telemetry import open_ticket, update_ticket, tickets, get_ticket
-        return {"open_ticket": open_ticket, "update_ticket": update_ticket,
-                "tickets": tickets, "get_ticket": get_ticket}
-    except Exception as e:  # noqa: BLE001
-        sys.stderr.write("[doc_watch] jazz_telemetry unavailable: %r\n" % e)
-        return None
-
-
-# ---------------------------------------------------------------- git helpers
-def git(*args):
-    return subprocess.run(["git"] + list(args), cwd=ROOT, capture_output=True, text=True).stdout.strip()
-
-
-def resolve(ref):
-    return git("rev-parse", ref)
-
-
-def commits_in_range(start, end="HEAD"):
-    out = git("rev-list", "--reverse", "%s..%s" % (start, end))
-    return out.split() if out else []
-
-
-def changed_files(sha):
-    out = git("diff-tree", "--no-commit-id", "--name-only", "-r", sha)
-    return out.splitlines() if out else []
-
-
-def subject(sha):
-    return git("log", "-1", "--format=%s", sha)
-
-
-# ---------------------------------------------------------------- classification
-def ignored(path):
-    return any(s in path for s in IGNORE_SUBSTR)
-
-
-def docs_for(path):
-    best = None
-    for prefix, docs in DOC_MAP:
-        if path.startswith(prefix) and (best is None or len(prefix) > len(best[0])):
-            best = (prefix, docs)
-    if best is not None:
-        docs = list(best[1])
-        if best[0] == "checkouts/current/tools/":
-            base = os.path.basename(path)
-            if base in ("provision_php.py", "predict.py"):
-                docs.append("DEPENDENCIES.md")
-            if base in ("crawl.py", "tagcheck.py"):
-                docs.append("checkouts/current/doc/CMS_ADDITIONS.md")
-        return docs
-    if path.startswith("checkouts/current/") and path.endswith(SCRIPT_EXT):
-        return [FALLBACK_CODE]
-    return [GENERIC]
-
-
-# ---------------------------------------------------------------- dedup state
-def load_open_docs(jazz):
-    """map implicated-doc -> {id, meta, body} for OPEN documentation tickets already filed by doc_watch."""
-    out = {}
-    if not jazz:
-        return out
-    for t in jazz["tickets"]("OPEN"):
-        if t.get("component") != "documentation":
-            continue
-        full = jazz["get_ticket"](t["id"])
-        if not full:
-            continue
-        meta = full.get("meta")
-        if isinstance(meta, dict) and meta.get("doc"):
-            out[meta["doc"]] = {"id": full["id"], "meta": meta, "body": full.get("body") or ""}
-    return out
-
-
-def title_for(doc):
-    return "Docs may be stale: %s" % ("review documentation" if doc == GENERIC else doc)
-
-
-def process_commit(sha, jazz, open_docs, write):
-    files = [f for f in changed_files(sha) if not ignored(f)]
-    scripts = [f for f in files if f.endswith(SCRIPT_EXT)]
-    docs_touched = [f for f in files if f.endswith(DOC_EXT)]
-    if not scripts or docs_touched:
-        return []   # trigger only on "code changed, docs didn''t"
-    implicated = {}
-    for s in scripts:
-        for d in docs_for(s):
-            implicated.setdefault(d, set()).add(s)
-    subj = subject(sha)
-    actions = []
-    for doc in sorted(implicated):
-        scr = sorted(implicated[doc])
-        line = "%s %s -- scripts: %s" % (sha[:9], subj, ", ".join(scr))
-        if doc in open_docs:
-            t = open_docs[doc]
-            commits = list(t["meta"].get("commits", []))
-            if sha in commits:
-                actions.append(("skip", doc, t["id"]))
-                continue
-            commits.append(sha)
-            body = (t["body"] + "\n" + line).strip()
-            if write:
-                jazz["update_ticket"](t["id"], body=body, doc=doc, commits=commits, source="doc_watch")
-            t["meta"]["commits"] = commits
-            t["body"] = body
-            actions.append(("append", doc, t["id"]))
-        else:
-            tid = "(dry)"
-            if write:
-                tid = jazz["open_ticket"](title_for(doc), component="documentation", severity="low",
-                                          body=line, doc=doc, commits=[sha], source="doc_watch")
-            open_docs[doc] = {"id": tid, "meta": {"doc": doc, "commits": [sha]}, "body": line}
-            actions.append(("open", doc, tid))
-    return actions
-
-
-# ---------------------------------------------------------------- watermark + hook
-def watermark_path(reg):
-    return os.path.join(reg["__root__"], "logs", "doc_watch.json")
-
-
-def read_watermark(reg):
-    try:
-        return json.load(open(watermark_path(reg))).get("last_seen")
-    except Exception:  # noqa: BLE001
-        return None
-
-
-def write_watermark(reg, sha):
-    try:
-        p = watermark_path(reg)
-        os.makedirs(os.path.dirname(p), exist_ok=True)
-        json.dump({"last_seen": sha, "updated": datetime.now().isoformat()}, open(p, "w"), indent=2)
-    except Exception:  # noqa: BLE001
-        pass
-
-
-HOOK = """#!/usr/bin/env python3
-# doc_watch post-commit hook (installed by `doc_watch.py --install-hook`). Best-effort; never blocks.
-import subprocess, sys, os
-try:
-    root = subprocess.run(["git", "rev-parse", "--show-toplevel"],
-                          capture_output=True, text=True, timeout=10).stdout.strip()
-    tool = os.path.join(root, "checkouts", "current", "tools", "doc_watch.py")
-    if root and os.path.isfile(tool):
-        subprocess.run([sys.executable, tool, "--head"], timeout=30)
-except Exception:
-    pass
-"""
-
-
-def install_hook(reg):
-    gitdir = git("rev-parse", "--absolute-git-dir")
-    hooks = os.path.join(gitdir, "hooks")
-    os.makedirs(hooks, exist_ok=True)
-    path = os.path.join(hooks, "post-commit")
-    with open(path, "w") as fh:
-        fh.write(HOOK)
-    os.chmod(path, 0o755)
-    print("installed post-commit hook -> %s  (runs doc_watch.py --head after each commit)" % path)
-    return 0
-
-
-# ---------------------------------------------------------------- main
-def main():
-    global ROOT
-    ap = argparse.ArgumentParser(description="file a documentation-stale ticket when code changes without a doc update")
-    ap.add_argument("--commit", help="inspect a single commit")
-    ap.add_argument("--head", action="store_true", help="inspect HEAD only")
-    ap.add_argument("--since", help="inspect <ref>..HEAD")
-    ap.add_argument("--dry-run", action="store_true", help="classify + print, write nothing")
-    ap.add_argument("--install-hook", action="store_true", help="install the post-commit hook and exit")
-    a = ap.parse_args()
-
-    reg = load_registry()
-    ROOT = reg["__root__"]
-
-    if a.install_hook:
-        return install_hook(reg)
-
-    if a.head or a.commit:
-        commits = [resolve(a.commit or "HEAD")]
-    elif a.since:
-        commits = commits_in_range(a.since)
-    else:
-        wm = read_watermark(reg)
-        commits = commits_in_range(wm) if wm else [resolve("HEAD")]
-
-    jazz = _jazz(reg)
-    write = (not a.dry_run) and (jazz is not None)
-    open_docs = load_open_docs(jazz)
-
-    actions = []
-    for sha in commits:
-        actions += process_commit(sha, jazz, open_docs, write)
-
-    for kind, doc, tid in actions:
-        print("  %-7s %-45s ticket %s" % (kind, doc, tid))
-    tag = " [dry-run]" if a.dry_run else ("" if write else " [no jazz_telemetry — not written]")
-    print("doc_watch: %d commit(s), %d action(s)%s" % (len(commits), len(actions), tag))
-
-    # advance the watermark only for modes that logically processed up to HEAD (not a targeted --commit)
-    if write and commits and a.commit is None:
-        write_watermark(reg, resolve("HEAD"))
-    return 0
-
-
-if __name__ == "__main__":
-    try:
-        sys.exit(main())
-    except Exception as e:  # noqa: BLE001  -- best-effort: never crash a commit hook
-        sys.stderr.write("[doc_watch] %r\n" % e)
-        sys.exit(0)
 ');
 INSERT INTO "code_blobs" VALUES('cc9e3604de6ad9477e0966330afc654cd4b32d9b','php',10994,'<?php
 /*
@@ -19442,173 +18969,325 @@ if __name__ == "__main__":
         sys.stderr.write("[ingest_self] %r\n" % e)
         sys.exit(0)
 ');
+INSERT INTO "code_blobs" VALUES('8ddf2b221e3f8cc757e1756924710b41d6bebd71','python',7444,'#!/usr/bin/env python3
+"""db_export.py -- export the CMS database as a git-viewable SQL dump (+ compressed).
+
+Dumps CONGRUENCY_SQLITE to state/seed.sql (readable CREATE TABLE + INSERT statements you can diff in git)
+and state/seed.sql.xz (compressed, for a fast deploy restore). Excludes local-noise / secret tables by
+default -- the `events` tracker log and the auth tables (Login_Password/User_Group_Mappings/Group_Privileges)
+-- so the committed seed is a clean public showcase. The self-hosting source/doc archive (with full history)
+is kept: the browsable version history is the point.
+
+    python3 tools/db_export.py                 # -> state/seed.sql (+ .xz); events + auth excluded
+    python3 tools/db_export.py --keep-auth     # keep the auth tables (bake in the demo admin), drop events
+    python3 tools/db_export.py --keep-events   # include the tracker event log
+    python3 tools/db_export.py --all           # include everything (auth + events)
+    python3 tools/db_export.py --keep-auth --last-n 25   # keep only the last 25 commits of history
+
+Registry-gated, python-only; Variant-A bug report on exception.
+"""
+import argparse
+import json
+import lzma
+import os
+import shutil
+import sqlite3
+import sys
+import tempfile
+import traceback
+from datetime import datetime
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = None
+DEFAULT_EXCLUDE = ("events", "Login_Password", "User_Group_Mappings", "Group_Privileges")
+
+
+def find_registry(start=HERE):
+    d = os.path.abspath(start)
+    while True:
+        cand = os.path.join(d, "registry.json")
+        if os.path.isfile(cand):
+            return cand
+        parent = os.path.dirname(d)
+        if parent == d:
+            raise FileNotFoundError("registry.json not found at/above %s" % start)
+        d = parent
+
+
+def load_registry():
+    p = find_registry()
+    reg = json.load(open(p))
+    reg["__root__"] = os.path.dirname(p)
+    return reg
+
+
+def db_path(reg):
+    """The CMS DB the app reads: install.json''s CONGRUENCY_SQLITE, else the jazz default."""
+    cfg = os.path.join(reg["__root__"], "checkouts", "current", "install.json")
+    try:
+        j = json.load(open(cfg))
+        if j.get("CONGRUENCY_SQLITE"):
+            return os.path.expanduser(j["CONGRUENCY_SQLITE"])
+    except Exception:  # noqa: BLE001
+        pass
+    return os.path.join(os.path.expanduser("~"), ".jazz", "congruency.sqlite")
+
+
+def bug_report(reg, exc, tb, note="db_export"):
+    root = (reg or {}).get("__root__") or ROOT or HERE
+    path = os.path.join(root, (reg or {}).get("bug_reports", "logs/bug_reports.jsonl"))
+    frames = traceback.extract_tb(exc.__traceback__)
+    last = frames[-1] if frames else None
+    entry = {"filename": os.path.basename(__file__), "function": last.name if last else "?",
+             "time-of-occurance": datetime.now().isoformat(),
+             "methods-to-reproduce": "python3 tools/db_export.py " + " ".join(sys.argv[1:]),
+             "possible-cause": "%s: %s" % (type(exc).__name__, exc),
+             "traceback": tb.strip().splitlines()[-6:], "note": note}
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        open(path, "a").write(json.dumps(entry) + "\n")
+    except OSError:
+        pass
+    return path
+
+
+def prune_history(c, last_n):
+    """Cut the tail off the self-hosting archive: keep refs from the most recent N commits, plus ALWAYS the
+    running source (is_current=1), then drop orphaned blobs. Bounds the history index without losing the
+    current source; full history is rebuildable from git with `ingest_self --backfill`."""
+    kept_commits = 0
+    for refs, blobs in (("code_refs", "code_blobs"), ("doc_refs", "doc_blobs")):
+        if not c.execute("SELECT 1 FROM sqlite_master WHERE type=''table'' AND name=?", (refs,)).fetchone():
+            continue
+        keep = [r[0] for r in c.execute(
+            ''SELECT commit_sha FROM (SELECT commit_sha, MAX(ts) t FROM "%s" GROUP BY commit_sha) ''
+            ''ORDER BY t DESC LIMIT ?'' % refs, (last_n,))]
+        kept_commits = max(kept_commits, len(keep))
+        if not keep:
+            continue
+        ph = ",".join("?" * len(keep))
+        c.execute(''DELETE FROM "%s" WHERE is_current=0 AND commit_sha NOT IN (%s)'' % (refs, ph), keep)
+        c.execute(''DELETE FROM "%s" WHERE hash NOT IN (SELECT hash FROM "%s")'' % (blobs, refs))
+    return kept_commits
+
+
+def export(reg, exclude, last_n=None):
+    db = db_path(reg)
+    if not os.path.isfile(db):
+        raise FileNotFoundError("no CMS DB at %s" % db)
+    state = os.path.join(reg["__root__"], "checkouts", "current", "state")
+    os.makedirs(state, exist_ok=True)
+
+    # Work on a copy so the live DB is never mutated: drop excluded tables, prune history, VACUUM, then dump.
+    fd, tmp = tempfile.mkstemp(suffix=".sqlite")
+    os.close(fd)
+    shutil.copy(db, tmp)
+    try:
+        c = sqlite3.connect(tmp)
+        dropped = []
+        for t in exclude:
+            if c.execute("SELECT 1 FROM sqlite_master WHERE type=''table'' AND name=?", (t,)).fetchone():
+                c.execute(''DROP TABLE "%s"'' % t)
+                dropped.append(t)
+        if last_n:
+            prune_history(c, last_n)
+        c.commit()
+        c.execute("VACUUM")
+        c.commit()
+        sql = "\n".join(c.iterdump()) + "\n"
+        c.close()
+    finally:
+        os.remove(tmp)
+
+    seed = os.path.join(state, "seed.sql")
+    # newline="" so CRLF in blob bodies survives the write (text mode would translate \r\n -> \n and break
+    # the content hash on round-trip; db_import reads with newline="" too).
+    with open(seed, "w", newline="") as f:
+        f.write(sql)
+    with lzma.open(seed + ".xz", "wt", preset=9, newline="") as f:
+        f.write(sql)
+    return seed, len(sql.encode("utf-8")), dropped
+
+
+def main():
+    global ROOT
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--keep-events", action="store_true", help="include the tracker event log")
+    ap.add_argument("--keep-auth", action="store_true", help="include the auth tables (bakes in the demo admin)")
+    ap.add_argument("--all", action="store_true", help="include everything (auth + events)")
+    ap.add_argument("--last-n", type=int, metavar="N",
+                    help="keep only the last N commits of source/doc history (+ always the running source)")
+    a = ap.parse_args()
+    reg = None
+    try:
+        reg = load_registry()
+        ROOT = reg["__root__"]
+        auth = ("Login_Password", "User_Group_Mappings", "Group_Privileges")
+        if a.all:
+            exclude = ()
+        else:
+            exclude = tuple(t for t in DEFAULT_EXCLUDE
+                            if not (a.keep_events and t == "events")
+                            and not (a.keep_auth and t in auth))
+        seed, nbytes, dropped = export(reg, exclude, a.last_n)
+        rel = os.path.relpath(seed, reg["__root__"])
+        hist = ("last %d commits" % a.last_n) if a.last_n else "full history"
+        print("db_export: wrote %s (%.2f MB text, %.2f MB xz); history: %s; excluded: %s" % (
+            rel, nbytes / 1024 / 1024, os.path.getsize(seed + ".xz") / 1024 / 1024,
+            hist, ", ".join(dropped) or "none"))
+        return 0
+    except Exception as e:  # noqa: BLE001
+        tb = traceback.format_exc()
+        try:
+            bug_report(reg, e, tb)
+        except Exception:  # noqa: BLE001
+            pass
+        sys.stderr.write(tb)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+');
+INSERT INTO "code_blobs" VALUES('4b526d03fde11c393bec31fad64cd7607da78c5e','python',4912,'#!/usr/bin/env python3
+"""db_import.py -- rebuild a CMS database from the SQL seed (state/seed.sql).
+
+MANUAL tool -- NOT run on any crank or hook. Builds a fresh DB from the committed seed. Refuses to clobber
+an existing target without --force, and never touches the live DB unless you point --to at it explicitly.
+
+    python3 tools/db_import.py --verify                 # build to a throwaway temp DB + print table counts
+    python3 tools/db_import.py --to /tmp/new.sqlite     # build a fresh DB from state/seed.sql[.xz]
+    python3 tools/db_import.py --to X --force           # overwrite X if it exists
+
+Registry-gated, python-only.
+"""
+import argparse
+import json
+import lzma
+import os
+import sqlite3
+import sys
+import tempfile
+import traceback
+from datetime import datetime
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = None
+
+
+def find_registry(start=HERE):
+    d = os.path.abspath(start)
+    while True:
+        cand = os.path.join(d, "registry.json")
+        if os.path.isfile(cand):
+            return cand
+        parent = os.path.dirname(d)
+        if parent == d:
+            raise FileNotFoundError("registry.json not found at/above %s" % start)
+        d = parent
+
+
+def load_registry():
+    p = find_registry()
+    reg = json.load(open(p))
+    reg["__root__"] = os.path.dirname(p)
+    return reg
+
+
+def bug_report(reg, exc, tb, note="db_import"):
+    root = (reg or {}).get("__root__") or ROOT or HERE
+    path = os.path.join(root, (reg or {}).get("bug_reports", "logs/bug_reports.jsonl"))
+    frames = traceback.extract_tb(exc.__traceback__)
+    last = frames[-1] if frames else None
+    entry = {"filename": os.path.basename(__file__), "function": last.name if last else "?",
+             "time-of-occurance": datetime.now().isoformat(),
+             "methods-to-reproduce": "python3 tools/db_import.py " + " ".join(sys.argv[1:]),
+             "possible-cause": "%s: %s" % (type(exc).__name__, exc),
+             "traceback": tb.strip().splitlines()[-6:], "note": note}
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        open(path, "a").write(json.dumps(entry) + "\n")
+    except OSError:
+        pass
+    return path
+
+
+def seed_sql(reg):
+    state = os.path.join(reg["__root__"], "checkouts", "current", "state")
+    plain = os.path.join(state, "seed.sql")
+    xz = plain + ".xz"
+    # newline="" so CRLF in blob bodies survives the read (text mode would translate \r\n -> \n, breaking
+    # the content hash — the seed is written with newline="" too).
+    if os.path.isfile(plain):
+        return open(plain, newline="").read()
+    if os.path.isfile(xz):
+        with lzma.open(xz, "rt", newline="") as f:
+            return f.read()
+    raise FileNotFoundError("no state/seed.sql[.xz] -- run tools/db_export.py first")
+
+
+def build(sql, target):
+    c = sqlite3.connect(target)
+    c.executescript(sql)
+    c.commit()
+    counts = {t: c.execute(''SELECT COUNT(*) FROM "%s"'' % t).fetchone()[0]
+              for (t,) in c.execute("SELECT name FROM sqlite_master WHERE type=''table'' AND name NOT LIKE ''sqlite_%'' ORDER BY name")}
+    c.close()
+    return counts
+
+
+def main():
+    global ROOT
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--to", help="target DB path to build")
+    ap.add_argument("--force", action="store_true", help="overwrite an existing --to target")
+    ap.add_argument("--verify", action="store_true", help="build to a temp DB + print counts (no writes kept)")
+    a = ap.parse_args()
+    reg = None
+    try:
+        reg = load_registry()
+        ROOT = reg["__root__"]
+        sql = seed_sql(reg)
+
+        if a.verify:
+            fd, tmp = tempfile.mkstemp(suffix=".sqlite")
+            os.close(fd)
+            os.remove(tmp)
+            counts = build(sql, tmp)
+            os.remove(tmp)
+            print("db_import --verify: seed builds cleanly -> %d rows across %d tables" % (
+                sum(counts.values()), len(counts)))
+            for t, n in counts.items():
+                print("  %-24s %d" % (t, n))
+            return 0
+
+        if not a.to:
+            sys.stderr.write("db_import: --to <path> required (or --verify)\n")
+            return 2
+        target = os.path.abspath(os.path.expanduser(a.to))
+        if os.path.exists(target) and not a.force:
+            sys.stderr.write("db_import: %s exists; pass --force to overwrite\n" % target)
+            return 2
+        if os.path.exists(target):
+            os.remove(target)
+        counts = build(sql, target)
+        print("db_import: built %s (%d rows across %d tables)" % (
+            target, sum(counts.values()), len(counts)))
+        return 0
+    except Exception as e:  # noqa: BLE001
+        tb = traceback.format_exc()
+        try:
+            bug_report(reg, e, tb)
+        except Exception:  # noqa: BLE001
+            pass
+        sys.stderr.write(tb)
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+');
 CREATE TABLE code_refs  (hash TEXT, path TEXT, commit_sha TEXT, ts REAL, is_current INTEGER DEFAULT 0);
-INSERT INTO "code_refs" VALUES('a5cfc62aa29449be08989ce4e376d722325d6893','checkouts/current/bin/Execute.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('8209e13bcc2f0d74ce673bb4d33f6a4241d18948','checkouts/current/bin/Harness/AutoLoaderHarness.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('bc0a30e5d232dc85b298f34e395c3b2df47272b2','checkouts/current/bin/Harness/ConfigFormHarness.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('d8c907ad08d04a8596da49caf63eacbf61cc60f1','checkouts/current/bin/Harness/DAOHarness.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('d8f4949a3b88325c04828c603f2ddcf24374ecb4','checkouts/current/bin/Harness/FormManagerHarness.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('07dc45fa64d3340bf491e45d24de083b62458297','checkouts/current/bin/Harness/FormSystemHarness.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('09956707b23aa6c2a70a62247539cb8f95a644da','checkouts/current/bin/Harness/OrderFormHarness.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('5b3518b69dfa2a02e9f629166b131acbc2e41b33','checkouts/current/bin/Harness/POMHarness.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('f748d9e1fbd148c9a959ce1ae2da0b990ac8fa2a','checkouts/current/bin/Harness/PriceListHarness.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('09956707b23aa6c2a70a62247539cb8f95a644da','checkouts/current/bin/Harness/RadioCreationHarness.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('9f4ac28acd7b990ec650ecc4a454dfef73078fe1','checkouts/current/bin/Harness/TagHarness.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('02d6f69d6f4da0249b4cb7f2025748e318055814','checkouts/current/bin/Harness/TagLoaderHarness.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('1a5fe8395c595120ddc5836e202f11475a9003c5','checkouts/current/bin/Harness/UserDAOHarness.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('1421b026297471e290db69d60cea17a80b3bc743','checkouts/current/bin/Initialize_POM.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('4f8904e176134af5a354e29413ea01b8c146b190','checkouts/current/boot/AutoLoader.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('a27fbc58eaa7fe21a41fb6faac1ebebd6a1e0032','checkouts/current/boot/configure.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('756c2bd27443597feea646d9b03371e5e714be25','checkouts/current/boot/rest.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('bc15b2eda4887801247ab9909a0bb7cdfe4e3dba','checkouts/current/boot/router.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('e67f45723ca2da3b8b9ea7ca58f1b113953bc4a4','checkouts/current/boot/shim.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('60c74c5b5d80409d5755f8fcd9d98b80722ac302','checkouts/current/invocators/tags/Maker/PriceMakerControl.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('6162ad292fdf96b2e2acee65ae16c18da55f416d','checkouts/current/invocators/tags/MemoryList.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('7245d47eeca6c42e771b0bdb35ce0d03b1324d27','checkouts/current/invocators/tags/dev/BugDemo.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('c7e1fad0a14d13f10d8ed4d8a5990a2e47fbdeb0','checkouts/current/invocators/tags/dev/BugReport.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('b28d69e85fb05c34a280464f78abf890e98e62a1','checkouts/current/invocators/tags/dev/CategoryPages.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('6e61698ea36cd59260cc06c2979a06d7b674f28f','checkouts/current/invocators/tags/dev/FormTag.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('bdeb6f2d5723fcd7f26e3d9160049a020027858b','checkouts/current/invocators/tags/dev/PageList.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('810e2006cf5680094c69fd72f8bbb1fbe767c8d1','checkouts/current/invocators/tags/dev/SiteMap.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('fe48db5b7fd472d0bda4513eedfaaf851201bee8','checkouts/current/invocators/tags/dev/TagList.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('9879e050a015cbd9f0b14172f33cad3dd21b4aaa','checkouts/current/invocators/tags/dev/TagPageHandler.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('b5728cb12bee5d2842da9f9945d408de14ddeafd','checkouts/current/invocators/tags/dev/TicketList.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('9f04ca9e222c807ba59c0c907aab241d7a09e126','checkouts/current/invocators/tags/dev/TicketLogger.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('d7e5225b66c8f4b6ee8024c1d4f21ed886701b99','checkouts/current/invocators/tags/document/BodyTag.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('7e85eada2f7bb22f9d88ad16f454c93a887b4af4','checkouts/current/invocators/tags/document/ContentTag.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('4eda0995279a8340b5e236dfb0e0c1f267bda9b6','checkouts/current/invocators/tags/document/TitleTag.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('a2623b2ab303763e21badd55142de640498cd00c','checkouts/current/invocators/tags/forms/Config_Form_Invocator.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('6cc7308ca147928472f6ee54b2affc26e8ab0b97','checkouts/current/invocators/tags/login/Login.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('7a6b1464e0956922181fe6e8a8ea752660c8d79a','checkouts/current/invocators/tags/login/ToggleLogin.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('f7d04d79acdb7cf79acd2708676d572f9e550a49','checkouts/current/invocators/tags/store/Catalog_Controller.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('425765189007b25cf5b03acd86c5923340452fb7','checkouts/current/invocators/tags/store/CategoryView.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('ee4c2cf39ed689c26849bbf6c63db4c55fa25d58','checkouts/current/invocators/tags/store/ItemList.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('0b469f9997bfed881aa945c824077800b88071c1','checkouts/current/invocators/tags/store/PriceChanger.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('a129a9735970e94595532d08794c395e0144b2e9','checkouts/current/invocators/tags/store/ProductView.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('43d5b86892bbcc957173300a3e4698a026cd8a99','checkouts/current/invocators/tags/store/ShowOrders.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('430c77605d1676c67bd2a3ee6e71f1277429875e','checkouts/current/invocators/tags/test_tags/TestTagA.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('b471eb80ddbb61b244a75285afe926581e9f2b4a','checkouts/current/invocators/tags/user/Admin_Links.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('3da998987456f2267df3c57f77cbec8b28dc6b0b','checkouts/current/invocators/tags/user/Controls.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('aa6e63db1af058690ab3324e566ad111d49956f7','checkouts/current/invocators/tags/utilities/Logout.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('ff3477839d8be287a9f140f07a7703505f09471a','checkouts/current/invocators/tags/utilities/ShowPost.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('198096cdb0b81d8c82a7acbc46ef6d2da759be33','checkouts/current/lib/ClassLoader/AutoLoader.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('2166c6ddb85907aa16b1a1ad61d85d6d4e5b3562','checkouts/current/lib/ClassLoader/ClassLoader.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('fa1ac346d87db61dc381afe678f1d539cbcddb8d','checkouts/current/lib/ClassLoader/ClassLoaderHeader.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('b3917cb88fa1362b2ae581d66c4b48a935b53a2c','checkouts/current/lib/ClassLoader/DestroyClassLoader.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('53eb9d42bb3d875ebbf695b91bf07f762eaf9fe0','checkouts/current/lib/ClassLoader/GetClassLoader.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('5ab2e612a5da4afacb6a048643034fad0d5e9eab','checkouts/current/lib/CommandQueues/Execution/CommandInterpreter.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('851fab36741e9e91ca530206ab622cb67b7a47c5','checkouts/current/lib/CommandQueues/InterfaceObject/CommandInterfaceObject.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('f0892182ee6bd38bc0fed2215bd98dc5aee21555','checkouts/current/lib/CommandQueues/Registry/CommandRegistry.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('8c15b5f98a72a467372f372213d5fe5cd6735684','checkouts/current/lib/Commands/Command.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('c7f703dc4932ff74b38a823dc61204892a624fde','checkouts/current/lib/Commands/CommandTemplate.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('1f577e1b8680140e500040d4ba863f7b6930371f','checkouts/current/lib/Commands/DestroySession.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('afdc144f41e04e4125c1db60145b16a760740277','checkouts/current/lib/Commands/Redirect.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('17cc6610de028696d994e186ed950f064219e002','checkouts/current/lib/Content/Content.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('6870d793176d5d57076910c1eb267bc3896355c0','checkouts/current/lib/Content/ContentDAO.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('b56f1b8b051d9d9a495f6c9ebd3c68ef94b8b1cb','checkouts/current/lib/Controller/Controller.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('cc6cb09288285606719886948e42002983554d2a','checkouts/current/lib/DatabaseDrivers/MySQL/AbstractDAO.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('043cdc12550d480912ec376d268e1319c855fddf','checkouts/current/lib/DatabaseDrivers/MySQL/DataConnection.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('fca303fd81f760728890182be895ddbe3276267d','checkouts/current/lib/DatabaseDrivers/MySQL/MysqlShimResult.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('1cbe84a55e0008565c427c503534564444aaf9c1','checkouts/current/lib/IOControl/HTML/HTMLFunctions/HTMLFunctions.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('9c4ef3682f7e7ebb3e78784afabdbf5b92ff37a8','checkouts/current/lib/IOControl/Validators/ValidateFields.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('e5151550349f8ee1396e839909dbb1eaa64f9fbf','checkouts/current/lib/Modules/Constructs/Document/DAO/DocumentDAO.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('d164b595ea35492e5b55b16f0b584ead735294b0','checkouts/current/lib/Modules/Constructs/Document/Document/Document.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('695658b24e8db571f671dfd0a58e1d021ed6da6f','checkouts/current/lib/Modules/Constructs/Document/DocumentInterface/DocumentManager.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('67184b06812b75e686936e2b979293c5476bb5c5','checkouts/current/lib/Modules/Constructs/Form/Beans/FormElementBean.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('148cc16191484a54d347e0d2275e82c1861a6c0a','checkouts/current/lib/Modules/Constructs/Form/DAO/FormElementDAO.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('d780338b45b72d9a3a31374d35150b961021871d','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/BigTextBox.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('4eb5dae39561c23fa9ad51ea78b3b01f4d486f15','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/Checkbox.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('1cc93ac20165e6911a6ed9e16dbc3e6d2dbd4a5f','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/DateField.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('2a772698b97a457ab7e7db8da56e6e4850109c0a','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/DbSelect.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('2f957853c7d8cbc9f9c6de3e8e6e7ec96db31959','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/FormConfigElement.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('2217ed2022153f87efcf1391579eb6b61ecc2752','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/MultiSelect.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('8b94a83a039e3492dae2ac0dd6f50b5b72cd6a53','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/NumberField.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('e13e92c63c4d45aaeab3516ea837367985398ecd','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/RadioSelect.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('d414e02c7a9674cbcba80263ac997f073747529e','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/TextBox.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('4d883b50b73d851b8db130f6fd41165ac6bde0ee','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/TextField.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('662183c7ce09cd87b8eb7d6b14391fb6a6813f64','checkouts/current/lib/Modules/Constructs/Form/FormElements/ConfigForm/ConfigFormInitialValue.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('c67e0e40e23c3bc57b3bd6a8fe0fe6a32b009e28','checkouts/current/lib/Modules/Constructs/Form/FormElements/ConfigForm/ConfigFormRadioSelect.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('f51a02fce0b7b2241b983e1aaa0a9b215b68c991','checkouts/current/lib/Modules/Constructs/Form/FormElements/ConfigForm/CreationForm/RadioCreationElement.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('fb12fd3c5c1bae608c6ed7d6f3c9b293396981c3','checkouts/current/lib/Modules/Constructs/Form/FormElements/Lib/AbstractFormElement.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('0256415ff915067dddfa9b25d71860c18b2c9568','checkouts/current/lib/Modules/Constructs/Form/FormElements/Lib/FormElementInterface.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('c22d8b152d87accf01d672fe0c6d791dfde9b65d','checkouts/current/lib/Modules/Constructs/Form/FormElements/Lib/FormElementUtils.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('ac4184f67dd270c0491e403064999fd301fa2a4c','checkouts/current/lib/Modules/Constructs/Form/FormInterface/FormManager.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('14d8f18534673ae6bcc071556fa73c67b9b68dfd','checkouts/current/lib/Modules/Constructs/Form/FormLogic/StandardForm.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('030d6d024f625319577332eceb56920d148a9a26','checkouts/current/lib/Modules/Constructs/Form/Lists/FormElementList.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('9bdefb6ac76916bd3dba6891535756ced90665fa','checkouts/current/lib/Modules/Constructs/Lists/AbstractList.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('f9f2dc0108bb654046a39dfc1a58e9796219cb78','checkouts/current/lib/Modules/Interfaces/Container.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('916c18c3962d084fbd87e04dfb57faa4e255cdb2','checkouts/current/lib/Modules/StoreModule/Admin/AbstractMaker.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('91d44468cb900e46872b1ecd3cbddc4537936624','checkouts/current/lib/Modules/StoreModule/Admin/CategoryMaker.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('4c57ba1981c08f8da961c48fcd9e3ae18a781d0c','checkouts/current/lib/Modules/StoreModule/Admin/ConfigFormFCE.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('21e743447b4ac42e78f886ade1267ac5dee79f4b','checkouts/current/lib/Modules/StoreModule/Admin/ConfigFormRSE.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('dad7a49d12c46c0fe58c0bce76c7d6ae178dfdb7','checkouts/current/lib/Modules/StoreModule/Admin/ConfigForm_1.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('4ff813aac73a5c8b4d23ebe8fa31a7c84ac4dab0','checkouts/current/lib/Modules/StoreModule/Admin/FormMaker.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('709446b8bdf6ec6c13557475492f846a6db28d74','checkouts/current/lib/Modules/StoreModule/Admin/OrderMaker.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('bdce1b32bf8c1d8ebe63d507ca5e85b33613e3db','checkouts/current/lib/Modules/StoreModule/Admin/PageMaker.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('0523bbc5583b52829223b20f4fcdd3933d608b16','checkouts/current/lib/Modules/StoreModule/Admin/PriceMaker.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('84611ce3885d089c514c6ae1b14cf0936f10c653','checkouts/current/lib/Modules/StoreModule/Admin/ProductMaker.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('b8d4c135ca6bdc9df945be1339589748f9ce530e','checkouts/current/lib/Modules/StoreModule/Admin/RadioCreation.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('2e5a6567c547596846d17b551cd03108fae1d36d','checkouts/current/lib/Modules/StoreModule/Catalog/Category/Category.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('0fe9fd4a1d9fa75e190507ef0d95f5ffc580ec89','checkouts/current/lib/Modules/StoreModule/Catalog/DAO/CatalogDAO.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('966f4f9bfb28357110c85779781d8308e4995a3d','checkouts/current/lib/Modules/StoreModule/Catalog/DAO/ProductDAO.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('78c7b13e2ddee0598958d80572cf346a2f6924f2','checkouts/current/lib/Modules/StoreModule/Catalog/List/CategoryList.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('d6a13ce35fed70b16d7bfaa7812ab76e9ece129b','checkouts/current/lib/Modules/StoreModule/Catalog/List/PriceList.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('2b1880686ad7d648cedb52d5140fd98f29d2b6f3','checkouts/current/lib/Modules/StoreModule/Catalog/List/ProductList.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('d970e2ea7f3822a6e4e16d97bf9ad5f0f5b86e2a','checkouts/current/lib/Modules/StoreModule/Catalog/List/ProductMakerList.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('04400994d1f97f6d04cc1cd0196bff4c14566397','checkouts/current/lib/Modules/StoreModule/Catalog/Product/Product.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('afe3108fc081064332c888d793decdf8b7c871c9','checkouts/current/lib/Modules/StoreModule/Catalog/price/PriceDAO.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('af651ac6c2c9d9d9026dfb34e544409d9f553c73','checkouts/current/lib/Modules/StoreModule/Container/Store.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('97e0044de2eea94efd5f7fa3350641ec018a62e5','checkouts/current/lib/Modules/StoreModule/Order/DAO/Order.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('ac7f1fa1391520799aaa501d685fa6df8fc5e43c','checkouts/current/lib/Modules/StoreModule/Order/DAO/OrderDAO.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('9e9c879f28b5b65376502cb1756aacd14b41ee00','checkouts/current/lib/Modules/StoreModule/Order/List/OrderList.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('98f8b656cb5b0d92aa08d8c1b1234df36530c3f0','checkouts/current/lib/Modules/StoreModule/Order/OrderSystem/ConfigForm.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('26f474f95df8686006d03459144444ea983fa939','checkouts/current/lib/Modules/StoreModule/Order/OrderSystem/OrderForm.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('c31cb4d6cff37ccca8a964ac5b6b1dfe41ae712b','checkouts/current/lib/Modules/StoreModule/Order/OrderSystem/Orderer.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('88ba4b20139af165267148b701c4d1ac6f50cf29','checkouts/current/lib/Modules/taglib/Admin_Tag.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('4e7b40c97370e72d7f194207cffe4914be1cce18','checkouts/current/lib/Modules/taglib/Tag_Interface.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('6e1e5ee8a173292df225709090e3452892e1d8d8','checkouts/current/lib/PersistanceObjectManager/PersistentObjectManager.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('a47fff6be6ca0270b802c402abf21b05ca203066','checkouts/current/lib/Sort/SortIterator.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('6f7b7c73d1362876ac213630ec89469b8eb98639','checkouts/current/lib/TagLoader/Arguments/TagArguments.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('aad39c7664beae8a9c5f9cc9456da2e5f6aa2aed','checkouts/current/lib/TagLoader/Parser/Tag_Parser.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('bbbfc23dce3ddc222dbf5ea3107a9e5f6e1c220a','checkouts/current/lib/TagLoader/Tag/Tag_Wrapper.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('53658979d0309c06c7d3b62f4e00d4f794be39de','checkouts/current/lib/UserAuthentication/UserDAO.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('999837c4fd3cf099c30d8fabedf9569f59a10c39','checkouts/current/lib/UserAuthentication/UserPrivilegeSet.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('cea88c23bfc6f5cf9882c22609ce06a218ac3e8a','checkouts/current/tools/crawl.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('295afef8273c5e24d35dd8aeeb43931a835efb68','checkouts/current/tools/deploy_lifecycle_check.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('1014720bc252914cac96ac0dffe966260ec94633','checkouts/current/tools/doc_watch.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('cc9e3604de6ad9477e0966330afc654cd4b32d9b','checkouts/current/tools/formelement_roundtrip.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('0d75b0d1349f36d58a1e895efa140c06b2bfc8c9','checkouts/current/tools/gpl_stamp.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('ec0b6d92949598ea217805290800feb0ce735fed','checkouts/current/tools/make_state.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('d542be04920bd0043da518023ab4d81f9b7463fd','checkouts/current/tools/mint_crank.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('d91d46feadac022055367ebde386b3f8e10cc99d','checkouts/current/tools/predict.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('e0f9e147487e937dae497f0d7bedf1cf68b1ead5','checkouts/current/tools/provision_php.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('84411b3b9c8e3343c5bdcc481891959ebb5d0fe2','checkouts/current/tools/serve.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('80e8213394f7df610e039da7933e8c7fd4babc46','checkouts/current/tools/tagcheck.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('cb87643a9c45360e52859cef23ba70854ae864fc','checkouts/current/tools/tostring_check.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('f50ae8faa8d38135433b1d8d9f360e0a9655c130','checkouts/current/versioning/checkout.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('fcff965fe4d7ad1421d6231a6caa66a8cf6a83c7','checkouts/current/versioning/gitutil.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('452d7b575c85e1480c1f157f236cd2fa5e5b500a','checkouts/current/versioning/ops/__init__.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('0864fba22aa656aa7974352ffd057f76985be922','checkouts/current/versioning/ops/__main__.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('7c4d5eed528e67d46512b3c39bec8c22206ef50d','checkouts/current/versioning/ops/commit_release.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('607928f9650153c95bb96dfda73f55cd8dbba2d4','checkouts/current/versioning/ops/generate_manifest.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('a7f10c62f8e5be5c12eaa70184524ff0937b1001','checkouts/current/versioning/ops/git_commit.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('e0776811c9cf8f4cd916ba456af241637404bcd4','checkouts/current/versioning/ops/git_push.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('05f4bae70abba50c134e16ff87e7d0fdf1670443','checkouts/current/versioning/ops/opsrun.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('932527b46f3f154eae3cf61b60ca1d92f489f575','checkouts/current/versioning/ops/propagate_version.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('7d721481c5b7e3a47aaefc028fa3fa2225e85809','checkouts/current/versioning/ops/refresh_bundles.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('ff6decbb41f3d6b504961bfe5fe191fe38ba9c07','checkouts/current/versioning/ops/release.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('a03b381f4c777e6ab91dae7f64dcbd7d40862e81','checkouts/current/versioning/ops/run_op.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('162e52405cee78b856f200bd8f63d084cdfd18e2','checkouts/current/versioning/ops/run_ops.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('58f039d8cd36253f961784972d442ab56421f674','checkouts/current/versioning/ops/verify_bundles.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('51e309820c4e1505b403026666476f52ddae6fc6','checkouts/current/versioning/paths.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('d1e6973094a28fabdc415a9a17dbc00c1cc586bb','checkouts/current/versioning/push_branch.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('900a1cbd2b90d102c9741df6845ab7cc8c987646','checkouts/current/versioning/verify_git_state.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('8112f830faa66f6674c17d3006124a305cd9692f','checkouts/current/versioning/version_source.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('1738673bc49073f5bfcf41c526cdeb39d80b81fb','checkouts/current/www/index.php','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('3bba9fa79ef5adeedea31c84aa09db1500fef5a1','tracker/install_signals.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('2c8ed98806d33b33e87b1bf69a7d2b83df8c6fd8','tracker/signals-mcp/server.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('d27d3195f829b5f2264cb923a257a345ac7323a9','tracker/store.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "code_refs" VALUES('92c3a730220629e408eb8b01a5621217fbd8efe4','tracker/ticket.py','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
 INSERT INTO "code_refs" VALUES('cdf56f92c540e04e43b038d379c71e68e366b7a7','main:deploy.py','f267973760045823fd5cf20e6c267026a9349b6c',1783371830.0,1);
 INSERT INTO "code_refs" VALUES('58a2da089d103ce55925014d6eb6988b847edcd9','main:install.py','f267973760045823fd5cf20e6c267026a9349b6c',1783371830.0,1);
 INSERT INTO "code_refs" VALUES('a5cfc62aa29449be08989ce4e376d722325d6893','checkouts/current/bin/Execute.php','14e3140bb7756ec3c5c1db4f9ebfa3ceb6e919e2',1783373991.0,0);
@@ -23388,184 +23067,540 @@ INSERT INTO "code_refs" VALUES('3bba9fa79ef5adeedea31c84aa09db1500fef5a1','track
 INSERT INTO "code_refs" VALUES('2c8ed98806d33b33e87b1bf69a7d2b83df8c6fd8','tracker/signals-mcp/server.py','c9c1b1d5a55974240e06a91deea90d13ed16b63d',1783394808.0,0);
 INSERT INTO "code_refs" VALUES('d27d3195f829b5f2264cb923a257a345ac7323a9','tracker/store.py','c9c1b1d5a55974240e06a91deea90d13ed16b63d',1783394808.0,0);
 INSERT INTO "code_refs" VALUES('92c3a730220629e408eb8b01a5621217fbd8efe4','tracker/ticket.py','c9c1b1d5a55974240e06a91deea90d13ed16b63d',1783394808.0,0);
-INSERT INTO "code_refs" VALUES('a5cfc62aa29449be08989ce4e376d722325d6893','checkouts/current/bin/Execute.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('8209e13bcc2f0d74ce673bb4d33f6a4241d18948','checkouts/current/bin/Harness/AutoLoaderHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('bc0a30e5d232dc85b298f34e395c3b2df47272b2','checkouts/current/bin/Harness/ConfigFormHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('d8c907ad08d04a8596da49caf63eacbf61cc60f1','checkouts/current/bin/Harness/DAOHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('d8f4949a3b88325c04828c603f2ddcf24374ecb4','checkouts/current/bin/Harness/FormManagerHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('07dc45fa64d3340bf491e45d24de083b62458297','checkouts/current/bin/Harness/FormSystemHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('09956707b23aa6c2a70a62247539cb8f95a644da','checkouts/current/bin/Harness/OrderFormHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('5b3518b69dfa2a02e9f629166b131acbc2e41b33','checkouts/current/bin/Harness/POMHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('f748d9e1fbd148c9a959ce1ae2da0b990ac8fa2a','checkouts/current/bin/Harness/PriceListHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('09956707b23aa6c2a70a62247539cb8f95a644da','checkouts/current/bin/Harness/RadioCreationHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('9f4ac28acd7b990ec650ecc4a454dfef73078fe1','checkouts/current/bin/Harness/TagHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('02d6f69d6f4da0249b4cb7f2025748e318055814','checkouts/current/bin/Harness/TagLoaderHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('1a5fe8395c595120ddc5836e202f11475a9003c5','checkouts/current/bin/Harness/UserDAOHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('1421b026297471e290db69d60cea17a80b3bc743','checkouts/current/bin/Initialize_POM.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('4f8904e176134af5a354e29413ea01b8c146b190','checkouts/current/boot/AutoLoader.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('a27fbc58eaa7fe21a41fb6faac1ebebd6a1e0032','checkouts/current/boot/configure.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('c6dd6cecdc9ff55bbc5ff15e9df0a2d0dc5c4d4d','checkouts/current/boot/rest.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('e9031d73ed825868ee16067327dd5ddec13f9b3e','checkouts/current/boot/router.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('e67f45723ca2da3b8b9ea7ca58f1b113953bc4a4','checkouts/current/boot/shim.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('60c74c5b5d80409d5755f8fcd9d98b80722ac302','checkouts/current/invocators/tags/Maker/PriceMakerControl.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('6162ad292fdf96b2e2acee65ae16c18da55f416d','checkouts/current/invocators/tags/MemoryList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('a86cc97b492028951e1144f0020467d6efd3219b','checkouts/current/invocators/tags/dev/AnnotateHandler.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('49cda5b1a041fd1a5b054ec196135d4aaf79bfb7','checkouts/current/invocators/tags/dev/Annotations.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('7245d47eeca6c42e771b0bdb35ce0d03b1324d27','checkouts/current/invocators/tags/dev/BugDemo.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('c7e1fad0a14d13f10d8ed4d8a5990a2e47fbdeb0','checkouts/current/invocators/tags/dev/BugReport.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('a9364b51f31ba28ce5d894de6ff79e7ab163d988','checkouts/current/invocators/tags/dev/CategoryPages.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('24f1527f9347f0849cae6080d13af46a22b54e19','checkouts/current/invocators/tags/dev/DatabaseInfo.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('45fd1279553f5b5aa5212347a1761d290e385409','checkouts/current/invocators/tags/dev/DocList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('6e61698ea36cd59260cc06c2979a06d7b674f28f','checkouts/current/invocators/tags/dev/FormTag.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('55c17a1e07f4beeaef177f73ef6263ee7b56c9d6','checkouts/current/invocators/tags/dev/NewCategoryHandler.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('bdeb6f2d5723fcd7f26e3d9160049a020027858b','checkouts/current/invocators/tags/dev/PageList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('c6788b46db91f20bb1cdfaf8dd9ba88363ee2bd8','checkouts/current/invocators/tags/dev/SiteMap.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('ac1d94e69de95cd68e5edf01a2359e7b5ffb8ac1','checkouts/current/invocators/tags/dev/SourceList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('a543e4f1c420b579c0bbc4b2e9ae0a29bdfbb7ab','checkouts/current/invocators/tags/dev/Style.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('fe48db5b7fd472d0bda4513eedfaaf851201bee8','checkouts/current/invocators/tags/dev/TagList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('5c2c55224cfe70ac3d82b539b7d1dc9fd6763fe8','checkouts/current/invocators/tags/dev/TagPageHandler.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('b5728cb12bee5d2842da9f9945d408de14ddeafd','checkouts/current/invocators/tags/dev/TicketList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('9f04ca9e222c807ba59c0c907aab241d7a09e126','checkouts/current/invocators/tags/dev/TicketLogger.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('d7e5225b66c8f4b6ee8024c1d4f21ed886701b99','checkouts/current/invocators/tags/document/BodyTag.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('7e85eada2f7bb22f9d88ad16f454c93a887b4af4','checkouts/current/invocators/tags/document/ContentTag.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('4eda0995279a8340b5e236dfb0e0c1f267bda9b6','checkouts/current/invocators/tags/document/TitleTag.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('a2623b2ab303763e21badd55142de640498cd00c','checkouts/current/invocators/tags/forms/Config_Form_Invocator.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('6cc7308ca147928472f6ee54b2affc26e8ab0b97','checkouts/current/invocators/tags/login/Login.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('7a6b1464e0956922181fe6e8a8ea752660c8d79a','checkouts/current/invocators/tags/login/ToggleLogin.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('f7d04d79acdb7cf79acd2708676d572f9e550a49','checkouts/current/invocators/tags/store/Catalog_Controller.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('425765189007b25cf5b03acd86c5923340452fb7','checkouts/current/invocators/tags/store/CategoryView.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('ee4c2cf39ed689c26849bbf6c63db4c55fa25d58','checkouts/current/invocators/tags/store/ItemList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('0b469f9997bfed881aa945c824077800b88071c1','checkouts/current/invocators/tags/store/PriceChanger.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('a129a9735970e94595532d08794c395e0144b2e9','checkouts/current/invocators/tags/store/ProductView.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('43d5b86892bbcc957173300a3e4698a026cd8a99','checkouts/current/invocators/tags/store/ShowOrders.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('430c77605d1676c67bd2a3ee6e71f1277429875e','checkouts/current/invocators/tags/test_tags/TestTagA.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('b471eb80ddbb61b244a75285afe926581e9f2b4a','checkouts/current/invocators/tags/user/Admin_Links.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('3da998987456f2267df3c57f77cbec8b28dc6b0b','checkouts/current/invocators/tags/user/Controls.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('aa6e63db1af058690ab3324e566ad111d49956f7','checkouts/current/invocators/tags/utilities/Logout.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('ff3477839d8be287a9f140f07a7703505f09471a','checkouts/current/invocators/tags/utilities/ShowPost.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('198096cdb0b81d8c82a7acbc46ef6d2da759be33','checkouts/current/lib/ClassLoader/AutoLoader.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('2166c6ddb85907aa16b1a1ad61d85d6d4e5b3562','checkouts/current/lib/ClassLoader/ClassLoader.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('fa1ac346d87db61dc381afe678f1d539cbcddb8d','checkouts/current/lib/ClassLoader/ClassLoaderHeader.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('b3917cb88fa1362b2ae581d66c4b48a935b53a2c','checkouts/current/lib/ClassLoader/DestroyClassLoader.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('53eb9d42bb3d875ebbf695b91bf07f762eaf9fe0','checkouts/current/lib/ClassLoader/GetClassLoader.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('5ab2e612a5da4afacb6a048643034fad0d5e9eab','checkouts/current/lib/CommandQueues/Execution/CommandInterpreter.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('851fab36741e9e91ca530206ab622cb67b7a47c5','checkouts/current/lib/CommandQueues/InterfaceObject/CommandInterfaceObject.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('f0892182ee6bd38bc0fed2215bd98dc5aee21555','checkouts/current/lib/CommandQueues/Registry/CommandRegistry.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('8c15b5f98a72a467372f372213d5fe5cd6735684','checkouts/current/lib/Commands/Command.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('c7f703dc4932ff74b38a823dc61204892a624fde','checkouts/current/lib/Commands/CommandTemplate.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('1f577e1b8680140e500040d4ba863f7b6930371f','checkouts/current/lib/Commands/DestroySession.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('afdc144f41e04e4125c1db60145b16a760740277','checkouts/current/lib/Commands/Redirect.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('17cc6610de028696d994e186ed950f064219e002','checkouts/current/lib/Content/Content.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('6870d793176d5d57076910c1eb267bc3896355c0','checkouts/current/lib/Content/ContentDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('b56f1b8b051d9d9a495f6c9ebd3c68ef94b8b1cb','checkouts/current/lib/Controller/Controller.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('cc6cb09288285606719886948e42002983554d2a','checkouts/current/lib/DatabaseDrivers/MySQL/AbstractDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('043cdc12550d480912ec376d268e1319c855fddf','checkouts/current/lib/DatabaseDrivers/MySQL/DataConnection.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('fca303fd81f760728890182be895ddbe3276267d','checkouts/current/lib/DatabaseDrivers/MySQL/MysqlShimResult.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('1cbe84a55e0008565c427c503534564444aaf9c1','checkouts/current/lib/IOControl/HTML/HTMLFunctions/HTMLFunctions.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('9c4ef3682f7e7ebb3e78784afabdbf5b92ff37a8','checkouts/current/lib/IOControl/Validators/ValidateFields.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('e5151550349f8ee1396e839909dbb1eaa64f9fbf','checkouts/current/lib/Modules/Constructs/Document/DAO/DocumentDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('d164b595ea35492e5b55b16f0b584ead735294b0','checkouts/current/lib/Modules/Constructs/Document/Document/Document.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('695658b24e8db571f671dfd0a58e1d021ed6da6f','checkouts/current/lib/Modules/Constructs/Document/DocumentInterface/DocumentManager.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('67184b06812b75e686936e2b979293c5476bb5c5','checkouts/current/lib/Modules/Constructs/Form/Beans/FormElementBean.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('148cc16191484a54d347e0d2275e82c1861a6c0a','checkouts/current/lib/Modules/Constructs/Form/DAO/FormElementDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('d780338b45b72d9a3a31374d35150b961021871d','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/BigTextBox.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('4eb5dae39561c23fa9ad51ea78b3b01f4d486f15','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/Checkbox.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('1cc93ac20165e6911a6ed9e16dbc3e6d2dbd4a5f','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/DateField.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('2a772698b97a457ab7e7db8da56e6e4850109c0a','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/DbSelect.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('2f957853c7d8cbc9f9c6de3e8e6e7ec96db31959','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/FormConfigElement.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('2217ed2022153f87efcf1391579eb6b61ecc2752','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/MultiSelect.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('8b94a83a039e3492dae2ac0dd6f50b5b72cd6a53','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/NumberField.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('e13e92c63c4d45aaeab3516ea837367985398ecd','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/RadioSelect.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('d414e02c7a9674cbcba80263ac997f073747529e','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/TextBox.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('4d883b50b73d851b8db130f6fd41165ac6bde0ee','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/TextField.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('662183c7ce09cd87b8eb7d6b14391fb6a6813f64','checkouts/current/lib/Modules/Constructs/Form/FormElements/ConfigForm/ConfigFormInitialValue.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('c67e0e40e23c3bc57b3bd6a8fe0fe6a32b009e28','checkouts/current/lib/Modules/Constructs/Form/FormElements/ConfigForm/ConfigFormRadioSelect.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('f51a02fce0b7b2241b983e1aaa0a9b215b68c991','checkouts/current/lib/Modules/Constructs/Form/FormElements/ConfigForm/CreationForm/RadioCreationElement.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('fb12fd3c5c1bae608c6ed7d6f3c9b293396981c3','checkouts/current/lib/Modules/Constructs/Form/FormElements/Lib/AbstractFormElement.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('0256415ff915067dddfa9b25d71860c18b2c9568','checkouts/current/lib/Modules/Constructs/Form/FormElements/Lib/FormElementInterface.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('c22d8b152d87accf01d672fe0c6d791dfde9b65d','checkouts/current/lib/Modules/Constructs/Form/FormElements/Lib/FormElementUtils.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('ac4184f67dd270c0491e403064999fd301fa2a4c','checkouts/current/lib/Modules/Constructs/Form/FormInterface/FormManager.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('14d8f18534673ae6bcc071556fa73c67b9b68dfd','checkouts/current/lib/Modules/Constructs/Form/FormLogic/StandardForm.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('030d6d024f625319577332eceb56920d148a9a26','checkouts/current/lib/Modules/Constructs/Form/Lists/FormElementList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('9bdefb6ac76916bd3dba6891535756ced90665fa','checkouts/current/lib/Modules/Constructs/Lists/AbstractList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('f9f2dc0108bb654046a39dfc1a58e9796219cb78','checkouts/current/lib/Modules/Interfaces/Container.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('916c18c3962d084fbd87e04dfb57faa4e255cdb2','checkouts/current/lib/Modules/StoreModule/Admin/AbstractMaker.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('91d44468cb900e46872b1ecd3cbddc4537936624','checkouts/current/lib/Modules/StoreModule/Admin/CategoryMaker.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('4c57ba1981c08f8da961c48fcd9e3ae18a781d0c','checkouts/current/lib/Modules/StoreModule/Admin/ConfigFormFCE.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('21e743447b4ac42e78f886ade1267ac5dee79f4b','checkouts/current/lib/Modules/StoreModule/Admin/ConfigFormRSE.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('dad7a49d12c46c0fe58c0bce76c7d6ae178dfdb7','checkouts/current/lib/Modules/StoreModule/Admin/ConfigForm_1.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('4ff813aac73a5c8b4d23ebe8fa31a7c84ac4dab0','checkouts/current/lib/Modules/StoreModule/Admin/FormMaker.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('709446b8bdf6ec6c13557475492f846a6db28d74','checkouts/current/lib/Modules/StoreModule/Admin/OrderMaker.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('bdce1b32bf8c1d8ebe63d507ca5e85b33613e3db','checkouts/current/lib/Modules/StoreModule/Admin/PageMaker.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('0523bbc5583b52829223b20f4fcdd3933d608b16','checkouts/current/lib/Modules/StoreModule/Admin/PriceMaker.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('84611ce3885d089c514c6ae1b14cf0936f10c653','checkouts/current/lib/Modules/StoreModule/Admin/ProductMaker.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('b8d4c135ca6bdc9df945be1339589748f9ce530e','checkouts/current/lib/Modules/StoreModule/Admin/RadioCreation.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('2e5a6567c547596846d17b551cd03108fae1d36d','checkouts/current/lib/Modules/StoreModule/Catalog/Category/Category.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('0fe9fd4a1d9fa75e190507ef0d95f5ffc580ec89','checkouts/current/lib/Modules/StoreModule/Catalog/DAO/CatalogDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('966f4f9bfb28357110c85779781d8308e4995a3d','checkouts/current/lib/Modules/StoreModule/Catalog/DAO/ProductDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('78c7b13e2ddee0598958d80572cf346a2f6924f2','checkouts/current/lib/Modules/StoreModule/Catalog/List/CategoryList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('d6a13ce35fed70b16d7bfaa7812ab76e9ece129b','checkouts/current/lib/Modules/StoreModule/Catalog/List/PriceList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('2b1880686ad7d648cedb52d5140fd98f29d2b6f3','checkouts/current/lib/Modules/StoreModule/Catalog/List/ProductList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('d970e2ea7f3822a6e4e16d97bf9ad5f0f5b86e2a','checkouts/current/lib/Modules/StoreModule/Catalog/List/ProductMakerList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('04400994d1f97f6d04cc1cd0196bff4c14566397','checkouts/current/lib/Modules/StoreModule/Catalog/Product/Product.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('afe3108fc081064332c888d793decdf8b7c871c9','checkouts/current/lib/Modules/StoreModule/Catalog/price/PriceDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('af651ac6c2c9d9d9026dfb34e544409d9f553c73','checkouts/current/lib/Modules/StoreModule/Container/Store.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('97e0044de2eea94efd5f7fa3350641ec018a62e5','checkouts/current/lib/Modules/StoreModule/Order/DAO/Order.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('ac7f1fa1391520799aaa501d685fa6df8fc5e43c','checkouts/current/lib/Modules/StoreModule/Order/DAO/OrderDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('9e9c879f28b5b65376502cb1756aacd14b41ee00','checkouts/current/lib/Modules/StoreModule/Order/List/OrderList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('98f8b656cb5b0d92aa08d8c1b1234df36530c3f0','checkouts/current/lib/Modules/StoreModule/Order/OrderSystem/ConfigForm.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('26f474f95df8686006d03459144444ea983fa939','checkouts/current/lib/Modules/StoreModule/Order/OrderSystem/OrderForm.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('c31cb4d6cff37ccca8a964ac5b6b1dfe41ae712b','checkouts/current/lib/Modules/StoreModule/Order/OrderSystem/Orderer.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('88ba4b20139af165267148b701c4d1ac6f50cf29','checkouts/current/lib/Modules/taglib/Admin_Tag.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('4e7b40c97370e72d7f194207cffe4914be1cce18','checkouts/current/lib/Modules/taglib/Tag_Interface.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('6e1e5ee8a173292df225709090e3452892e1d8d8','checkouts/current/lib/PersistanceObjectManager/PersistentObjectManager.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('a47fff6be6ca0270b802c402abf21b05ca203066','checkouts/current/lib/Sort/SortIterator.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('6f7b7c73d1362876ac213630ec89469b8eb98639','checkouts/current/lib/TagLoader/Arguments/TagArguments.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('aad39c7664beae8a9c5f9cc9456da2e5f6aa2aed','checkouts/current/lib/TagLoader/Parser/Tag_Parser.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('bbbfc23dce3ddc222dbf5ea3107a9e5f6e1c220a','checkouts/current/lib/TagLoader/Tag/Tag_Wrapper.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('53658979d0309c06c7d3b62f4e00d4f794be39de','checkouts/current/lib/UserAuthentication/UserDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('999837c4fd3cf099c30d8fabedf9569f59a10c39','checkouts/current/lib/UserAuthentication/UserPrivilegeSet.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('7dcd7417f5f0758c134d22ab6d150ad14b176fc7','checkouts/current/tools/crawl.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('17d0fb70b954f21c40db47b740cc200283484569','checkouts/current/tools/db_export.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('0a7fe096c9969840d4a7ac7fb1815a58a4f3593e','checkouts/current/tools/db_import.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('5592de4da8c362b4b484f0db8ce4ad8c291939a2','checkouts/current/tools/db_verify.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('295afef8273c5e24d35dd8aeeb43931a835efb68','checkouts/current/tools/deploy_lifecycle_check.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('33a7027281f4140812b4e68c04f691f60ce51994','checkouts/current/tools/doc_watch.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('cc9e3604de6ad9477e0966330afc654cd4b32d9b','checkouts/current/tools/formelement_roundtrip.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('0d75b0d1349f36d58a1e895efa140c06b2bfc8c9','checkouts/current/tools/gpl_stamp.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('6a15dcf914fb6ed590aed17a212547b6ae55b804','checkouts/current/tools/ingest_self.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('ec0b6d92949598ea217805290800feb0ce735fed','checkouts/current/tools/make_state.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('d542be04920bd0043da518023ab4d81f9b7463fd','checkouts/current/tools/mint_crank.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('d91d46feadac022055367ebde386b3f8e10cc99d','checkouts/current/tools/predict.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('e0f9e147487e937dae497f0d7bedf1cf68b1ead5','checkouts/current/tools/provision_php.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('84411b3b9c8e3343c5bdcc481891959ebb5d0fe2','checkouts/current/tools/serve.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('9b0cc517037a59248944a20d7a9aea83566bd10b','checkouts/current/tools/set_admin.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('80e8213394f7df610e039da7933e8c7fd4babc46','checkouts/current/tools/tagcheck.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('cb87643a9c45360e52859cef23ba70854ae864fc','checkouts/current/tools/tostring_check.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('f50ae8faa8d38135433b1d8d9f360e0a9655c130','checkouts/current/versioning/checkout.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('fcff965fe4d7ad1421d6231a6caa66a8cf6a83c7','checkouts/current/versioning/gitutil.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('452d7b575c85e1480c1f157f236cd2fa5e5b500a','checkouts/current/versioning/ops/__init__.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('0864fba22aa656aa7974352ffd057f76985be922','checkouts/current/versioning/ops/__main__.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('7c4d5eed528e67d46512b3c39bec8c22206ef50d','checkouts/current/versioning/ops/commit_release.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('607928f9650153c95bb96dfda73f55cd8dbba2d4','checkouts/current/versioning/ops/generate_manifest.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('a7f10c62f8e5be5c12eaa70184524ff0937b1001','checkouts/current/versioning/ops/git_commit.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('e0776811c9cf8f4cd916ba456af241637404bcd4','checkouts/current/versioning/ops/git_push.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('05f4bae70abba50c134e16ff87e7d0fdf1670443','checkouts/current/versioning/ops/opsrun.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('932527b46f3f154eae3cf61b60ca1d92f489f575','checkouts/current/versioning/ops/propagate_version.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('7d721481c5b7e3a47aaefc028fa3fa2225e85809','checkouts/current/versioning/ops/refresh_bundles.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('ff6decbb41f3d6b504961bfe5fe191fe38ba9c07','checkouts/current/versioning/ops/release.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('a03b381f4c777e6ab91dae7f64dcbd7d40862e81','checkouts/current/versioning/ops/run_op.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('162e52405cee78b856f200bd8f63d084cdfd18e2','checkouts/current/versioning/ops/run_ops.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('58f039d8cd36253f961784972d442ab56421f674','checkouts/current/versioning/ops/verify_bundles.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('51e309820c4e1505b403026666476f52ddae6fc6','checkouts/current/versioning/paths.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('d1e6973094a28fabdc415a9a17dbc00c1cc586bb','checkouts/current/versioning/push_branch.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('900a1cbd2b90d102c9741df6845ab7cc8c987646','checkouts/current/versioning/verify_git_state.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('8112f830faa66f6674c17d3006124a305cd9692f','checkouts/current/versioning/version_source.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('1738673bc49073f5bfcf41c526cdeb39d80b81fb','checkouts/current/www/index.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('3bba9fa79ef5adeedea31c84aa09db1500fef5a1','tracker/install_signals.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('2c8ed98806d33b33e87b1bf69a7d2b83df8c6fd8','tracker/signals-mcp/server.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('d27d3195f829b5f2264cb923a257a345ac7323a9','tracker/store.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "code_refs" VALUES('92c3a730220629e408eb8b01a5621217fbd8efe4','tracker/ticket.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
+INSERT INTO "code_refs" VALUES('a5cfc62aa29449be08989ce4e376d722325d6893','checkouts/current/bin/Execute.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('8209e13bcc2f0d74ce673bb4d33f6a4241d18948','checkouts/current/bin/Harness/AutoLoaderHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('bc0a30e5d232dc85b298f34e395c3b2df47272b2','checkouts/current/bin/Harness/ConfigFormHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('d8c907ad08d04a8596da49caf63eacbf61cc60f1','checkouts/current/bin/Harness/DAOHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('d8f4949a3b88325c04828c603f2ddcf24374ecb4','checkouts/current/bin/Harness/FormManagerHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('07dc45fa64d3340bf491e45d24de083b62458297','checkouts/current/bin/Harness/FormSystemHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('09956707b23aa6c2a70a62247539cb8f95a644da','checkouts/current/bin/Harness/OrderFormHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('5b3518b69dfa2a02e9f629166b131acbc2e41b33','checkouts/current/bin/Harness/POMHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('f748d9e1fbd148c9a959ce1ae2da0b990ac8fa2a','checkouts/current/bin/Harness/PriceListHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('09956707b23aa6c2a70a62247539cb8f95a644da','checkouts/current/bin/Harness/RadioCreationHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('9f4ac28acd7b990ec650ecc4a454dfef73078fe1','checkouts/current/bin/Harness/TagHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('02d6f69d6f4da0249b4cb7f2025748e318055814','checkouts/current/bin/Harness/TagLoaderHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('1a5fe8395c595120ddc5836e202f11475a9003c5','checkouts/current/bin/Harness/UserDAOHarness.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('1421b026297471e290db69d60cea17a80b3bc743','checkouts/current/bin/Initialize_POM.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('4f8904e176134af5a354e29413ea01b8c146b190','checkouts/current/boot/AutoLoader.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('a27fbc58eaa7fe21a41fb6faac1ebebd6a1e0032','checkouts/current/boot/configure.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('c6dd6cecdc9ff55bbc5ff15e9df0a2d0dc5c4d4d','checkouts/current/boot/rest.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('e9031d73ed825868ee16067327dd5ddec13f9b3e','checkouts/current/boot/router.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('e67f45723ca2da3b8b9ea7ca58f1b113953bc4a4','checkouts/current/boot/shim.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('60c74c5b5d80409d5755f8fcd9d98b80722ac302','checkouts/current/invocators/tags/Maker/PriceMakerControl.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('6162ad292fdf96b2e2acee65ae16c18da55f416d','checkouts/current/invocators/tags/MemoryList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('a86cc97b492028951e1144f0020467d6efd3219b','checkouts/current/invocators/tags/dev/AnnotateHandler.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('49cda5b1a041fd1a5b054ec196135d4aaf79bfb7','checkouts/current/invocators/tags/dev/Annotations.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('7245d47eeca6c42e771b0bdb35ce0d03b1324d27','checkouts/current/invocators/tags/dev/BugDemo.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('c7e1fad0a14d13f10d8ed4d8a5990a2e47fbdeb0','checkouts/current/invocators/tags/dev/BugReport.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('a9364b51f31ba28ce5d894de6ff79e7ab163d988','checkouts/current/invocators/tags/dev/CategoryPages.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('24f1527f9347f0849cae6080d13af46a22b54e19','checkouts/current/invocators/tags/dev/DatabaseInfo.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('45fd1279553f5b5aa5212347a1761d290e385409','checkouts/current/invocators/tags/dev/DocList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('6e61698ea36cd59260cc06c2979a06d7b674f28f','checkouts/current/invocators/tags/dev/FormTag.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('55c17a1e07f4beeaef177f73ef6263ee7b56c9d6','checkouts/current/invocators/tags/dev/NewCategoryHandler.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('bdeb6f2d5723fcd7f26e3d9160049a020027858b','checkouts/current/invocators/tags/dev/PageList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('c6788b46db91f20bb1cdfaf8dd9ba88363ee2bd8','checkouts/current/invocators/tags/dev/SiteMap.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('ac1d94e69de95cd68e5edf01a2359e7b5ffb8ac1','checkouts/current/invocators/tags/dev/SourceList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('a543e4f1c420b579c0bbc4b2e9ae0a29bdfbb7ab','checkouts/current/invocators/tags/dev/Style.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('fe48db5b7fd472d0bda4513eedfaaf851201bee8','checkouts/current/invocators/tags/dev/TagList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('5c2c55224cfe70ac3d82b539b7d1dc9fd6763fe8','checkouts/current/invocators/tags/dev/TagPageHandler.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('b5728cb12bee5d2842da9f9945d408de14ddeafd','checkouts/current/invocators/tags/dev/TicketList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('9f04ca9e222c807ba59c0c907aab241d7a09e126','checkouts/current/invocators/tags/dev/TicketLogger.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('d7e5225b66c8f4b6ee8024c1d4f21ed886701b99','checkouts/current/invocators/tags/document/BodyTag.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('7e85eada2f7bb22f9d88ad16f454c93a887b4af4','checkouts/current/invocators/tags/document/ContentTag.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('4eda0995279a8340b5e236dfb0e0c1f267bda9b6','checkouts/current/invocators/tags/document/TitleTag.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('a2623b2ab303763e21badd55142de640498cd00c','checkouts/current/invocators/tags/forms/Config_Form_Invocator.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('6cc7308ca147928472f6ee54b2affc26e8ab0b97','checkouts/current/invocators/tags/login/Login.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('7a6b1464e0956922181fe6e8a8ea752660c8d79a','checkouts/current/invocators/tags/login/ToggleLogin.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('f7d04d79acdb7cf79acd2708676d572f9e550a49','checkouts/current/invocators/tags/store/Catalog_Controller.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('425765189007b25cf5b03acd86c5923340452fb7','checkouts/current/invocators/tags/store/CategoryView.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('ee4c2cf39ed689c26849bbf6c63db4c55fa25d58','checkouts/current/invocators/tags/store/ItemList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('0b469f9997bfed881aa945c824077800b88071c1','checkouts/current/invocators/tags/store/PriceChanger.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('a129a9735970e94595532d08794c395e0144b2e9','checkouts/current/invocators/tags/store/ProductView.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('43d5b86892bbcc957173300a3e4698a026cd8a99','checkouts/current/invocators/tags/store/ShowOrders.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('430c77605d1676c67bd2a3ee6e71f1277429875e','checkouts/current/invocators/tags/test_tags/TestTagA.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('b471eb80ddbb61b244a75285afe926581e9f2b4a','checkouts/current/invocators/tags/user/Admin_Links.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('3da998987456f2267df3c57f77cbec8b28dc6b0b','checkouts/current/invocators/tags/user/Controls.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('aa6e63db1af058690ab3324e566ad111d49956f7','checkouts/current/invocators/tags/utilities/Logout.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('ff3477839d8be287a9f140f07a7703505f09471a','checkouts/current/invocators/tags/utilities/ShowPost.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('198096cdb0b81d8c82a7acbc46ef6d2da759be33','checkouts/current/lib/ClassLoader/AutoLoader.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('2166c6ddb85907aa16b1a1ad61d85d6d4e5b3562','checkouts/current/lib/ClassLoader/ClassLoader.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('fa1ac346d87db61dc381afe678f1d539cbcddb8d','checkouts/current/lib/ClassLoader/ClassLoaderHeader.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('b3917cb88fa1362b2ae581d66c4b48a935b53a2c','checkouts/current/lib/ClassLoader/DestroyClassLoader.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('53eb9d42bb3d875ebbf695b91bf07f762eaf9fe0','checkouts/current/lib/ClassLoader/GetClassLoader.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('5ab2e612a5da4afacb6a048643034fad0d5e9eab','checkouts/current/lib/CommandQueues/Execution/CommandInterpreter.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('851fab36741e9e91ca530206ab622cb67b7a47c5','checkouts/current/lib/CommandQueues/InterfaceObject/CommandInterfaceObject.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('f0892182ee6bd38bc0fed2215bd98dc5aee21555','checkouts/current/lib/CommandQueues/Registry/CommandRegistry.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('8c15b5f98a72a467372f372213d5fe5cd6735684','checkouts/current/lib/Commands/Command.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('c7f703dc4932ff74b38a823dc61204892a624fde','checkouts/current/lib/Commands/CommandTemplate.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('1f577e1b8680140e500040d4ba863f7b6930371f','checkouts/current/lib/Commands/DestroySession.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('afdc144f41e04e4125c1db60145b16a760740277','checkouts/current/lib/Commands/Redirect.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('17cc6610de028696d994e186ed950f064219e002','checkouts/current/lib/Content/Content.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('6870d793176d5d57076910c1eb267bc3896355c0','checkouts/current/lib/Content/ContentDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('b56f1b8b051d9d9a495f6c9ebd3c68ef94b8b1cb','checkouts/current/lib/Controller/Controller.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('cc6cb09288285606719886948e42002983554d2a','checkouts/current/lib/DatabaseDrivers/MySQL/AbstractDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('043cdc12550d480912ec376d268e1319c855fddf','checkouts/current/lib/DatabaseDrivers/MySQL/DataConnection.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('fca303fd81f760728890182be895ddbe3276267d','checkouts/current/lib/DatabaseDrivers/MySQL/MysqlShimResult.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('1cbe84a55e0008565c427c503534564444aaf9c1','checkouts/current/lib/IOControl/HTML/HTMLFunctions/HTMLFunctions.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('9c4ef3682f7e7ebb3e78784afabdbf5b92ff37a8','checkouts/current/lib/IOControl/Validators/ValidateFields.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('e5151550349f8ee1396e839909dbb1eaa64f9fbf','checkouts/current/lib/Modules/Constructs/Document/DAO/DocumentDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('d164b595ea35492e5b55b16f0b584ead735294b0','checkouts/current/lib/Modules/Constructs/Document/Document/Document.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('695658b24e8db571f671dfd0a58e1d021ed6da6f','checkouts/current/lib/Modules/Constructs/Document/DocumentInterface/DocumentManager.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('67184b06812b75e686936e2b979293c5476bb5c5','checkouts/current/lib/Modules/Constructs/Form/Beans/FormElementBean.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('148cc16191484a54d347e0d2275e82c1861a6c0a','checkouts/current/lib/Modules/Constructs/Form/DAO/FormElementDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('d780338b45b72d9a3a31374d35150b961021871d','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/BigTextBox.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('4eb5dae39561c23fa9ad51ea78b3b01f4d486f15','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/Checkbox.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('1cc93ac20165e6911a6ed9e16dbc3e6d2dbd4a5f','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/DateField.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('2a772698b97a457ab7e7db8da56e6e4850109c0a','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/DbSelect.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('2f957853c7d8cbc9f9c6de3e8e6e7ec96db31959','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/FormConfigElement.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('2217ed2022153f87efcf1391579eb6b61ecc2752','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/MultiSelect.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('8b94a83a039e3492dae2ac0dd6f50b5b72cd6a53','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/NumberField.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('e13e92c63c4d45aaeab3516ea837367985398ecd','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/RadioSelect.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('d414e02c7a9674cbcba80263ac997f073747529e','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/TextBox.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('4d883b50b73d851b8db130f6fd41165ac6bde0ee','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/TextField.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('662183c7ce09cd87b8eb7d6b14391fb6a6813f64','checkouts/current/lib/Modules/Constructs/Form/FormElements/ConfigForm/ConfigFormInitialValue.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('c67e0e40e23c3bc57b3bd6a8fe0fe6a32b009e28','checkouts/current/lib/Modules/Constructs/Form/FormElements/ConfigForm/ConfigFormRadioSelect.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('f51a02fce0b7b2241b983e1aaa0a9b215b68c991','checkouts/current/lib/Modules/Constructs/Form/FormElements/ConfigForm/CreationForm/RadioCreationElement.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('fb12fd3c5c1bae608c6ed7d6f3c9b293396981c3','checkouts/current/lib/Modules/Constructs/Form/FormElements/Lib/AbstractFormElement.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('0256415ff915067dddfa9b25d71860c18b2c9568','checkouts/current/lib/Modules/Constructs/Form/FormElements/Lib/FormElementInterface.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('c22d8b152d87accf01d672fe0c6d791dfde9b65d','checkouts/current/lib/Modules/Constructs/Form/FormElements/Lib/FormElementUtils.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('ac4184f67dd270c0491e403064999fd301fa2a4c','checkouts/current/lib/Modules/Constructs/Form/FormInterface/FormManager.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('14d8f18534673ae6bcc071556fa73c67b9b68dfd','checkouts/current/lib/Modules/Constructs/Form/FormLogic/StandardForm.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('030d6d024f625319577332eceb56920d148a9a26','checkouts/current/lib/Modules/Constructs/Form/Lists/FormElementList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('9bdefb6ac76916bd3dba6891535756ced90665fa','checkouts/current/lib/Modules/Constructs/Lists/AbstractList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('f9f2dc0108bb654046a39dfc1a58e9796219cb78','checkouts/current/lib/Modules/Interfaces/Container.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('916c18c3962d084fbd87e04dfb57faa4e255cdb2','checkouts/current/lib/Modules/StoreModule/Admin/AbstractMaker.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('91d44468cb900e46872b1ecd3cbddc4537936624','checkouts/current/lib/Modules/StoreModule/Admin/CategoryMaker.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('4c57ba1981c08f8da961c48fcd9e3ae18a781d0c','checkouts/current/lib/Modules/StoreModule/Admin/ConfigFormFCE.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('21e743447b4ac42e78f886ade1267ac5dee79f4b','checkouts/current/lib/Modules/StoreModule/Admin/ConfigFormRSE.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('dad7a49d12c46c0fe58c0bce76c7d6ae178dfdb7','checkouts/current/lib/Modules/StoreModule/Admin/ConfigForm_1.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('4ff813aac73a5c8b4d23ebe8fa31a7c84ac4dab0','checkouts/current/lib/Modules/StoreModule/Admin/FormMaker.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('709446b8bdf6ec6c13557475492f846a6db28d74','checkouts/current/lib/Modules/StoreModule/Admin/OrderMaker.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('bdce1b32bf8c1d8ebe63d507ca5e85b33613e3db','checkouts/current/lib/Modules/StoreModule/Admin/PageMaker.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('0523bbc5583b52829223b20f4fcdd3933d608b16','checkouts/current/lib/Modules/StoreModule/Admin/PriceMaker.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('84611ce3885d089c514c6ae1b14cf0936f10c653','checkouts/current/lib/Modules/StoreModule/Admin/ProductMaker.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('b8d4c135ca6bdc9df945be1339589748f9ce530e','checkouts/current/lib/Modules/StoreModule/Admin/RadioCreation.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('2e5a6567c547596846d17b551cd03108fae1d36d','checkouts/current/lib/Modules/StoreModule/Catalog/Category/Category.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('0fe9fd4a1d9fa75e190507ef0d95f5ffc580ec89','checkouts/current/lib/Modules/StoreModule/Catalog/DAO/CatalogDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('966f4f9bfb28357110c85779781d8308e4995a3d','checkouts/current/lib/Modules/StoreModule/Catalog/DAO/ProductDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('78c7b13e2ddee0598958d80572cf346a2f6924f2','checkouts/current/lib/Modules/StoreModule/Catalog/List/CategoryList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('d6a13ce35fed70b16d7bfaa7812ab76e9ece129b','checkouts/current/lib/Modules/StoreModule/Catalog/List/PriceList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('2b1880686ad7d648cedb52d5140fd98f29d2b6f3','checkouts/current/lib/Modules/StoreModule/Catalog/List/ProductList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('d970e2ea7f3822a6e4e16d97bf9ad5f0f5b86e2a','checkouts/current/lib/Modules/StoreModule/Catalog/List/ProductMakerList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('04400994d1f97f6d04cc1cd0196bff4c14566397','checkouts/current/lib/Modules/StoreModule/Catalog/Product/Product.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('afe3108fc081064332c888d793decdf8b7c871c9','checkouts/current/lib/Modules/StoreModule/Catalog/price/PriceDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('af651ac6c2c9d9d9026dfb34e544409d9f553c73','checkouts/current/lib/Modules/StoreModule/Container/Store.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('97e0044de2eea94efd5f7fa3350641ec018a62e5','checkouts/current/lib/Modules/StoreModule/Order/DAO/Order.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('ac7f1fa1391520799aaa501d685fa6df8fc5e43c','checkouts/current/lib/Modules/StoreModule/Order/DAO/OrderDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('9e9c879f28b5b65376502cb1756aacd14b41ee00','checkouts/current/lib/Modules/StoreModule/Order/List/OrderList.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('98f8b656cb5b0d92aa08d8c1b1234df36530c3f0','checkouts/current/lib/Modules/StoreModule/Order/OrderSystem/ConfigForm.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('26f474f95df8686006d03459144444ea983fa939','checkouts/current/lib/Modules/StoreModule/Order/OrderSystem/OrderForm.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('c31cb4d6cff37ccca8a964ac5b6b1dfe41ae712b','checkouts/current/lib/Modules/StoreModule/Order/OrderSystem/Orderer.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('88ba4b20139af165267148b701c4d1ac6f50cf29','checkouts/current/lib/Modules/taglib/Admin_Tag.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('4e7b40c97370e72d7f194207cffe4914be1cce18','checkouts/current/lib/Modules/taglib/Tag_Interface.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('6e1e5ee8a173292df225709090e3452892e1d8d8','checkouts/current/lib/PersistanceObjectManager/PersistentObjectManager.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('a47fff6be6ca0270b802c402abf21b05ca203066','checkouts/current/lib/Sort/SortIterator.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('6f7b7c73d1362876ac213630ec89469b8eb98639','checkouts/current/lib/TagLoader/Arguments/TagArguments.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('aad39c7664beae8a9c5f9cc9456da2e5f6aa2aed','checkouts/current/lib/TagLoader/Parser/Tag_Parser.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('bbbfc23dce3ddc222dbf5ea3107a9e5f6e1c220a','checkouts/current/lib/TagLoader/Tag/Tag_Wrapper.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('53658979d0309c06c7d3b62f4e00d4f794be39de','checkouts/current/lib/UserAuthentication/UserDAO.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('999837c4fd3cf099c30d8fabedf9569f59a10c39','checkouts/current/lib/UserAuthentication/UserPrivilegeSet.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('7dcd7417f5f0758c134d22ab6d150ad14b176fc7','checkouts/current/tools/crawl.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('17d0fb70b954f21c40db47b740cc200283484569','checkouts/current/tools/db_export.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('0a7fe096c9969840d4a7ac7fb1815a58a4f3593e','checkouts/current/tools/db_import.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('5592de4da8c362b4b484f0db8ce4ad8c291939a2','checkouts/current/tools/db_verify.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('295afef8273c5e24d35dd8aeeb43931a835efb68','checkouts/current/tools/deploy_lifecycle_check.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('33a7027281f4140812b4e68c04f691f60ce51994','checkouts/current/tools/doc_watch.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('cc9e3604de6ad9477e0966330afc654cd4b32d9b','checkouts/current/tools/formelement_roundtrip.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('0d75b0d1349f36d58a1e895efa140c06b2bfc8c9','checkouts/current/tools/gpl_stamp.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('6a15dcf914fb6ed590aed17a212547b6ae55b804','checkouts/current/tools/ingest_self.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('ec0b6d92949598ea217805290800feb0ce735fed','checkouts/current/tools/make_state.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('d542be04920bd0043da518023ab4d81f9b7463fd','checkouts/current/tools/mint_crank.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('d91d46feadac022055367ebde386b3f8e10cc99d','checkouts/current/tools/predict.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('e0f9e147487e937dae497f0d7bedf1cf68b1ead5','checkouts/current/tools/provision_php.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('84411b3b9c8e3343c5bdcc481891959ebb5d0fe2','checkouts/current/tools/serve.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('9b0cc517037a59248944a20d7a9aea83566bd10b','checkouts/current/tools/set_admin.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('80e8213394f7df610e039da7933e8c7fd4babc46','checkouts/current/tools/tagcheck.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('cb87643a9c45360e52859cef23ba70854ae864fc','checkouts/current/tools/tostring_check.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('f50ae8faa8d38135433b1d8d9f360e0a9655c130','checkouts/current/versioning/checkout.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('fcff965fe4d7ad1421d6231a6caa66a8cf6a83c7','checkouts/current/versioning/gitutil.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('452d7b575c85e1480c1f157f236cd2fa5e5b500a','checkouts/current/versioning/ops/__init__.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('0864fba22aa656aa7974352ffd057f76985be922','checkouts/current/versioning/ops/__main__.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('7c4d5eed528e67d46512b3c39bec8c22206ef50d','checkouts/current/versioning/ops/commit_release.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('607928f9650153c95bb96dfda73f55cd8dbba2d4','checkouts/current/versioning/ops/generate_manifest.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('a7f10c62f8e5be5c12eaa70184524ff0937b1001','checkouts/current/versioning/ops/git_commit.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('e0776811c9cf8f4cd916ba456af241637404bcd4','checkouts/current/versioning/ops/git_push.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('05f4bae70abba50c134e16ff87e7d0fdf1670443','checkouts/current/versioning/ops/opsrun.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('932527b46f3f154eae3cf61b60ca1d92f489f575','checkouts/current/versioning/ops/propagate_version.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('7d721481c5b7e3a47aaefc028fa3fa2225e85809','checkouts/current/versioning/ops/refresh_bundles.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('ff6decbb41f3d6b504961bfe5fe191fe38ba9c07','checkouts/current/versioning/ops/release.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('a03b381f4c777e6ab91dae7f64dcbd7d40862e81','checkouts/current/versioning/ops/run_op.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('162e52405cee78b856f200bd8f63d084cdfd18e2','checkouts/current/versioning/ops/run_ops.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('58f039d8cd36253f961784972d442ab56421f674','checkouts/current/versioning/ops/verify_bundles.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('51e309820c4e1505b403026666476f52ddae6fc6','checkouts/current/versioning/paths.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('d1e6973094a28fabdc415a9a17dbc00c1cc586bb','checkouts/current/versioning/push_branch.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('900a1cbd2b90d102c9741df6845ab7cc8c987646','checkouts/current/versioning/verify_git_state.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('8112f830faa66f6674c17d3006124a305cd9692f','checkouts/current/versioning/version_source.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('1738673bc49073f5bfcf41c526cdeb39d80b81fb','checkouts/current/www/index.php','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('3bba9fa79ef5adeedea31c84aa09db1500fef5a1','tracker/install_signals.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('2c8ed98806d33b33e87b1bf69a7d2b83df8c6fd8','tracker/signals-mcp/server.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('d27d3195f829b5f2264cb923a257a345ac7323a9','tracker/store.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('92c3a730220629e408eb8b01a5621217fbd8efe4','tracker/ticket.py','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "code_refs" VALUES('a5cfc62aa29449be08989ce4e376d722325d6893','checkouts/current/bin/Execute.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('8209e13bcc2f0d74ce673bb4d33f6a4241d18948','checkouts/current/bin/Harness/AutoLoaderHarness.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('bc0a30e5d232dc85b298f34e395c3b2df47272b2','checkouts/current/bin/Harness/ConfigFormHarness.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('d8c907ad08d04a8596da49caf63eacbf61cc60f1','checkouts/current/bin/Harness/DAOHarness.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('d8f4949a3b88325c04828c603f2ddcf24374ecb4','checkouts/current/bin/Harness/FormManagerHarness.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('07dc45fa64d3340bf491e45d24de083b62458297','checkouts/current/bin/Harness/FormSystemHarness.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('09956707b23aa6c2a70a62247539cb8f95a644da','checkouts/current/bin/Harness/OrderFormHarness.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('5b3518b69dfa2a02e9f629166b131acbc2e41b33','checkouts/current/bin/Harness/POMHarness.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('f748d9e1fbd148c9a959ce1ae2da0b990ac8fa2a','checkouts/current/bin/Harness/PriceListHarness.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('09956707b23aa6c2a70a62247539cb8f95a644da','checkouts/current/bin/Harness/RadioCreationHarness.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('9f4ac28acd7b990ec650ecc4a454dfef73078fe1','checkouts/current/bin/Harness/TagHarness.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('02d6f69d6f4da0249b4cb7f2025748e318055814','checkouts/current/bin/Harness/TagLoaderHarness.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('1a5fe8395c595120ddc5836e202f11475a9003c5','checkouts/current/bin/Harness/UserDAOHarness.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('1421b026297471e290db69d60cea17a80b3bc743','checkouts/current/bin/Initialize_POM.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('4f8904e176134af5a354e29413ea01b8c146b190','checkouts/current/boot/AutoLoader.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('a27fbc58eaa7fe21a41fb6faac1ebebd6a1e0032','checkouts/current/boot/configure.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('c6dd6cecdc9ff55bbc5ff15e9df0a2d0dc5c4d4d','checkouts/current/boot/rest.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('e9031d73ed825868ee16067327dd5ddec13f9b3e','checkouts/current/boot/router.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('e67f45723ca2da3b8b9ea7ca58f1b113953bc4a4','checkouts/current/boot/shim.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('60c74c5b5d80409d5755f8fcd9d98b80722ac302','checkouts/current/invocators/tags/Maker/PriceMakerControl.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('6162ad292fdf96b2e2acee65ae16c18da55f416d','checkouts/current/invocators/tags/MemoryList.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('a86cc97b492028951e1144f0020467d6efd3219b','checkouts/current/invocators/tags/dev/AnnotateHandler.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('49cda5b1a041fd1a5b054ec196135d4aaf79bfb7','checkouts/current/invocators/tags/dev/Annotations.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('7245d47eeca6c42e771b0bdb35ce0d03b1324d27','checkouts/current/invocators/tags/dev/BugDemo.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('c7e1fad0a14d13f10d8ed4d8a5990a2e47fbdeb0','checkouts/current/invocators/tags/dev/BugReport.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('a9364b51f31ba28ce5d894de6ff79e7ab163d988','checkouts/current/invocators/tags/dev/CategoryPages.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('24f1527f9347f0849cae6080d13af46a22b54e19','checkouts/current/invocators/tags/dev/DatabaseInfo.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('45fd1279553f5b5aa5212347a1761d290e385409','checkouts/current/invocators/tags/dev/DocList.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('6e61698ea36cd59260cc06c2979a06d7b674f28f','checkouts/current/invocators/tags/dev/FormTag.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('55c17a1e07f4beeaef177f73ef6263ee7b56c9d6','checkouts/current/invocators/tags/dev/NewCategoryHandler.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('bdeb6f2d5723fcd7f26e3d9160049a020027858b','checkouts/current/invocators/tags/dev/PageList.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('c6788b46db91f20bb1cdfaf8dd9ba88363ee2bd8','checkouts/current/invocators/tags/dev/SiteMap.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('ac1d94e69de95cd68e5edf01a2359e7b5ffb8ac1','checkouts/current/invocators/tags/dev/SourceList.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('a543e4f1c420b579c0bbc4b2e9ae0a29bdfbb7ab','checkouts/current/invocators/tags/dev/Style.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('fe48db5b7fd472d0bda4513eedfaaf851201bee8','checkouts/current/invocators/tags/dev/TagList.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('5c2c55224cfe70ac3d82b539b7d1dc9fd6763fe8','checkouts/current/invocators/tags/dev/TagPageHandler.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('b5728cb12bee5d2842da9f9945d408de14ddeafd','checkouts/current/invocators/tags/dev/TicketList.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('9f04ca9e222c807ba59c0c907aab241d7a09e126','checkouts/current/invocators/tags/dev/TicketLogger.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('d7e5225b66c8f4b6ee8024c1d4f21ed886701b99','checkouts/current/invocators/tags/document/BodyTag.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('7e85eada2f7bb22f9d88ad16f454c93a887b4af4','checkouts/current/invocators/tags/document/ContentTag.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('4eda0995279a8340b5e236dfb0e0c1f267bda9b6','checkouts/current/invocators/tags/document/TitleTag.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('a2623b2ab303763e21badd55142de640498cd00c','checkouts/current/invocators/tags/forms/Config_Form_Invocator.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('6cc7308ca147928472f6ee54b2affc26e8ab0b97','checkouts/current/invocators/tags/login/Login.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('7a6b1464e0956922181fe6e8a8ea752660c8d79a','checkouts/current/invocators/tags/login/ToggleLogin.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('f7d04d79acdb7cf79acd2708676d572f9e550a49','checkouts/current/invocators/tags/store/Catalog_Controller.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('425765189007b25cf5b03acd86c5923340452fb7','checkouts/current/invocators/tags/store/CategoryView.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('ee4c2cf39ed689c26849bbf6c63db4c55fa25d58','checkouts/current/invocators/tags/store/ItemList.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('0b469f9997bfed881aa945c824077800b88071c1','checkouts/current/invocators/tags/store/PriceChanger.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('a129a9735970e94595532d08794c395e0144b2e9','checkouts/current/invocators/tags/store/ProductView.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('43d5b86892bbcc957173300a3e4698a026cd8a99','checkouts/current/invocators/tags/store/ShowOrders.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('430c77605d1676c67bd2a3ee6e71f1277429875e','checkouts/current/invocators/tags/test_tags/TestTagA.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('b471eb80ddbb61b244a75285afe926581e9f2b4a','checkouts/current/invocators/tags/user/Admin_Links.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('3da998987456f2267df3c57f77cbec8b28dc6b0b','checkouts/current/invocators/tags/user/Controls.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('aa6e63db1af058690ab3324e566ad111d49956f7','checkouts/current/invocators/tags/utilities/Logout.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('ff3477839d8be287a9f140f07a7703505f09471a','checkouts/current/invocators/tags/utilities/ShowPost.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('198096cdb0b81d8c82a7acbc46ef6d2da759be33','checkouts/current/lib/ClassLoader/AutoLoader.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('2166c6ddb85907aa16b1a1ad61d85d6d4e5b3562','checkouts/current/lib/ClassLoader/ClassLoader.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('fa1ac346d87db61dc381afe678f1d539cbcddb8d','checkouts/current/lib/ClassLoader/ClassLoaderHeader.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('b3917cb88fa1362b2ae581d66c4b48a935b53a2c','checkouts/current/lib/ClassLoader/DestroyClassLoader.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('53eb9d42bb3d875ebbf695b91bf07f762eaf9fe0','checkouts/current/lib/ClassLoader/GetClassLoader.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('5ab2e612a5da4afacb6a048643034fad0d5e9eab','checkouts/current/lib/CommandQueues/Execution/CommandInterpreter.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('851fab36741e9e91ca530206ab622cb67b7a47c5','checkouts/current/lib/CommandQueues/InterfaceObject/CommandInterfaceObject.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('f0892182ee6bd38bc0fed2215bd98dc5aee21555','checkouts/current/lib/CommandQueues/Registry/CommandRegistry.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('8c15b5f98a72a467372f372213d5fe5cd6735684','checkouts/current/lib/Commands/Command.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('c7f703dc4932ff74b38a823dc61204892a624fde','checkouts/current/lib/Commands/CommandTemplate.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('1f577e1b8680140e500040d4ba863f7b6930371f','checkouts/current/lib/Commands/DestroySession.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('afdc144f41e04e4125c1db60145b16a760740277','checkouts/current/lib/Commands/Redirect.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('17cc6610de028696d994e186ed950f064219e002','checkouts/current/lib/Content/Content.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('6870d793176d5d57076910c1eb267bc3896355c0','checkouts/current/lib/Content/ContentDAO.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('b56f1b8b051d9d9a495f6c9ebd3c68ef94b8b1cb','checkouts/current/lib/Controller/Controller.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('cc6cb09288285606719886948e42002983554d2a','checkouts/current/lib/DatabaseDrivers/MySQL/AbstractDAO.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('043cdc12550d480912ec376d268e1319c855fddf','checkouts/current/lib/DatabaseDrivers/MySQL/DataConnection.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('fca303fd81f760728890182be895ddbe3276267d','checkouts/current/lib/DatabaseDrivers/MySQL/MysqlShimResult.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('1cbe84a55e0008565c427c503534564444aaf9c1','checkouts/current/lib/IOControl/HTML/HTMLFunctions/HTMLFunctions.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('9c4ef3682f7e7ebb3e78784afabdbf5b92ff37a8','checkouts/current/lib/IOControl/Validators/ValidateFields.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('e5151550349f8ee1396e839909dbb1eaa64f9fbf','checkouts/current/lib/Modules/Constructs/Document/DAO/DocumentDAO.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('d164b595ea35492e5b55b16f0b584ead735294b0','checkouts/current/lib/Modules/Constructs/Document/Document/Document.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('695658b24e8db571f671dfd0a58e1d021ed6da6f','checkouts/current/lib/Modules/Constructs/Document/DocumentInterface/DocumentManager.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('67184b06812b75e686936e2b979293c5476bb5c5','checkouts/current/lib/Modules/Constructs/Form/Beans/FormElementBean.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('148cc16191484a54d347e0d2275e82c1861a6c0a','checkouts/current/lib/Modules/Constructs/Form/DAO/FormElementDAO.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('d780338b45b72d9a3a31374d35150b961021871d','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/BigTextBox.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('4eb5dae39561c23fa9ad51ea78b3b01f4d486f15','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/Checkbox.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('1cc93ac20165e6911a6ed9e16dbc3e6d2dbd4a5f','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/DateField.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('2a772698b97a457ab7e7db8da56e6e4850109c0a','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/DbSelect.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('2f957853c7d8cbc9f9c6de3e8e6e7ec96db31959','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/FormConfigElement.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('2217ed2022153f87efcf1391579eb6b61ecc2752','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/MultiSelect.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('8b94a83a039e3492dae2ac0dd6f50b5b72cd6a53','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/NumberField.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('e13e92c63c4d45aaeab3516ea837367985398ecd','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/RadioSelect.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('d414e02c7a9674cbcba80263ac997f073747529e','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/TextBox.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('4d883b50b73d851b8db130f6fd41165ac6bde0ee','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/TextField.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('662183c7ce09cd87b8eb7d6b14391fb6a6813f64','checkouts/current/lib/Modules/Constructs/Form/FormElements/ConfigForm/ConfigFormInitialValue.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('c67e0e40e23c3bc57b3bd6a8fe0fe6a32b009e28','checkouts/current/lib/Modules/Constructs/Form/FormElements/ConfigForm/ConfigFormRadioSelect.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('f51a02fce0b7b2241b983e1aaa0a9b215b68c991','checkouts/current/lib/Modules/Constructs/Form/FormElements/ConfigForm/CreationForm/RadioCreationElement.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('fb12fd3c5c1bae608c6ed7d6f3c9b293396981c3','checkouts/current/lib/Modules/Constructs/Form/FormElements/Lib/AbstractFormElement.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('0256415ff915067dddfa9b25d71860c18b2c9568','checkouts/current/lib/Modules/Constructs/Form/FormElements/Lib/FormElementInterface.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('c22d8b152d87accf01d672fe0c6d791dfde9b65d','checkouts/current/lib/Modules/Constructs/Form/FormElements/Lib/FormElementUtils.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('ac4184f67dd270c0491e403064999fd301fa2a4c','checkouts/current/lib/Modules/Constructs/Form/FormInterface/FormManager.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('14d8f18534673ae6bcc071556fa73c67b9b68dfd','checkouts/current/lib/Modules/Constructs/Form/FormLogic/StandardForm.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('030d6d024f625319577332eceb56920d148a9a26','checkouts/current/lib/Modules/Constructs/Form/Lists/FormElementList.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('9bdefb6ac76916bd3dba6891535756ced90665fa','checkouts/current/lib/Modules/Constructs/Lists/AbstractList.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('f9f2dc0108bb654046a39dfc1a58e9796219cb78','checkouts/current/lib/Modules/Interfaces/Container.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('916c18c3962d084fbd87e04dfb57faa4e255cdb2','checkouts/current/lib/Modules/StoreModule/Admin/AbstractMaker.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('91d44468cb900e46872b1ecd3cbddc4537936624','checkouts/current/lib/Modules/StoreModule/Admin/CategoryMaker.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('4c57ba1981c08f8da961c48fcd9e3ae18a781d0c','checkouts/current/lib/Modules/StoreModule/Admin/ConfigFormFCE.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('21e743447b4ac42e78f886ade1267ac5dee79f4b','checkouts/current/lib/Modules/StoreModule/Admin/ConfigFormRSE.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('dad7a49d12c46c0fe58c0bce76c7d6ae178dfdb7','checkouts/current/lib/Modules/StoreModule/Admin/ConfigForm_1.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('4ff813aac73a5c8b4d23ebe8fa31a7c84ac4dab0','checkouts/current/lib/Modules/StoreModule/Admin/FormMaker.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('709446b8bdf6ec6c13557475492f846a6db28d74','checkouts/current/lib/Modules/StoreModule/Admin/OrderMaker.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('bdce1b32bf8c1d8ebe63d507ca5e85b33613e3db','checkouts/current/lib/Modules/StoreModule/Admin/PageMaker.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('0523bbc5583b52829223b20f4fcdd3933d608b16','checkouts/current/lib/Modules/StoreModule/Admin/PriceMaker.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('84611ce3885d089c514c6ae1b14cf0936f10c653','checkouts/current/lib/Modules/StoreModule/Admin/ProductMaker.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('b8d4c135ca6bdc9df945be1339589748f9ce530e','checkouts/current/lib/Modules/StoreModule/Admin/RadioCreation.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('2e5a6567c547596846d17b551cd03108fae1d36d','checkouts/current/lib/Modules/StoreModule/Catalog/Category/Category.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('0fe9fd4a1d9fa75e190507ef0d95f5ffc580ec89','checkouts/current/lib/Modules/StoreModule/Catalog/DAO/CatalogDAO.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('966f4f9bfb28357110c85779781d8308e4995a3d','checkouts/current/lib/Modules/StoreModule/Catalog/DAO/ProductDAO.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('78c7b13e2ddee0598958d80572cf346a2f6924f2','checkouts/current/lib/Modules/StoreModule/Catalog/List/CategoryList.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('d6a13ce35fed70b16d7bfaa7812ab76e9ece129b','checkouts/current/lib/Modules/StoreModule/Catalog/List/PriceList.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('2b1880686ad7d648cedb52d5140fd98f29d2b6f3','checkouts/current/lib/Modules/StoreModule/Catalog/List/ProductList.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('d970e2ea7f3822a6e4e16d97bf9ad5f0f5b86e2a','checkouts/current/lib/Modules/StoreModule/Catalog/List/ProductMakerList.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('04400994d1f97f6d04cc1cd0196bff4c14566397','checkouts/current/lib/Modules/StoreModule/Catalog/Product/Product.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('afe3108fc081064332c888d793decdf8b7c871c9','checkouts/current/lib/Modules/StoreModule/Catalog/price/PriceDAO.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('af651ac6c2c9d9d9026dfb34e544409d9f553c73','checkouts/current/lib/Modules/StoreModule/Container/Store.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('97e0044de2eea94efd5f7fa3350641ec018a62e5','checkouts/current/lib/Modules/StoreModule/Order/DAO/Order.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('ac7f1fa1391520799aaa501d685fa6df8fc5e43c','checkouts/current/lib/Modules/StoreModule/Order/DAO/OrderDAO.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('9e9c879f28b5b65376502cb1756aacd14b41ee00','checkouts/current/lib/Modules/StoreModule/Order/List/OrderList.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('98f8b656cb5b0d92aa08d8c1b1234df36530c3f0','checkouts/current/lib/Modules/StoreModule/Order/OrderSystem/ConfigForm.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('26f474f95df8686006d03459144444ea983fa939','checkouts/current/lib/Modules/StoreModule/Order/OrderSystem/OrderForm.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('c31cb4d6cff37ccca8a964ac5b6b1dfe41ae712b','checkouts/current/lib/Modules/StoreModule/Order/OrderSystem/Orderer.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('88ba4b20139af165267148b701c4d1ac6f50cf29','checkouts/current/lib/Modules/taglib/Admin_Tag.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('4e7b40c97370e72d7f194207cffe4914be1cce18','checkouts/current/lib/Modules/taglib/Tag_Interface.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('6e1e5ee8a173292df225709090e3452892e1d8d8','checkouts/current/lib/PersistanceObjectManager/PersistentObjectManager.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('a47fff6be6ca0270b802c402abf21b05ca203066','checkouts/current/lib/Sort/SortIterator.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('6f7b7c73d1362876ac213630ec89469b8eb98639','checkouts/current/lib/TagLoader/Arguments/TagArguments.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('aad39c7664beae8a9c5f9cc9456da2e5f6aa2aed','checkouts/current/lib/TagLoader/Parser/Tag_Parser.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('bbbfc23dce3ddc222dbf5ea3107a9e5f6e1c220a','checkouts/current/lib/TagLoader/Tag/Tag_Wrapper.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('53658979d0309c06c7d3b62f4e00d4f794be39de','checkouts/current/lib/UserAuthentication/UserDAO.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('999837c4fd3cf099c30d8fabedf9569f59a10c39','checkouts/current/lib/UserAuthentication/UserPrivilegeSet.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('7dcd7417f5f0758c134d22ab6d150ad14b176fc7','checkouts/current/tools/crawl.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('8ddf2b221e3f8cc757e1756924710b41d6bebd71','checkouts/current/tools/db_export.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('4b526d03fde11c393bec31fad64cd7607da78c5e','checkouts/current/tools/db_import.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('5592de4da8c362b4b484f0db8ce4ad8c291939a2','checkouts/current/tools/db_verify.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('295afef8273c5e24d35dd8aeeb43931a835efb68','checkouts/current/tools/deploy_lifecycle_check.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('33a7027281f4140812b4e68c04f691f60ce51994','checkouts/current/tools/doc_watch.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('cc9e3604de6ad9477e0966330afc654cd4b32d9b','checkouts/current/tools/formelement_roundtrip.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('0d75b0d1349f36d58a1e895efa140c06b2bfc8c9','checkouts/current/tools/gpl_stamp.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('6a15dcf914fb6ed590aed17a212547b6ae55b804','checkouts/current/tools/ingest_self.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('ec0b6d92949598ea217805290800feb0ce735fed','checkouts/current/tools/make_state.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('d542be04920bd0043da518023ab4d81f9b7463fd','checkouts/current/tools/mint_crank.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('d91d46feadac022055367ebde386b3f8e10cc99d','checkouts/current/tools/predict.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('e0f9e147487e937dae497f0d7bedf1cf68b1ead5','checkouts/current/tools/provision_php.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('84411b3b9c8e3343c5bdcc481891959ebb5d0fe2','checkouts/current/tools/serve.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('9b0cc517037a59248944a20d7a9aea83566bd10b','checkouts/current/tools/set_admin.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('80e8213394f7df610e039da7933e8c7fd4babc46','checkouts/current/tools/tagcheck.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('cb87643a9c45360e52859cef23ba70854ae864fc','checkouts/current/tools/tostring_check.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('f50ae8faa8d38135433b1d8d9f360e0a9655c130','checkouts/current/versioning/checkout.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('fcff965fe4d7ad1421d6231a6caa66a8cf6a83c7','checkouts/current/versioning/gitutil.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('452d7b575c85e1480c1f157f236cd2fa5e5b500a','checkouts/current/versioning/ops/__init__.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('0864fba22aa656aa7974352ffd057f76985be922','checkouts/current/versioning/ops/__main__.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('7c4d5eed528e67d46512b3c39bec8c22206ef50d','checkouts/current/versioning/ops/commit_release.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('607928f9650153c95bb96dfda73f55cd8dbba2d4','checkouts/current/versioning/ops/generate_manifest.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('a7f10c62f8e5be5c12eaa70184524ff0937b1001','checkouts/current/versioning/ops/git_commit.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('e0776811c9cf8f4cd916ba456af241637404bcd4','checkouts/current/versioning/ops/git_push.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('05f4bae70abba50c134e16ff87e7d0fdf1670443','checkouts/current/versioning/ops/opsrun.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('932527b46f3f154eae3cf61b60ca1d92f489f575','checkouts/current/versioning/ops/propagate_version.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('7d721481c5b7e3a47aaefc028fa3fa2225e85809','checkouts/current/versioning/ops/refresh_bundles.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('ff6decbb41f3d6b504961bfe5fe191fe38ba9c07','checkouts/current/versioning/ops/release.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('a03b381f4c777e6ab91dae7f64dcbd7d40862e81','checkouts/current/versioning/ops/run_op.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('162e52405cee78b856f200bd8f63d084cdfd18e2','checkouts/current/versioning/ops/run_ops.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('58f039d8cd36253f961784972d442ab56421f674','checkouts/current/versioning/ops/verify_bundles.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('51e309820c4e1505b403026666476f52ddae6fc6','checkouts/current/versioning/paths.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('d1e6973094a28fabdc415a9a17dbc00c1cc586bb','checkouts/current/versioning/push_branch.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('900a1cbd2b90d102c9741df6845ab7cc8c987646','checkouts/current/versioning/verify_git_state.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('8112f830faa66f6674c17d3006124a305cd9692f','checkouts/current/versioning/version_source.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('1738673bc49073f5bfcf41c526cdeb39d80b81fb','checkouts/current/www/index.php','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('3bba9fa79ef5adeedea31c84aa09db1500fef5a1','tracker/install_signals.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('2c8ed98806d33b33e87b1bf69a7d2b83df8c6fd8','tracker/signals-mcp/server.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('d27d3195f829b5f2264cb923a257a345ac7323a9','tracker/store.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('92c3a730220629e408eb8b01a5621217fbd8efe4','tracker/ticket.py','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "code_refs" VALUES('a5cfc62aa29449be08989ce4e376d722325d6893','checkouts/current/bin/Execute.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('8209e13bcc2f0d74ce673bb4d33f6a4241d18948','checkouts/current/bin/Harness/AutoLoaderHarness.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('bc0a30e5d232dc85b298f34e395c3b2df47272b2','checkouts/current/bin/Harness/ConfigFormHarness.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('d8c907ad08d04a8596da49caf63eacbf61cc60f1','checkouts/current/bin/Harness/DAOHarness.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('d8f4949a3b88325c04828c603f2ddcf24374ecb4','checkouts/current/bin/Harness/FormManagerHarness.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('07dc45fa64d3340bf491e45d24de083b62458297','checkouts/current/bin/Harness/FormSystemHarness.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('09956707b23aa6c2a70a62247539cb8f95a644da','checkouts/current/bin/Harness/OrderFormHarness.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('5b3518b69dfa2a02e9f629166b131acbc2e41b33','checkouts/current/bin/Harness/POMHarness.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('f748d9e1fbd148c9a959ce1ae2da0b990ac8fa2a','checkouts/current/bin/Harness/PriceListHarness.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('09956707b23aa6c2a70a62247539cb8f95a644da','checkouts/current/bin/Harness/RadioCreationHarness.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('9f4ac28acd7b990ec650ecc4a454dfef73078fe1','checkouts/current/bin/Harness/TagHarness.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('02d6f69d6f4da0249b4cb7f2025748e318055814','checkouts/current/bin/Harness/TagLoaderHarness.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('1a5fe8395c595120ddc5836e202f11475a9003c5','checkouts/current/bin/Harness/UserDAOHarness.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('1421b026297471e290db69d60cea17a80b3bc743','checkouts/current/bin/Initialize_POM.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('4f8904e176134af5a354e29413ea01b8c146b190','checkouts/current/boot/AutoLoader.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('a27fbc58eaa7fe21a41fb6faac1ebebd6a1e0032','checkouts/current/boot/configure.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('c6dd6cecdc9ff55bbc5ff15e9df0a2d0dc5c4d4d','checkouts/current/boot/rest.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('e9031d73ed825868ee16067327dd5ddec13f9b3e','checkouts/current/boot/router.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('e67f45723ca2da3b8b9ea7ca58f1b113953bc4a4','checkouts/current/boot/shim.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('60c74c5b5d80409d5755f8fcd9d98b80722ac302','checkouts/current/invocators/tags/Maker/PriceMakerControl.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('6162ad292fdf96b2e2acee65ae16c18da55f416d','checkouts/current/invocators/tags/MemoryList.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('a86cc97b492028951e1144f0020467d6efd3219b','checkouts/current/invocators/tags/dev/AnnotateHandler.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('49cda5b1a041fd1a5b054ec196135d4aaf79bfb7','checkouts/current/invocators/tags/dev/Annotations.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('7245d47eeca6c42e771b0bdb35ce0d03b1324d27','checkouts/current/invocators/tags/dev/BugDemo.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('c7e1fad0a14d13f10d8ed4d8a5990a2e47fbdeb0','checkouts/current/invocators/tags/dev/BugReport.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('a9364b51f31ba28ce5d894de6ff79e7ab163d988','checkouts/current/invocators/tags/dev/CategoryPages.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('24f1527f9347f0849cae6080d13af46a22b54e19','checkouts/current/invocators/tags/dev/DatabaseInfo.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('45fd1279553f5b5aa5212347a1761d290e385409','checkouts/current/invocators/tags/dev/DocList.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('6e61698ea36cd59260cc06c2979a06d7b674f28f','checkouts/current/invocators/tags/dev/FormTag.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('55c17a1e07f4beeaef177f73ef6263ee7b56c9d6','checkouts/current/invocators/tags/dev/NewCategoryHandler.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('bdeb6f2d5723fcd7f26e3d9160049a020027858b','checkouts/current/invocators/tags/dev/PageList.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('c6788b46db91f20bb1cdfaf8dd9ba88363ee2bd8','checkouts/current/invocators/tags/dev/SiteMap.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('ac1d94e69de95cd68e5edf01a2359e7b5ffb8ac1','checkouts/current/invocators/tags/dev/SourceList.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('a543e4f1c420b579c0bbc4b2e9ae0a29bdfbb7ab','checkouts/current/invocators/tags/dev/Style.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('fe48db5b7fd472d0bda4513eedfaaf851201bee8','checkouts/current/invocators/tags/dev/TagList.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('5c2c55224cfe70ac3d82b539b7d1dc9fd6763fe8','checkouts/current/invocators/tags/dev/TagPageHandler.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('b5728cb12bee5d2842da9f9945d408de14ddeafd','checkouts/current/invocators/tags/dev/TicketList.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('9f04ca9e222c807ba59c0c907aab241d7a09e126','checkouts/current/invocators/tags/dev/TicketLogger.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('d7e5225b66c8f4b6ee8024c1d4f21ed886701b99','checkouts/current/invocators/tags/document/BodyTag.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('7e85eada2f7bb22f9d88ad16f454c93a887b4af4','checkouts/current/invocators/tags/document/ContentTag.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('4eda0995279a8340b5e236dfb0e0c1f267bda9b6','checkouts/current/invocators/tags/document/TitleTag.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('a2623b2ab303763e21badd55142de640498cd00c','checkouts/current/invocators/tags/forms/Config_Form_Invocator.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('6cc7308ca147928472f6ee54b2affc26e8ab0b97','checkouts/current/invocators/tags/login/Login.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('7a6b1464e0956922181fe6e8a8ea752660c8d79a','checkouts/current/invocators/tags/login/ToggleLogin.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('f7d04d79acdb7cf79acd2708676d572f9e550a49','checkouts/current/invocators/tags/store/Catalog_Controller.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('425765189007b25cf5b03acd86c5923340452fb7','checkouts/current/invocators/tags/store/CategoryView.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('ee4c2cf39ed689c26849bbf6c63db4c55fa25d58','checkouts/current/invocators/tags/store/ItemList.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('0b469f9997bfed881aa945c824077800b88071c1','checkouts/current/invocators/tags/store/PriceChanger.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('a129a9735970e94595532d08794c395e0144b2e9','checkouts/current/invocators/tags/store/ProductView.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('43d5b86892bbcc957173300a3e4698a026cd8a99','checkouts/current/invocators/tags/store/ShowOrders.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('430c77605d1676c67bd2a3ee6e71f1277429875e','checkouts/current/invocators/tags/test_tags/TestTagA.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('b471eb80ddbb61b244a75285afe926581e9f2b4a','checkouts/current/invocators/tags/user/Admin_Links.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('3da998987456f2267df3c57f77cbec8b28dc6b0b','checkouts/current/invocators/tags/user/Controls.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('aa6e63db1af058690ab3324e566ad111d49956f7','checkouts/current/invocators/tags/utilities/Logout.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('ff3477839d8be287a9f140f07a7703505f09471a','checkouts/current/invocators/tags/utilities/ShowPost.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('198096cdb0b81d8c82a7acbc46ef6d2da759be33','checkouts/current/lib/ClassLoader/AutoLoader.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('2166c6ddb85907aa16b1a1ad61d85d6d4e5b3562','checkouts/current/lib/ClassLoader/ClassLoader.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('fa1ac346d87db61dc381afe678f1d539cbcddb8d','checkouts/current/lib/ClassLoader/ClassLoaderHeader.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('b3917cb88fa1362b2ae581d66c4b48a935b53a2c','checkouts/current/lib/ClassLoader/DestroyClassLoader.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('53eb9d42bb3d875ebbf695b91bf07f762eaf9fe0','checkouts/current/lib/ClassLoader/GetClassLoader.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('5ab2e612a5da4afacb6a048643034fad0d5e9eab','checkouts/current/lib/CommandQueues/Execution/CommandInterpreter.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('851fab36741e9e91ca530206ab622cb67b7a47c5','checkouts/current/lib/CommandQueues/InterfaceObject/CommandInterfaceObject.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('f0892182ee6bd38bc0fed2215bd98dc5aee21555','checkouts/current/lib/CommandQueues/Registry/CommandRegistry.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('8c15b5f98a72a467372f372213d5fe5cd6735684','checkouts/current/lib/Commands/Command.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('c7f703dc4932ff74b38a823dc61204892a624fde','checkouts/current/lib/Commands/CommandTemplate.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('1f577e1b8680140e500040d4ba863f7b6930371f','checkouts/current/lib/Commands/DestroySession.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('afdc144f41e04e4125c1db60145b16a760740277','checkouts/current/lib/Commands/Redirect.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('17cc6610de028696d994e186ed950f064219e002','checkouts/current/lib/Content/Content.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('6870d793176d5d57076910c1eb267bc3896355c0','checkouts/current/lib/Content/ContentDAO.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('b56f1b8b051d9d9a495f6c9ebd3c68ef94b8b1cb','checkouts/current/lib/Controller/Controller.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('cc6cb09288285606719886948e42002983554d2a','checkouts/current/lib/DatabaseDrivers/MySQL/AbstractDAO.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('043cdc12550d480912ec376d268e1319c855fddf','checkouts/current/lib/DatabaseDrivers/MySQL/DataConnection.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('fca303fd81f760728890182be895ddbe3276267d','checkouts/current/lib/DatabaseDrivers/MySQL/MysqlShimResult.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('1cbe84a55e0008565c427c503534564444aaf9c1','checkouts/current/lib/IOControl/HTML/HTMLFunctions/HTMLFunctions.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('9c4ef3682f7e7ebb3e78784afabdbf5b92ff37a8','checkouts/current/lib/IOControl/Validators/ValidateFields.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('e5151550349f8ee1396e839909dbb1eaa64f9fbf','checkouts/current/lib/Modules/Constructs/Document/DAO/DocumentDAO.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('d164b595ea35492e5b55b16f0b584ead735294b0','checkouts/current/lib/Modules/Constructs/Document/Document/Document.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('695658b24e8db571f671dfd0a58e1d021ed6da6f','checkouts/current/lib/Modules/Constructs/Document/DocumentInterface/DocumentManager.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('67184b06812b75e686936e2b979293c5476bb5c5','checkouts/current/lib/Modules/Constructs/Form/Beans/FormElementBean.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('148cc16191484a54d347e0d2275e82c1861a6c0a','checkouts/current/lib/Modules/Constructs/Form/DAO/FormElementDAO.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('d780338b45b72d9a3a31374d35150b961021871d','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/BigTextBox.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('4eb5dae39561c23fa9ad51ea78b3b01f4d486f15','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/Checkbox.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('1cc93ac20165e6911a6ed9e16dbc3e6d2dbd4a5f','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/DateField.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('2a772698b97a457ab7e7db8da56e6e4850109c0a','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/DbSelect.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('2f957853c7d8cbc9f9c6de3e8e6e7ec96db31959','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/FormConfigElement.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('2217ed2022153f87efcf1391579eb6b61ecc2752','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/MultiSelect.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('8b94a83a039e3492dae2ac0dd6f50b5b72cd6a53','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/NumberField.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('e13e92c63c4d45aaeab3516ea837367985398ecd','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/RadioSelect.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('d414e02c7a9674cbcba80263ac997f073747529e','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/TextBox.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('4d883b50b73d851b8db130f6fd41165ac6bde0ee','checkouts/current/lib/Modules/Constructs/Form/FormElements/BasicElements/TextField.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('662183c7ce09cd87b8eb7d6b14391fb6a6813f64','checkouts/current/lib/Modules/Constructs/Form/FormElements/ConfigForm/ConfigFormInitialValue.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('c67e0e40e23c3bc57b3bd6a8fe0fe6a32b009e28','checkouts/current/lib/Modules/Constructs/Form/FormElements/ConfigForm/ConfigFormRadioSelect.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('f51a02fce0b7b2241b983e1aaa0a9b215b68c991','checkouts/current/lib/Modules/Constructs/Form/FormElements/ConfigForm/CreationForm/RadioCreationElement.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('fb12fd3c5c1bae608c6ed7d6f3c9b293396981c3','checkouts/current/lib/Modules/Constructs/Form/FormElements/Lib/AbstractFormElement.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('0256415ff915067dddfa9b25d71860c18b2c9568','checkouts/current/lib/Modules/Constructs/Form/FormElements/Lib/FormElementInterface.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('c22d8b152d87accf01d672fe0c6d791dfde9b65d','checkouts/current/lib/Modules/Constructs/Form/FormElements/Lib/FormElementUtils.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('ac4184f67dd270c0491e403064999fd301fa2a4c','checkouts/current/lib/Modules/Constructs/Form/FormInterface/FormManager.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('14d8f18534673ae6bcc071556fa73c67b9b68dfd','checkouts/current/lib/Modules/Constructs/Form/FormLogic/StandardForm.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('030d6d024f625319577332eceb56920d148a9a26','checkouts/current/lib/Modules/Constructs/Form/Lists/FormElementList.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('9bdefb6ac76916bd3dba6891535756ced90665fa','checkouts/current/lib/Modules/Constructs/Lists/AbstractList.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('f9f2dc0108bb654046a39dfc1a58e9796219cb78','checkouts/current/lib/Modules/Interfaces/Container.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('916c18c3962d084fbd87e04dfb57faa4e255cdb2','checkouts/current/lib/Modules/StoreModule/Admin/AbstractMaker.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('91d44468cb900e46872b1ecd3cbddc4537936624','checkouts/current/lib/Modules/StoreModule/Admin/CategoryMaker.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('4c57ba1981c08f8da961c48fcd9e3ae18a781d0c','checkouts/current/lib/Modules/StoreModule/Admin/ConfigFormFCE.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('21e743447b4ac42e78f886ade1267ac5dee79f4b','checkouts/current/lib/Modules/StoreModule/Admin/ConfigFormRSE.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('dad7a49d12c46c0fe58c0bce76c7d6ae178dfdb7','checkouts/current/lib/Modules/StoreModule/Admin/ConfigForm_1.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('4ff813aac73a5c8b4d23ebe8fa31a7c84ac4dab0','checkouts/current/lib/Modules/StoreModule/Admin/FormMaker.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('709446b8bdf6ec6c13557475492f846a6db28d74','checkouts/current/lib/Modules/StoreModule/Admin/OrderMaker.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('bdce1b32bf8c1d8ebe63d507ca5e85b33613e3db','checkouts/current/lib/Modules/StoreModule/Admin/PageMaker.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('0523bbc5583b52829223b20f4fcdd3933d608b16','checkouts/current/lib/Modules/StoreModule/Admin/PriceMaker.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('84611ce3885d089c514c6ae1b14cf0936f10c653','checkouts/current/lib/Modules/StoreModule/Admin/ProductMaker.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('b8d4c135ca6bdc9df945be1339589748f9ce530e','checkouts/current/lib/Modules/StoreModule/Admin/RadioCreation.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('2e5a6567c547596846d17b551cd03108fae1d36d','checkouts/current/lib/Modules/StoreModule/Catalog/Category/Category.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('0fe9fd4a1d9fa75e190507ef0d95f5ffc580ec89','checkouts/current/lib/Modules/StoreModule/Catalog/DAO/CatalogDAO.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('966f4f9bfb28357110c85779781d8308e4995a3d','checkouts/current/lib/Modules/StoreModule/Catalog/DAO/ProductDAO.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('78c7b13e2ddee0598958d80572cf346a2f6924f2','checkouts/current/lib/Modules/StoreModule/Catalog/List/CategoryList.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('d6a13ce35fed70b16d7bfaa7812ab76e9ece129b','checkouts/current/lib/Modules/StoreModule/Catalog/List/PriceList.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('2b1880686ad7d648cedb52d5140fd98f29d2b6f3','checkouts/current/lib/Modules/StoreModule/Catalog/List/ProductList.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('d970e2ea7f3822a6e4e16d97bf9ad5f0f5b86e2a','checkouts/current/lib/Modules/StoreModule/Catalog/List/ProductMakerList.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('04400994d1f97f6d04cc1cd0196bff4c14566397','checkouts/current/lib/Modules/StoreModule/Catalog/Product/Product.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('afe3108fc081064332c888d793decdf8b7c871c9','checkouts/current/lib/Modules/StoreModule/Catalog/price/PriceDAO.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('af651ac6c2c9d9d9026dfb34e544409d9f553c73','checkouts/current/lib/Modules/StoreModule/Container/Store.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('97e0044de2eea94efd5f7fa3350641ec018a62e5','checkouts/current/lib/Modules/StoreModule/Order/DAO/Order.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('ac7f1fa1391520799aaa501d685fa6df8fc5e43c','checkouts/current/lib/Modules/StoreModule/Order/DAO/OrderDAO.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('9e9c879f28b5b65376502cb1756aacd14b41ee00','checkouts/current/lib/Modules/StoreModule/Order/List/OrderList.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('98f8b656cb5b0d92aa08d8c1b1234df36530c3f0','checkouts/current/lib/Modules/StoreModule/Order/OrderSystem/ConfigForm.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('26f474f95df8686006d03459144444ea983fa939','checkouts/current/lib/Modules/StoreModule/Order/OrderSystem/OrderForm.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('c31cb4d6cff37ccca8a964ac5b6b1dfe41ae712b','checkouts/current/lib/Modules/StoreModule/Order/OrderSystem/Orderer.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('88ba4b20139af165267148b701c4d1ac6f50cf29','checkouts/current/lib/Modules/taglib/Admin_Tag.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('4e7b40c97370e72d7f194207cffe4914be1cce18','checkouts/current/lib/Modules/taglib/Tag_Interface.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('6e1e5ee8a173292df225709090e3452892e1d8d8','checkouts/current/lib/PersistanceObjectManager/PersistentObjectManager.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('a47fff6be6ca0270b802c402abf21b05ca203066','checkouts/current/lib/Sort/SortIterator.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('6f7b7c73d1362876ac213630ec89469b8eb98639','checkouts/current/lib/TagLoader/Arguments/TagArguments.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('aad39c7664beae8a9c5f9cc9456da2e5f6aa2aed','checkouts/current/lib/TagLoader/Parser/Tag_Parser.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('bbbfc23dce3ddc222dbf5ea3107a9e5f6e1c220a','checkouts/current/lib/TagLoader/Tag/Tag_Wrapper.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('53658979d0309c06c7d3b62f4e00d4f794be39de','checkouts/current/lib/UserAuthentication/UserDAO.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('999837c4fd3cf099c30d8fabedf9569f59a10c39','checkouts/current/lib/UserAuthentication/UserPrivilegeSet.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('7dcd7417f5f0758c134d22ab6d150ad14b176fc7','checkouts/current/tools/crawl.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('8ddf2b221e3f8cc757e1756924710b41d6bebd71','checkouts/current/tools/db_export.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('4b526d03fde11c393bec31fad64cd7607da78c5e','checkouts/current/tools/db_import.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('5592de4da8c362b4b484f0db8ce4ad8c291939a2','checkouts/current/tools/db_verify.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('295afef8273c5e24d35dd8aeeb43931a835efb68','checkouts/current/tools/deploy_lifecycle_check.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('33a7027281f4140812b4e68c04f691f60ce51994','checkouts/current/tools/doc_watch.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('cc9e3604de6ad9477e0966330afc654cd4b32d9b','checkouts/current/tools/formelement_roundtrip.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('0d75b0d1349f36d58a1e895efa140c06b2bfc8c9','checkouts/current/tools/gpl_stamp.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('6a15dcf914fb6ed590aed17a212547b6ae55b804','checkouts/current/tools/ingest_self.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('ec0b6d92949598ea217805290800feb0ce735fed','checkouts/current/tools/make_state.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('d542be04920bd0043da518023ab4d81f9b7463fd','checkouts/current/tools/mint_crank.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('d91d46feadac022055367ebde386b3f8e10cc99d','checkouts/current/tools/predict.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('e0f9e147487e937dae497f0d7bedf1cf68b1ead5','checkouts/current/tools/provision_php.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('84411b3b9c8e3343c5bdcc481891959ebb5d0fe2','checkouts/current/tools/serve.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('9b0cc517037a59248944a20d7a9aea83566bd10b','checkouts/current/tools/set_admin.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('80e8213394f7df610e039da7933e8c7fd4babc46','checkouts/current/tools/tagcheck.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('cb87643a9c45360e52859cef23ba70854ae864fc','checkouts/current/tools/tostring_check.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('f50ae8faa8d38135433b1d8d9f360e0a9655c130','checkouts/current/versioning/checkout.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('fcff965fe4d7ad1421d6231a6caa66a8cf6a83c7','checkouts/current/versioning/gitutil.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('452d7b575c85e1480c1f157f236cd2fa5e5b500a','checkouts/current/versioning/ops/__init__.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('0864fba22aa656aa7974352ffd057f76985be922','checkouts/current/versioning/ops/__main__.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('7c4d5eed528e67d46512b3c39bec8c22206ef50d','checkouts/current/versioning/ops/commit_release.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('607928f9650153c95bb96dfda73f55cd8dbba2d4','checkouts/current/versioning/ops/generate_manifest.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('a7f10c62f8e5be5c12eaa70184524ff0937b1001','checkouts/current/versioning/ops/git_commit.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('e0776811c9cf8f4cd916ba456af241637404bcd4','checkouts/current/versioning/ops/git_push.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('05f4bae70abba50c134e16ff87e7d0fdf1670443','checkouts/current/versioning/ops/opsrun.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('932527b46f3f154eae3cf61b60ca1d92f489f575','checkouts/current/versioning/ops/propagate_version.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('7d721481c5b7e3a47aaefc028fa3fa2225e85809','checkouts/current/versioning/ops/refresh_bundles.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('ff6decbb41f3d6b504961bfe5fe191fe38ba9c07','checkouts/current/versioning/ops/release.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('a03b381f4c777e6ab91dae7f64dcbd7d40862e81','checkouts/current/versioning/ops/run_op.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('162e52405cee78b856f200bd8f63d084cdfd18e2','checkouts/current/versioning/ops/run_ops.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('58f039d8cd36253f961784972d442ab56421f674','checkouts/current/versioning/ops/verify_bundles.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('51e309820c4e1505b403026666476f52ddae6fc6','checkouts/current/versioning/paths.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('d1e6973094a28fabdc415a9a17dbc00c1cc586bb','checkouts/current/versioning/push_branch.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('900a1cbd2b90d102c9741df6845ab7cc8c987646','checkouts/current/versioning/verify_git_state.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('8112f830faa66f6674c17d3006124a305cd9692f','checkouts/current/versioning/version_source.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('1738673bc49073f5bfcf41c526cdeb39d80b81fb','checkouts/current/www/index.php','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('3bba9fa79ef5adeedea31c84aa09db1500fef5a1','tracker/install_signals.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('2c8ed98806d33b33e87b1bf69a7d2b83df8c6fd8','tracker/signals-mcp/server.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('d27d3195f829b5f2264cb923a257a345ac7323a9','tracker/store.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "code_refs" VALUES('92c3a730220629e408eb8b01a5621217fbd8efe4','tracker/ticket.py','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
 CREATE TABLE doc_blobs  (hash TEXT PRIMARY KEY, kind TEXT, bytes INTEGER, body TEXT);
 INSERT INTO "doc_blobs" VALUES('2e372af10c5a6e0d461c01f02790f27fd66d7f00','markdown',2611,'# DEPENDENCIES.md — runtime dependencies & system-process changes
 
@@ -25110,197 +25145,6 @@ The running server lives at `~/.MCP/signals-mcp/server.py` (so it can import the
 the **source of record** is versioned in the repo at `tracker/signals-mcp/server.py`. Keep them in sync
 with the one-command installer (ticket #37): `python3 tracker/install_signals.py` copies the repo copy
 into `~/.MCP` (`--check` reports drift without writing); then restart the gate.
-');
-INSERT INTO "doc_blobs" VALUES('c42dfa64938c242a211ac6024b38eedea2b33c5c','markdown',9871,'# The tracker safety layer — signals, the dead-man''s switch, and the signals MCP daemon
-
-This is the write-up for the operational safety layer around the project tracker: **why it exists, how
-the pieces fit, what an MCP and a daemon are here, and the fail-safe philosophy that drives it.**
-
----
-
-## 1. Why this exists
-
-The ticket ledger (`tracker/tickets.jsonl`) is going to be **edited whether we like it or not** — by hand,
-by an agent, by accident. When a ticket is added (on purpose or not), vanishes, or can''t be found, **we
-need to be notified**, and that notification has to be **looked up from a database**, not scraped from a
-file. So we need:
-
-- a **DB error channel** (a `signals` table) that any process writes to and anyone can query;
-- **reconciliation** that turns ledger drift into signals automatically;
-- a **fail-safe watchdog** whose *default condition is error* — the healthy component must actively hold
-  the error back, so a dead or hung component is **detected, never silently assumed fine.**
-
----
-
-## 2. Architecture at a glance
-
-```
- tracker/tickets.jsonl        append-only ledger — the committed SOURCE OF TRUTH (on GitHub)
-        │  (sync, "no matter what")
-        ▼
- tracker/store.py  ──►  ~/.MCP/project.db   (ONE PERSISTENT INSTALL db — $PROJECT_DB overrides)
-        │                 ├── tickets    projection of the ledger (rebuildable)
-        │                 ├── signals    the DB ERROR CHANNEL  ◄── errors looked up here
-        │                 ├── heartbeat  the DEAD-MAN''s SWITCH (default state = error)
-        │                 └── memories   the gate''s tool-use log (durable, NOT rebuildable) ◄── gate writes here
-        ▼
- ~/.MCP/signals-mcp/server.py   the DAEMON (watchdog thread) + the error-channel TOOLS
-        │  registry.json → servers.signals
-        ▼
- the gate  ──►  signals__due · signals__ack · signals__sync · signals__check · signals__lookup · signals__status
-```
-
-The ledger stays the source of truth (committed, diffable, append-only). `project.db` is **one persistent,
-install-level db** — by default `~/.MCP/project.db` (the install root, beside the gate and registry;
-override with `$PROJECT_DB`). It is deliberately **not** a copy in the disposable working tree, because the
-`memories` table (the gate''s tool-use log) is durable operational history with **no ledger to rebuild it
-from**. Only `tickets` is a projection one `sync` can rebuild; `signals`/`heartbeat` are transient
-operational state; `memories` is the durable data that makes the db worth persisting across a repo re-clone.
-
----
-
-## 3. `store.py` — the DB + the safety functions
-
-Three tables:
-
-| table | purpose |
-|---|---|
-| `tickets(id, type, description, status, created)` | projection of the ledger (rebuildable via `sync`) |
-| `signals(id, ts, level, source, code, message, ref, status)` | the **error channel** — every process writes here; errors are read with a query |
-| `heartbeat(component, last_seen, ttl, state)` | the **dead-man''s switch**, one row per component |
-| `memories(id, ts, session, tool, intent, note)` | the **gate''s tool-use log** — one row per gated call, tagged with the Claude Code **session** id; durable (no ledger to rebuild it), the reason the db is a persistent install |
-
-Key functions:
-
-- **`sync_from_ledger()`** — migrate/refresh the db from the ledger **"no matter what"**: the ledger read
-  is wrapped so **any** exception becomes a `READER_EXCEPTION` error signal (and, deliberately, *no beat*
-  — so the dead-man''s switch will also fire). It then **reconciles**: a ticket in the ledger but not the db
-  → `TICKET_ADDED`; in the db but not the ledger → `TICKET_VANISHED`. A clean run **beats** `ticket_reader`.
-- **`raise_signal(level, source, code, message, ref)`** — append a signal. `level` ∈ `error|warn|info`.
-- **`signals(level=None, status="open")`** / **`ack_signal(id, status)`** — read / resolve the channel.
-- **`lookup_ticket(id)`** — read a ticket *from the db*; a miss itself raises `TICKET_NOT_FOUND`.
-- **`beat(component, ttl)`** / **`check_deadman()`** — the dead-man''s switch (below).
-
----
-
-## 4. The dead-man''s switch — the safety philosophy
-
-> The default condition is **error**. The functional component holds it back.
-
-Each watched component has a `heartbeat` row with a `ttl`. The healthy component calls `beat()` on every
-success, pushing `last_seen` forward. `check_deadman()` walks the heartbeats and, for any whose
-`now - last_seen > ttl`, flips its state to `error` and raises a **`DEADMAN_EXPIRED`** signal.
-
-This inverts the usual "raise an error when something breaks" into **"assume broken unless proven
-alive."** A component that crashes, hangs, or is killed simply *stops beating* — and silence is read as
-failure, not success. There is no way to fail *quietly*: doing nothing trips the switch.
-
-The functional component here is the **daemon** (§6): every clean `sync` beats `ticket_reader`. If the
-daemon dies, `ticket_reader` goes stale and the next `check_deadman()` (on daemon restart, or a manual
-`signals__check`) fires the switch.
-
----
-
-## 5. What an MCP is (in this project)
-
-An **MCP** is a small stdio server that exposes a set of **tools**. In this stack they live under
-`~/.MCP/<name>-mcp/server.py`, are listed in `~/.MCP/registry.json` under `servers`, and are aggregated by
-the **gate** (a coupler) so their tools surface to the agent as **`<name>__<tool>`** (e.g.
-`signals__due`). A server is minimal:
-
-```python
-import mcplib
-TOOLS = [{"name": "...", "description": "...", "inputSchema": {...}, "handler": fn}, ...]
-def list_tools(): ...
-def call_tool(name, args): ...
-mcplib.Server("signals", "1.0.0", list_tools, call_tool).serve()   # the stdio loop
-```
-
-Registration (in `registry.json`):
-
-```json
-"signals": { "command": "python3", "args": ["signals-mcp/server.py"],
-             "env": { "TRACKER_DIR": "../big-jazz-main/packages/congruencey/tracker" } }
-```
-
-`TRACKER_DIR` tells the server where the tracker''s `store.py` lives; `SIGNALS_TICK` (default 30s) sets the
-daemon cadence.
-
----
-
-## 6. What a DAEMON is here (the watchdog)
-
-A plain MCP is **request/response** — it only acts when a tool is called. The safety layer needs
-something running *between* calls, so the signals MCP starts a **background daemon thread** before it
-begins serving:
-
-```python
-threading.Thread(target=_daemon, daemon=True).start()
-mcplib.Server("signals", "1.0.0", list_tools, call_tool).serve()
-```
-
-The daemon loop, every `SIGNALS_TICK` seconds:
-
-1. `sync_from_ledger()` — pull the ledger into the db (reconciliation signals fall out automatically);
-2. `check_deadman()` — fire error signals for any component gone silent;
-3. wraps everything in a last-resort `try/except` → a `DAEMON_EXCEPTION` error signal, because **the
-   watchdog itself must never die silently.**
-
-This is the "MCP that sends a signal if it catches any exception whatsoever at the component that reads
-`tickets.jsonl`" **and** the thing that "drops a dead-man''s switch." The daemon *is* the functional
-component that holds the switch back; kill the MCP and the switch arms itself.
-
-**Standalone equivalent** (no MCP): `python3 tracker/store.py watch [seconds]` runs the same loop in the
-foreground — handy for testing or a cron/systemd unit.
-
----
-
-## 7. The tools (`signals__*`)
-
-| tool | what it does |
-|---|---|
-| `signals__due [level]` | list OPEN signals from the db error channel (errors/warnings + reconciliation + dead-man fires) |
-| `signals__ack {id, status?}` | resolve a signal (append-only status; signals are never deleted) |
-| `signals__sync` | force a ledger→db sync now (also beats the switch); returns counts |
-| `signals__check` | run the dead-man''s switch check now |
-| `signals__lookup {id}` | look up a ticket from the db; a miss raises `TICKET_NOT_FOUND` |
-| `signals__status` | open signal + error counts, the daemon tick, recent errors |
-
----
-
-## 8. Signal codes
-
-| code | level | meaning |
-|---|---|---|
-| `TICKET_ADDED` | info | a ticket appeared in the ledger (added on purpose or by accident) |
-| `TICKET_VANISHED` | warn | a ticket in the db is gone from the ledger (edited away) |
-| `TICKET_NOT_FOUND` | error | a lookup referenced a ticket that isn''t in the db |
-| `READER_EXCEPTION` | error | the ledger reader threw — sync caught it (and did **not** beat) |
-| `DEADMAN_EXPIRED` | error | a component stopped beating; the switch fired |
-| `DAEMON_EXCEPTION` | error | the watchdog loop itself threw |
-
----
-
-## 9. Guarantees & failure modes
-
-- **Corrupt/edited ledger** → `READER_EXCEPTION` (+ no beat → `DEADMAN_EXPIRED` shortly after). You are
-  told twice, from two independent mechanisms.
-- **Daemon dies** → `ticket_reader` goes stale → `DEADMAN_EXPIRED` on next check. Silence ≠ health.
-- **DB briefly locked** → connections use a 5s busy timeout; signal writes never nest inside another open
-  write transaction (that was a real bug we fixed).
-- **`project.db` lost** → `tickets` rebuild from the ledger on one `sync`, and `signals`/`heartbeat` are
-  transient by design — but **`memories` are gone for good** (there is no ledger behind them). That is
-  exactly why the db is a **persistent install file at `~/.MCP/project.db`**, not a copy in the disposable
-  working tree: a repo re-clone or a `git clean` must not take the tool-use history with it.
-
----
-
-## 10. Deploying / keeping in sync
-
-The running server lives at `~/.MCP/signals-mcp/server.py` (so it can import the shared `~/.MCP/mcplib`);
-the **source of record** is versioned in the repo at `tracker/signals-mcp/server.py`. To deploy or
-update: copy the repo copy over the `~/.MCP` copy and restart the gate. (A future ticket: make this a
-one-command install so the two never drift — see the tracker''s own `build`/`spec` tickets.)
 ');
 INSERT INTO "doc_blobs" VALUES('f379aa1afa261c687801a40156cbb6e65dd7afeb','markdown',2927,'# DEPENDENCIES.md — runtime dependencies & system-process changes
 
@@ -27535,63 +27379,106 @@ section), #29 (GPL-header stamp), #44 (form elements: number/date/multiselect), 
 queue) is deliberately left live — see `?page=bugs`. **Remaining:** #43/#46 increments, and the live
 doc-stale backlog auto-filed by `doc_watch.py`. (#17–24 are historical tournament artifacts.)
 ');
+INSERT INTO "doc_blobs" VALUES('706880e03b2820a01c5ac2a5807065c7ee07701b','markdown',5940,'# tools/ — the congruency php-web harness
+
+Reconstruction of the old `~/congruencey-harness` as the source''s own tool (the reference
+lived off-tree and is gone; only pieces survived under `boot/` and the folded
+`tooling/congruencey-harness/`). This folder holds the **php-web reference server** (`serve.py`) for the
+congruency source at `checkouts/current`, the **regression gates** the ratchet runs (below), the
+**commit observer** (`doc_watch.py`), and the crank/ledger apparatus (`predict.py`, `make_state.py`,
+`mint_crank.py`, `provision_php.py`).
+
+## serve.py — one python script, no shell
+
+Boots the CMS under PHP''s built-in web server with the relocatable new-tree bootstrap
+`../boot/router.php` (shim → configure.php → AutoLoader → Controller), served from the
+source root.
+
+```
+python3 tools/serve.py            # serve on 0.0.0.0:8899   (Ctrl-C to stop)
+python3 tools/serve.py --port 9000
+python3 tools/serve.py --verify   # boot, probe catalog/about, assert HTTP 200, exit
+```
+
+Prerequisites (both ship as recipes; artifacts are git-ignored, not committed):
+
+- **PHP** at `tooling/congruencey-harness/php/php` — `python3 tools/provision_php.py`
+- **state DB** at `checkouts/current/state/congruency.sqlite` — auto-extracted from
+  `state/database.tar.xz` on first boot (or `python3 fixes/install_state_db.py`).
+
+## doc_watch.py — auto-file "documentation may be stale" tickets
+
+An outside-the-app observer of commits. For every commit where a **script (`.php`/`.py`) changed but
+no doc (`.md`/`.txt`) was touched in that same commit**, it maps the changed code area → the specific
+doc(s) likely now stale (a built-in dir→doc map) and opens a `documentation` ticket in the unified jazz
+tracker (`~/.jazz/congruency.sqlite`). One OPEN ticket per doc — deduped by `meta.doc`, and each commit
+recorded once in `meta.commits`, so the standalone tool and the git hook converge without duplicates.
+
+```
+python3 tools/doc_watch.py                 # watermark..HEAD  (HEAD only on first run)
+python3 tools/doc_watch.py --since HEAD~10  # batch catch-up over a range
+python3 tools/doc_watch.py --commit <sha>   # inspect one commit
+python3 tools/doc_watch.py --dry-run        # classify + print, write nothing
+python3 tools/doc_watch.py --install-hook   # drop a post-commit hook that runs --head
+```
+
+Filing goes through `jazz_telemetry.open_ticket(..., component="documentation")` (the same helper
+`predict.py`/`mint_crank.py` use). `--install-hook` drops a best-effort `post-commit` hook (python,
+never blocks a commit). The watermark lives at `logs/doc_watch.json` (git-ignored); correctness comes
+from `meta.commits`, so a lost watermark only re-scans, never double-files.
+
+## ingest_self.py — mirror the running source + docs into the CMS DB (self-hosting)
+
+On every crank the CMS''s own source and docs are pushed into the DB (the post-commit hook runs this after
+`doc_watch`), **content-addressed by git blob hash**, so `?page=source` / `?page=docs` (admin-only) render
+them. Deduped `code_blobs`/`doc_blobs` + reverse-lookup `code_refs`/`doc_refs` (hash → path@commit;
+`is_current` = the running source).
+
+```
+python3 tools/ingest_self.py             # --head: mirror the HEAD tree + flag current (hook default)
+python3 tools/ingest_self.py --backfill  # walk source history into the archive
+python3 tools/ingest_self.py --stats     # row counts
+```
+
+Scope = app PHP + the python tooling + docs + `main:deploy.py`/`install.py`; frozen/vendored excluded. The
+four archive tables are denylisted from the public REST. Rendered by the `SourceList`/`DocList` tags.
+
+## Gates the ratchet runs
+
+Every crank is verified against these (exit non-zero on failure):
+
+- **`tagcheck.py`** — renders every invocator tag standalone (`?page=tags&tag=NAME`), asserts HTTP 200 with
+  no PHP fatal **or warning/notice** (24/24). `python3 tools/tagcheck.py [--base URL] [--report out.json]`.
+- **`crawl.py`** — BFS web-spider over every link on every page; reports broken links (the `?api=Documents`
+  oracle supplies the valid-page set; the deliberate `?page=nope` is the expected `broken=1`).
+- **`tostring_check.py`** — flags `__toString()` methods that can return `null` (the #60 class).
+- **`gpl_stamp.py`** — keeps the GPL short-notice header on every first-party `.php` (`--check` / `--fix`,
+  line-ending preserving).
+- **`deploy_lifecycle_check.py`** — drives `deploy.py` through ON → SERVE → OFF → REDEPLOY in an isolated
+  git worktree, leaving your branch untouched (the #26 gate; 4/4 transitions).
+- **`formelement_roundtrip.php`** — asserts each form element''s `to_array()`/`from_array()` round-trips
+  through JSON, plus per-element validation + render (the #44/#45 gate). Run with the provisioned php:
+  `tooling/congruencey-harness/php/php tools/formelement_roundtrip.php`.
+- **`db_verify.py`** — integrity linter for the self-hosting archive: `git_blob_sha(body) == hash` for every
+  stored blob (`--manifest` also checks the running source vs git HEAD). Exit 1 on any mismatch.
+
+## DB export / import (manual — not on any crank)
+
+- **`db_export.py`** — dump the CMS DB to `state/seed.sql` (git-viewable) + `.xz`; `--keep-auth` bakes in the
+  demo admin, `--last-n N` cuts the history tail. Blob I/O is byte-exact (`newline=""`) so `db_verify` passes.
+- **`db_import.py`** — rebuild a DB from the seed (`--to`, `--verify`); refuses to clobber without `--force`.
+- **`set_admin.py`** — provision/rotate an admin login (`--db --login --password|--generate`); pairs with the
+  `CONGRUENCY_ADMIN_LOGIN`/`_PASSWORD` env that `prod_seed.php` reads at deploy.
+
+## Rules it obeys (note-for-claude)
+
+- python only — no shell scripts;
+- **registry-gated** — throws if it cannot see `registry.json`;
+- all paths derived from `__file__` (relocatable);
+- `$CONGRUENCEY_PHP` overrides the php location;
+- auto bug-report (timestamped) to the registry''s `bug_reports` sink on any exception.
+');
 CREATE TABLE doc_refs   (hash TEXT, path TEXT, commit_sha TEXT, ts REAL, is_current INTEGER DEFAULT 0);
-INSERT INTO "doc_refs" VALUES('2e372af10c5a6e0d461c01f02790f27fd66d7f00','DEPENDENCIES.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('71f9bba566070fccb05e479e30f26a535ed6e347','DEPLOY.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('f8ae1749c3f61eafa8c6348002c5c932956aa7c0','README.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('1dc1f906d9eed05a3c17cc731cd55e044b83f225','bugs/README.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('3588cb0c0a0ec91b5553ede3790f4738842c0413','checkouts/current/ARCHITECTURE.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('54393bd584b3c8764a2f601fa371e0d9c15aa933','checkouts/current/LINEAGE.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('9213bc818b42785ffe5af0e60490629e2ff31eda','checkouts/current/README.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('06e2f6e713050e2e6875a847e0eb6623a53193d1','checkouts/current/doc/CMS_ADDITIONS.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('995f73145bb9b63b39c0f632f658fa21ea9d35e9','checkouts/current/doc/Changes.txt','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('3ee0b6ac0393133d38bbb24d156c308ce6995c0e','checkouts/current/doc/Install.txt','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('39262c9277f9a17e06add5587286992a22809b18','checkouts/current/doc/License.txt','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('d24e99ba398624e585a795cb9749932d28a8e8eb','checkouts/current/doc/NextVersion.txt','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('706839d83f653a4e212be4801a4dd3453d69efc3','checkouts/current/doc/Version.txt','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('cebe7df895ac25b4a697597b696c8c13a7d432ff','checkouts/current/fixes/README.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('7436a5ae6b5841625ff942461d285e0f0566eb4d','checkouts/current/tests/parser/README.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('29aca7a758bfce95eaf5461fa7f6d72e87a48d4a','checkouts/current/tools/README.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('ef3bb4feed520bf1fd6936c1fb1972f4341ded3f','checkouts/current/versioning/BUGS_FOUND.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('78f7f65e8b780f95d5583210f91981602e609e75','checkouts/current/versioning/README.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('ce7ce503587af036bb1cef28c1d809097096c8b6','checkouts/current/versioning/logs/README.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('01e834283e19ac572bb8b1d2ed1b456687e3b1f8','logs/README.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('1cb8a9f7475cc85cdee083326de0c2e08ec6d94d','tooling/README.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('226a3e76e9dad7f54e453127b93b5ce83aec435d','tooling/congruencey-bugs/BUGS.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('ff6b7ef61edb19c2f22a9e4ecc6495b011b82372','tooling/congruencey-bugs/README.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('41df2c12d4a3f4c7409f09fe61a6ee08b32f2b96','tooling/congruencey-harness/README.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('19af3edf9e10435b871c150b8160ce3113a0483e','tooling/congruencey-tests/README.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('65640b6c4b1714f1e8c9edb518c315ac25018168','tooling/coverage/README.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('09f94bd2f92459388022a9ff03d1aeb1238b2ff8','tooling/pwdriver/README.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('99147dc3cb7d79cfea03878a750f3730c569df9b','tracker/SIGNALS.md','cfc2a42e7aeb5a711e7eb5802feea822190f7801',1783371830.0,0);
-INSERT INTO "doc_refs" VALUES('2e372af10c5a6e0d461c01f02790f27fd66d7f00','DEPENDENCIES.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('71f9bba566070fccb05e479e30f26a535ed6e347','DEPLOY.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('f8ae1749c3f61eafa8c6348002c5c932956aa7c0','README.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('1dc1f906d9eed05a3c17cc731cd55e044b83f225','bugs/README.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('3588cb0c0a0ec91b5553ede3790f4738842c0413','checkouts/current/ARCHITECTURE.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('54393bd584b3c8764a2f601fa371e0d9c15aa933','checkouts/current/LINEAGE.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('9213bc818b42785ffe5af0e60490629e2ff31eda','checkouts/current/README.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('06e2f6e713050e2e6875a847e0eb6623a53193d1','checkouts/current/doc/CMS_ADDITIONS.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('995f73145bb9b63b39c0f632f658fa21ea9d35e9','checkouts/current/doc/Changes.txt','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('3ee0b6ac0393133d38bbb24d156c308ce6995c0e','checkouts/current/doc/Install.txt','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('39262c9277f9a17e06add5587286992a22809b18','checkouts/current/doc/License.txt','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('d24e99ba398624e585a795cb9749932d28a8e8eb','checkouts/current/doc/NextVersion.txt','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('706839d83f653a4e212be4801a4dd3453d69efc3','checkouts/current/doc/Version.txt','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('cebe7df895ac25b4a697597b696c8c13a7d432ff','checkouts/current/fixes/README.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('7436a5ae6b5841625ff942461d285e0f0566eb4d','checkouts/current/tests/parser/README.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('29aca7a758bfce95eaf5461fa7f6d72e87a48d4a','checkouts/current/tools/README.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('ef3bb4feed520bf1fd6936c1fb1972f4341ded3f','checkouts/current/versioning/BUGS_FOUND.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('78f7f65e8b780f95d5583210f91981602e609e75','checkouts/current/versioning/README.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('ce7ce503587af036bb1cef28c1d809097096c8b6','checkouts/current/versioning/logs/README.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('01e834283e19ac572bb8b1d2ed1b456687e3b1f8','logs/README.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('1cb8a9f7475cc85cdee083326de0c2e08ec6d94d','tooling/README.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('226a3e76e9dad7f54e453127b93b5ce83aec435d','tooling/congruencey-bugs/BUGS.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('ff6b7ef61edb19c2f22a9e4ecc6495b011b82372','tooling/congruencey-bugs/README.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('41df2c12d4a3f4c7409f09fe61a6ee08b32f2b96','tooling/congruencey-harness/README.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('19af3edf9e10435b871c150b8160ce3113a0483e','tooling/congruencey-tests/README.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('65640b6c4b1714f1e8c9edb518c315ac25018168','tooling/coverage/README.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('09f94bd2f92459388022a9ff03d1aeb1238b2ff8','tooling/pwdriver/README.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
-INSERT INTO "doc_refs" VALUES('c42dfa64938c242a211ac6024b38eedea2b33c5c','tracker/SIGNALS.md','9c5d360c289983aed375e42ce4047e0ae210880e',1783371649.0,0);
 INSERT INTO "doc_refs" VALUES('2e372af10c5a6e0d461c01f02790f27fd66d7f00','DEPENDENCIES.md','14e3140bb7756ec3c5c1db4f9ebfa3ceb6e919e2',1783373991.0,0);
 INSERT INTO "doc_refs" VALUES('71f9bba566070fccb05e479e30f26a535ed6e347','DEPLOY.md','14e3140bb7756ec3c5c1db4f9ebfa3ceb6e919e2',1783373991.0,0);
 INSERT INTO "doc_refs" VALUES('f8ae1749c3f61eafa8c6348002c5c932956aa7c0','README.md','14e3140bb7756ec3c5c1db4f9ebfa3ceb6e919e2',1783373991.0,0);
@@ -28208,34 +28095,90 @@ INSERT INTO "doc_refs" VALUES('19af3edf9e10435b871c150b8160ce3113a0483e','toolin
 INSERT INTO "doc_refs" VALUES('65640b6c4b1714f1e8c9edb518c315ac25018168','tooling/coverage/README.md','c9c1b1d5a55974240e06a91deea90d13ed16b63d',1783394808.0,0);
 INSERT INTO "doc_refs" VALUES('09f94bd2f92459388022a9ff03d1aeb1238b2ff8','tooling/pwdriver/README.md','c9c1b1d5a55974240e06a91deea90d13ed16b63d',1783394808.0,0);
 INSERT INTO "doc_refs" VALUES('99147dc3cb7d79cfea03878a750f3730c569df9b','tracker/SIGNALS.md','c9c1b1d5a55974240e06a91deea90d13ed16b63d',1783394808.0,0);
-INSERT INTO "doc_refs" VALUES('f379aa1afa261c687801a40156cbb6e65dd7afeb','DEPENDENCIES.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('9633c1bb267dad588bde40abf71bf388214255af','DEPLOY.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('f8ae1749c3f61eafa8c6348002c5c932956aa7c0','README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('1dc1f906d9eed05a3c17cc731cd55e044b83f225','bugs/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('6e301323634823299315e89bf041e4172a7752e0','checkouts/current/ARCHITECTURE.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('54393bd584b3c8764a2f601fa371e0d9c15aa933','checkouts/current/LINEAGE.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('9213bc818b42785ffe5af0e60490629e2ff31eda','checkouts/current/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('be0f0224abfc1a419b03503a167b4e11e0472751','checkouts/current/doc/CMS_ADDITIONS.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('995f73145bb9b63b39c0f632f658fa21ea9d35e9','checkouts/current/doc/Changes.txt','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('3ee0b6ac0393133d38bbb24d156c308ce6995c0e','checkouts/current/doc/Install.txt','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('39262c9277f9a17e06add5587286992a22809b18','checkouts/current/doc/License.txt','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('d24e99ba398624e585a795cb9749932d28a8e8eb','checkouts/current/doc/NextVersion.txt','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('706839d83f653a4e212be4801a4dd3453d69efc3','checkouts/current/doc/Version.txt','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('cebe7df895ac25b4a697597b696c8c13a7d432ff','checkouts/current/fixes/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('7436a5ae6b5841625ff942461d285e0f0566eb4d','checkouts/current/tests/parser/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('db8e4a0b75a637aeaf48e4ae1a27b8cfbc53a643','checkouts/current/tools/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('ef3bb4feed520bf1fd6936c1fb1972f4341ded3f','checkouts/current/versioning/BUGS_FOUND.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('78f7f65e8b780f95d5583210f91981602e609e75','checkouts/current/versioning/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('ce7ce503587af036bb1cef28c1d809097096c8b6','checkouts/current/versioning/logs/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('01e834283e19ac572bb8b1d2ed1b456687e3b1f8','logs/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('1cb8a9f7475cc85cdee083326de0c2e08ec6d94d','tooling/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('226a3e76e9dad7f54e453127b93b5ce83aec435d','tooling/congruencey-bugs/BUGS.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('ff6b7ef61edb19c2f22a9e4ecc6495b011b82372','tooling/congruencey-bugs/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('41df2c12d4a3f4c7409f09fe61a6ee08b32f2b96','tooling/congruencey-harness/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('19af3edf9e10435b871c150b8160ce3113a0483e','tooling/congruencey-tests/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('65640b6c4b1714f1e8c9edb518c315ac25018168','tooling/coverage/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('09f94bd2f92459388022a9ff03d1aeb1238b2ff8','tooling/pwdriver/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
-INSERT INTO "doc_refs" VALUES('99147dc3cb7d79cfea03878a750f3730c569df9b','tracker/SIGNALS.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,1);
+INSERT INTO "doc_refs" VALUES('f379aa1afa261c687801a40156cbb6e65dd7afeb','DEPENDENCIES.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('9633c1bb267dad588bde40abf71bf388214255af','DEPLOY.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('f8ae1749c3f61eafa8c6348002c5c932956aa7c0','README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('1dc1f906d9eed05a3c17cc731cd55e044b83f225','bugs/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('6e301323634823299315e89bf041e4172a7752e0','checkouts/current/ARCHITECTURE.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('54393bd584b3c8764a2f601fa371e0d9c15aa933','checkouts/current/LINEAGE.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('9213bc818b42785ffe5af0e60490629e2ff31eda','checkouts/current/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('be0f0224abfc1a419b03503a167b4e11e0472751','checkouts/current/doc/CMS_ADDITIONS.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('995f73145bb9b63b39c0f632f658fa21ea9d35e9','checkouts/current/doc/Changes.txt','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('3ee0b6ac0393133d38bbb24d156c308ce6995c0e','checkouts/current/doc/Install.txt','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('39262c9277f9a17e06add5587286992a22809b18','checkouts/current/doc/License.txt','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('d24e99ba398624e585a795cb9749932d28a8e8eb','checkouts/current/doc/NextVersion.txt','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('706839d83f653a4e212be4801a4dd3453d69efc3','checkouts/current/doc/Version.txt','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('cebe7df895ac25b4a697597b696c8c13a7d432ff','checkouts/current/fixes/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('7436a5ae6b5841625ff942461d285e0f0566eb4d','checkouts/current/tests/parser/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('db8e4a0b75a637aeaf48e4ae1a27b8cfbc53a643','checkouts/current/tools/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('ef3bb4feed520bf1fd6936c1fb1972f4341ded3f','checkouts/current/versioning/BUGS_FOUND.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('78f7f65e8b780f95d5583210f91981602e609e75','checkouts/current/versioning/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('ce7ce503587af036bb1cef28c1d809097096c8b6','checkouts/current/versioning/logs/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('01e834283e19ac572bb8b1d2ed1b456687e3b1f8','logs/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('1cb8a9f7475cc85cdee083326de0c2e08ec6d94d','tooling/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('226a3e76e9dad7f54e453127b93b5ce83aec435d','tooling/congruencey-bugs/BUGS.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('ff6b7ef61edb19c2f22a9e4ecc6495b011b82372','tooling/congruencey-bugs/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('41df2c12d4a3f4c7409f09fe61a6ee08b32f2b96','tooling/congruencey-harness/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('19af3edf9e10435b871c150b8160ce3113a0483e','tooling/congruencey-tests/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('65640b6c4b1714f1e8c9edb518c315ac25018168','tooling/coverage/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('09f94bd2f92459388022a9ff03d1aeb1238b2ff8','tooling/pwdriver/README.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('99147dc3cb7d79cfea03878a750f3730c569df9b','tracker/SIGNALS.md','08da75723207411ae428000779853219fbbdabe7',1783395286.0,0);
+INSERT INTO "doc_refs" VALUES('f379aa1afa261c687801a40156cbb6e65dd7afeb','DEPENDENCIES.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('9633c1bb267dad588bde40abf71bf388214255af','DEPLOY.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('f8ae1749c3f61eafa8c6348002c5c932956aa7c0','README.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('1dc1f906d9eed05a3c17cc731cd55e044b83f225','bugs/README.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('6e301323634823299315e89bf041e4172a7752e0','checkouts/current/ARCHITECTURE.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('54393bd584b3c8764a2f601fa371e0d9c15aa933','checkouts/current/LINEAGE.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('9213bc818b42785ffe5af0e60490629e2ff31eda','checkouts/current/README.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('be0f0224abfc1a419b03503a167b4e11e0472751','checkouts/current/doc/CMS_ADDITIONS.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('995f73145bb9b63b39c0f632f658fa21ea9d35e9','checkouts/current/doc/Changes.txt','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('3ee0b6ac0393133d38bbb24d156c308ce6995c0e','checkouts/current/doc/Install.txt','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('39262c9277f9a17e06add5587286992a22809b18','checkouts/current/doc/License.txt','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('d24e99ba398624e585a795cb9749932d28a8e8eb','checkouts/current/doc/NextVersion.txt','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('706839d83f653a4e212be4801a4dd3453d69efc3','checkouts/current/doc/Version.txt','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('cebe7df895ac25b4a697597b696c8c13a7d432ff','checkouts/current/fixes/README.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('7436a5ae6b5841625ff942461d285e0f0566eb4d','checkouts/current/tests/parser/README.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('db8e4a0b75a637aeaf48e4ae1a27b8cfbc53a643','checkouts/current/tools/README.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('ef3bb4feed520bf1fd6936c1fb1972f4341ded3f','checkouts/current/versioning/BUGS_FOUND.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('78f7f65e8b780f95d5583210f91981602e609e75','checkouts/current/versioning/README.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('ce7ce503587af036bb1cef28c1d809097096c8b6','checkouts/current/versioning/logs/README.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('01e834283e19ac572bb8b1d2ed1b456687e3b1f8','logs/README.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('1cb8a9f7475cc85cdee083326de0c2e08ec6d94d','tooling/README.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('226a3e76e9dad7f54e453127b93b5ce83aec435d','tooling/congruencey-bugs/BUGS.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('ff6b7ef61edb19c2f22a9e4ecc6495b011b82372','tooling/congruencey-bugs/README.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('41df2c12d4a3f4c7409f09fe61a6ee08b32f2b96','tooling/congruencey-harness/README.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('19af3edf9e10435b871c150b8160ce3113a0483e','tooling/congruencey-tests/README.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('65640b6c4b1714f1e8c9edb518c315ac25018168','tooling/coverage/README.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('09f94bd2f92459388022a9ff03d1aeb1238b2ff8','tooling/pwdriver/README.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('99147dc3cb7d79cfea03878a750f3730c569df9b','tracker/SIGNALS.md','86a22c6c96ca87752b2cfb39550d8a875f21e0e3',1783395431.0,0);
+INSERT INTO "doc_refs" VALUES('f379aa1afa261c687801a40156cbb6e65dd7afeb','DEPENDENCIES.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('9633c1bb267dad588bde40abf71bf388214255af','DEPLOY.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('f8ae1749c3f61eafa8c6348002c5c932956aa7c0','README.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('1dc1f906d9eed05a3c17cc731cd55e044b83f225','bugs/README.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('6e301323634823299315e89bf041e4172a7752e0','checkouts/current/ARCHITECTURE.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('54393bd584b3c8764a2f601fa371e0d9c15aa933','checkouts/current/LINEAGE.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('9213bc818b42785ffe5af0e60490629e2ff31eda','checkouts/current/README.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('be0f0224abfc1a419b03503a167b4e11e0472751','checkouts/current/doc/CMS_ADDITIONS.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('995f73145bb9b63b39c0f632f658fa21ea9d35e9','checkouts/current/doc/Changes.txt','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('3ee0b6ac0393133d38bbb24d156c308ce6995c0e','checkouts/current/doc/Install.txt','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('39262c9277f9a17e06add5587286992a22809b18','checkouts/current/doc/License.txt','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('d24e99ba398624e585a795cb9749932d28a8e8eb','checkouts/current/doc/NextVersion.txt','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('706839d83f653a4e212be4801a4dd3453d69efc3','checkouts/current/doc/Version.txt','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('cebe7df895ac25b4a697597b696c8c13a7d432ff','checkouts/current/fixes/README.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('7436a5ae6b5841625ff942461d285e0f0566eb4d','checkouts/current/tests/parser/README.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('706880e03b2820a01c5ac2a5807065c7ee07701b','checkouts/current/tools/README.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('ef3bb4feed520bf1fd6936c1fb1972f4341ded3f','checkouts/current/versioning/BUGS_FOUND.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('78f7f65e8b780f95d5583210f91981602e609e75','checkouts/current/versioning/README.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('ce7ce503587af036bb1cef28c1d809097096c8b6','checkouts/current/versioning/logs/README.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('01e834283e19ac572bb8b1d2ed1b456687e3b1f8','logs/README.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('1cb8a9f7475cc85cdee083326de0c2e08ec6d94d','tooling/README.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('226a3e76e9dad7f54e453127b93b5ce83aec435d','tooling/congruencey-bugs/BUGS.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('ff6b7ef61edb19c2f22a9e4ecc6495b011b82372','tooling/congruencey-bugs/README.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('41df2c12d4a3f4c7409f09fe61a6ee08b32f2b96','tooling/congruencey-harness/README.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('19af3edf9e10435b871c150b8160ce3113a0483e','tooling/congruencey-tests/README.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('65640b6c4b1714f1e8c9edb518c315ac25018168','tooling/coverage/README.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('09f94bd2f92459388022a9ff03d1aeb1238b2ff8','tooling/pwdriver/README.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
+INSERT INTO "doc_refs" VALUES('99147dc3cb7d79cfea03878a750f3730c569df9b','tracker/SIGNALS.md','25ab2fa77503102595d18a7b73ba8f8deda19158',1783395513.0,1);
 CREATE TABLE forms (
     `key` INTEGER PRIMARY KEY, name TEXT, formName TEXT, elementString TEXT,
     implements TEXT, selection TEXT, required INTEGER, `order` INTEGER);
@@ -28264,7 +28207,7 @@ INSERT INTO "forms" VALUES(26,'tag','AnnotateForm','','TextField','Tag:',1,3);
 INSERT INTO "forms" VALUES(27,'note','AnnotateForm','','TextBox','Note:',0,4);
 CREATE TABLE heartbeat (
     component TEXT PRIMARY KEY, last_seen TEXT, ttl INTEGER, state TEXT);
-INSERT INTO "heartbeat" VALUES('ticket_reader','2026-07-06T21:37:00',60,'ok');
+INSERT INTO "heartbeat" VALUES('ticket_reader','2026-07-06T21:43:31',60,'ok');
 CREATE TABLE memories (
     id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, session TEXT,
     tool TEXT, intent TEXT, note TEXT);
@@ -28500,13 +28443,14 @@ INSERT INTO "tickets" VALUES(134,1.78338886544856762e+09,1.78338889407556605e+09
 INSERT INTO "tickets" VALUES(135,1.78338886546839761e+09,1.7833888940878148e+09,'documentation','Docs may be stale: DEPLOY.md','low','CLOSED','VERIFIED — cosmetic only: page column widened 640->960px (halve the L/R margin). No documented behavior changed.','{"doc": "DEPLOY.md", "commits": ["b86f1167e8125ae33aef591e60268837669a4f39"], "source": "doc_watch"}');
 INSERT INTO "tickets" VALUES(136,1.78338886547086167e+09,1.78338889408998274e+09,'documentation','Docs may be stale: review documentation','low','CLOSED','VERIFIED — cosmetic only: page column widened 640->960px (halve the L/R margin). No documented behavior changed.','{"doc": "__generic__", "commits": ["b86f1167e8125ae33aef591e60268837669a4f39"], "source": "doc_watch"}');
 INSERT INTO "tickets" VALUES(137,1.78338886547315526e+09,1.78338889409194541e+09,'documentation','Docs may be stale: checkouts/current/tools/README.md','low','CLOSED','VERIFIED — cosmetic only: page column widened 640->960px (halve the L/R margin). No documented behavior changed.','{"doc": "checkouts/current/tools/README.md", "commits": ["b86f1167e8125ae33aef591e60268837669a4f39"], "source": "doc_watch"}');
+INSERT INTO "tickets" VALUES(138,1.78339543158758664e+09,1783395513.73191,'documentation','Docs may be stale: checkouts/current/tools/README.md','low','CLOSED','RESOLVED — documented db_export/db_import/set_admin/db_verify in tools/README (new DB export/import section + db_verify gate).','{"doc": "checkouts/current/tools/README.md"}');
 CREATE INDEX ix_tickets_status   ON tickets(status);
 CREATE INDEX idx_memories_session ON memories(session);
 CREATE INDEX idx_memories_ts ON memories(ts);
 CREATE UNIQUE INDEX ix_code_refs ON code_refs(hash, path, commit_sha);
 CREATE UNIQUE INDEX ix_doc_refs ON doc_refs(hash, path, commit_sha);
 DELETE FROM "sqlite_sequence";
-INSERT INTO "sqlite_sequence" VALUES('tickets',137);
+INSERT INTO "sqlite_sequence" VALUES('tickets',138);
 INSERT INTO "sqlite_sequence" VALUES('signals',15);
 INSERT INTO "sqlite_sequence" VALUES('memories',9);
 INSERT INTO "sqlite_sequence" VALUES('_merge_conflicts',9);

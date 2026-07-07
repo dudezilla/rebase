@@ -103,9 +103,11 @@ curl cookie jars); frozen/vendored trees excluded. The four archive tables (and 
   deploy-time injection (or `prod_seed.php` picks up `CONGRUENCY_ADMIN_LOGIN`/`_PASSWORD` at deploy) so no
   credential ships in git.
 - `db_verify.py` — integrity linter: every stored blob body must hash to its git blob id
-  (`git_blob_sha(body) == hash`); `--manifest` also checks the running source (`is_current`) against git
-  HEAD. Exit 1 on any mismatch (gate-able). Blobs are stored **byte-exact** (raw bytes, no newline
-  translation) so this holds — content-addressing verified end to end.
+  (`git_blob_sha(body) == hash`); `--manifest` checks the running source (`is_current`) against **git HEAD**,
+  falling back to the shipped **`state/manifest.json`** (path→hash, written by `db_export`) when git is
+  absent — so a production box can verify its DB against what was shipped. Exit 1 on any mismatch (gate-able).
+  Blobs are stored **byte-exact** (raw bytes, no newline translation) so this holds. `SourceList` also shows
+  a live **✓ verified / ✗ mismatch** badge per file (recomputes the blob hash in PHP on view).
 - `doc_watch.py` — files a `documentation` ticket when a commit changes code but no doc (post-commit hook).
 - `serve.py` — the dev server. `crawl.py` — BFS site spider → broken-link report (uses `?api=Documents`
   as the page oracle; expect exactly **1** broken = the deliberate `?page=nope` demo on `about`).

@@ -85,7 +85,13 @@ def head_manifest(root):
 
 
 def verify_manifest(dbfile, root):
-    head = head_manifest(root)
+    head = head_manifest(root)               # git ls-tree HEAD (independent truth when git is present)
+    source = "git HEAD"
+    if not head:                             # no git / not a repo (e.g. a production box) -> shipped manifest
+        mpath = os.path.join(root, "checkouts", "current", "state", "manifest.json")
+        if os.path.isfile(mpath):
+            head = json.load(open(mpath))
+            source = "state/manifest.json"
     c = sqlite3.connect("file:%s?mode=ro" % dbfile, uri=True)
     drift = []
     for tbl in ("code_refs", "doc_refs"):
@@ -97,7 +103,7 @@ def verify_manifest(dbfile, root):
             if head.get(path) != h:
                 drift.append((path, h, head.get(path)))
     c.close()
-    return drift
+    return source, drift
 
 
 def main():
@@ -118,9 +124,9 @@ def main():
     rc = 0 if not bad else 1
 
     if a.manifest:
-        drift = verify_manifest(dbfile, reg["__root__"])
-        print("db_verify: is_current source vs git HEAD -> %s" % (
-            "in sync" if not drift else "%d drifted" % len(drift)))
+        source, drift = verify_manifest(dbfile, reg["__root__"])
+        print("db_verify: is_current source vs %s -> %s" % (
+            source, "in sync" if not drift else "%d drifted" % len(drift)))
         for path, dbh, headh in drift[:10]:
             print("  DRIFT  %s  db=%s head=%s" % (path, (dbh or "-")[:12], (headh or "absent")[:12]))
         if drift:

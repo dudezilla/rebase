@@ -123,6 +123,11 @@ def export(reg, exclude, last_n=None):
         c.commit()
         c.execute("VACUUM")
         c.commit()
+        manifest = {}
+        for tbl in ("code_refs", "doc_refs"):
+            if c.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (tbl,)).fetchone():
+                for path, h in c.execute('SELECT path, hash FROM "%s" WHERE is_current=1' % tbl):
+                    manifest[path] = h
         sql = "\n".join(c.iterdump()) + "\n"
         c.close()
     finally:
@@ -135,7 +140,12 @@ def export(reg, exclude, last_n=None):
         f.write(sql)
     with lzma.open(seed + ".xz", "wt", preset=9, newline="") as f:
         f.write(sql)
-    return seed, len(sql.encode("utf-8")), dropped
+    # ship a manifest (running-source path -> git blob hash) so a deployed box with no git can still run
+    # `db_verify.py --manifest` to check its DB against what was shipped.
+    with open(os.path.join(state, "manifest.json"), "w") as f:
+        json.dump(manifest, f, indent=0, sort_keys=True)
+        f.write("\n")
+    return seed, len(sql.encode("utf-8")), dropped, len(manifest)
 
 
 def main():
@@ -158,12 +168,12 @@ def main():
             exclude = tuple(t for t in DEFAULT_EXCLUDE
                             if not (a.keep_events and t == "events")
                             and not (a.keep_auth and t in auth))
-        seed, nbytes, dropped = export(reg, exclude, a.last_n)
+        seed, nbytes, dropped, nmanifest = export(reg, exclude, a.last_n)
         rel = os.path.relpath(seed, reg["__root__"])
         hist = ("last %d commits" % a.last_n) if a.last_n else "full history"
-        print("db_export: wrote %s (%.2f MB text, %.2f MB xz); history: %s; excluded: %s" % (
+        print("db_export: wrote %s (%.2f MB text, %.2f MB xz) + manifest.json (%d files); history: %s; excluded: %s" % (
             rel, nbytes / 1024 / 1024, os.path.getsize(seed + ".xz") / 1024 / 1024,
-            hist, ", ".join(dropped) or "none"))
+            nmanifest, hist, ", ".join(dropped) or "none"))
         return 0
     except Exception as e:  # noqa: BLE001
         tb = traceback.format_exc()

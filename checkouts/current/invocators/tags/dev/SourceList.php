@@ -119,8 +119,14 @@ if (!class_exists("SourceList")) {
             $hs->execute(array($path));
             $hist = $hs->fetchAll(PDO::FETCH_ASSOC);
 
+            // live integrity check: recompute the git blob id of the stored body and compare to the hash it's
+            // filed under. sha1("blob <bytelen>\0" + body) — strlen is byte-based, body is the raw stored string.
+            $computed = sha1("blob " . strlen((string) $blob['body']) . "\x00" . (string) $blob['body']);
+            $badge = hash_equals((string) $hash, $computed)
+                ? " &middot; <span style='color:#1a7a3a' title='body hashes to its git blob id — content-addressing verified'>&#10003; verified</span>"
+                : " &middot; <span style='color:#b00020' title='body does NOT match its stored hash'>&#10007; hash mismatch</span>";
             $head = "<p><a href='?page=source'>&larr; index</a> &middot; <strong>" . self::esc($path) . "</strong> "
-                  . "<span style='color:#888'>(" . self::esc($blob['lang']) . " &middot; " . (int) $blob['bytes'] . " B &middot; blob " . self::esc(substr($hash, 0, 12)) . ")</span></p>\n";
+                  . "<span style='color:#888'>(" . self::esc($blob['lang']) . " &middot; " . (int) $blob['bytes'] . " B &middot; blob " . self::esc(substr($hash, 0, 12)) . ")</span>" . $badge . "</p>\n";
 
             $paths = array(); $isCur = false;
             foreach ($refs as $r) { $paths[$r['path']] = 1; if ($r['is_current']) { $isCur = true; } }
