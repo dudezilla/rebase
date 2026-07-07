@@ -19,7 +19,7 @@ Server-rendered `Tag_Interface` classes. New:
 | `<<<TicketList>>>` | `?page=tickets` | renders the `tickets` table (OPEN first) |
 | `<<<MemoryList>>>` | `?page=memories` | **top-level** tag; the controller (Claude) tool-use log — merges the `memories` table + the live gate log `~/.MCP/gate-memories.json`, reverse-chronological, **paginated** (`?p=`) |
 | `<<<SiteMap>>>` | nav | the nav, generated from `Documents` (Pages · Tags · …) |
-| `<<<Style>>>` | every page `<head>` | **the single site stylesheet** — one place for the whole look; full-width (no max-width), plus the nav all-caps + code/pre/table styling. Templates embed `<<<Style>>>` instead of an inline `<style>` |
+| `<<<Style>>>` | every page `<head>` | **the single site stylesheet** — one place for the whole look; full-width (no max-width), nav all-caps, code/pre/table styling. Templates embed `<<<Style>>>` not an inline `<style>`. Reading pages (catalog/about/invalid, and the DocList doc view) opt into `class="prose"` (`max-width:70ch`) for a comfortable measure; data/code pages stay full-width |
 | `<<<PageList>>>` | `?page=pages` | index of every page |
 | `<<<TagList>>>` | `?page=tags` | gallery of every tag; `?tag=NAME` renders that tag (re-entrancy guarded) |
 | `<<<CategoryPages>>>` | `?page=pages` | browse pages by category (`?category=NAME`) |

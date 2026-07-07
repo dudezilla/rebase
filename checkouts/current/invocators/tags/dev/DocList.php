@@ -85,7 +85,7 @@ if (!class_exists("DocList")) {
             $rendered = ($blob['kind'] === 'markdown')
                 ? self::markdown($blob['body'])
                 : "<pre style='background:#f4f1e8;padding:.6rem;overflow:auto'>" . self::esc($blob['body']) . "</pre>";
-            return $head . $verhtml . "<div class='doc'>\n" . $rendered . "</div>\n";
+            return $head . $verhtml . "<div class='doc prose'>\n" . $rendered . "</div>\n";
         }
 
         /* Minimal markdown subset. ESCAPE FIRST (so HTML and '<<<Tag>>>' examples stay literal), then apply:

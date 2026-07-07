@@ -26,11 +26,12 @@ $style = 'body{font-family:Georgia,serif;max-width:960px;margin:3rem auto;paddin
        . 'line-height:1.6;color:#222;background:#f7f4ee}a{color:#8a5a1a}'
        . 'h1{font-weight:normal}code{background:#eae5d8;padding:1px 4px}';
 
-function page($nav, $style, $body) {
+function page($nav, $style, $body, $prose = false) {
     // The one stylesheet is the <<<Style>>> tag and the nav is <<<SiteMap>>>; $nav/$style are legacy
-    // params, ignored. Each template embeds <<<TitleTag>>> so the tag engine runs on every request.
+    // params, ignored. Reading pages pass $prose=true to constrain the text to a comfortable measure.
+    $inner = $prose ? '<div class="prose">' . $body . '</div>' : $body;
     return "<!DOCTYPE html>\n<html>\n<head>\n<<<TitleTag>>>\n<<<Style>>>\n</head>\n"
-         . "<body>\n<nav><<<SiteMap>>></nav>\n$body\n</body>\n</html>\n";
+         . "<body>\n<nav><<<SiteMap>>></nav>\n$inner\n</body>\n</html>\n";
 }
 
 $home = page($nav, $style,
@@ -41,7 +42,7 @@ $home = page($nav, $style,
   . '<code>Controller::control()</code> front controller, its custom autoloader, '
   . 'the persistent-object manager, and the &lt;&lt;&lt;tag&gt;&gt;&gt; engine.</p>'
   . '<p>The <code>&lt;title&gt;</code> above was produced by <code>TitleTag</code>, '
-  . 'loaded on demand by your tag loader.</p>');
+  . 'loaded on demand by your tag loader.</p>', true);
 
 $about = page($nav, $style,
     '<h1>About this resurrection</h1>'
@@ -51,7 +52,7 @@ $about = page($nav, $style,
   . 'stub, and a neutered <code>AutoLoader.php</code> (PHP 8 forbids declaring '
   . '<code>__autoLoad()</code>). Everything else is 2006 code.</p>'
   . '<p>Click <a href="?page=nope">the broken link</a> to watch the DAO&#39;s '
-  . '"invalid key" fallback path fire.</p>');
+  . '"invalid key" fallback path fire.</p>', true);
 
 // The 'invalid' document is the 404 page the DAO's fallback path explicitly
 // looks up when a requested key isn't found (DocumentDAO::produceDocument).
@@ -60,7 +61,7 @@ $notfound = page($nav, $style,
   . '<p>The <code>DocumentID</code> you asked for isn&#39;t in the database, so '
   . '<code>DocumentDAO</code> fell back to the <code>"invalid"</code> document '
   . '&mdash; exactly as the 2006 code intended.</p>'
-  . '<p><a href="?page=catalog">&larr; back home</a></p>');
+  . '<p><a href="?page=catalog">&larr; back home</a></p>', true);
 
 // The bug-report page: authored content that embeds our two new congruency
 // components. The <<<BugDemo(...)>>> tags run the bugs live; <<<BugReport>>>

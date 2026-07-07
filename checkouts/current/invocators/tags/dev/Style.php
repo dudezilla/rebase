@@ -23,6 +23,7 @@ if (!class_exists("Style")) {
                  . "nav{margin:0 0 1.5rem;padding-bottom:.75rem;border-bottom:1px solid #ccc;text-transform:uppercase;letter-spacing:.04em}"
                  . "table{border-collapse:collapse}"
                  . "th,td{text-align:left}"
+                 . ".prose{max-width:70ch}"   // reading pages opt in via class='prose' — a comfortable measure; data/code pages stay full-width
                  . "</style>";
         }
     }

@@ -31,20 +31,22 @@ $style = 'body{font-family:Georgia,serif;max-width:960px;margin:3rem auto;paddin
        . 'line-height:1.6;color:#222;background:#f7f4ee}a{color:#8a5a1a}'
        . 'h1{font-weight:normal}code{background:#eae5d8;padding:1px 4px}';
 
-function page($nav, $style, $body) {
+function page($nav, $style, $body, $prose = false) {
     // The one stylesheet is <<<Style>>> and the nav is <<<SiteMap>>>; $nav/$style are legacy params, ignored.
+    // Reading pages pass $prose=true to constrain the text to a comfortable measure (class="prose").
+    $inner = $prose ? '<div class="prose">' . $body . '</div>' : $body;
     return "<!DOCTYPE html>\n<html>\n<head>\n<<<TitleTag>>>\n<<<Style>>>\n</head>\n"
-         . "<body>\n<nav><<<SiteMap>>></nav>\n$body\n</body>\n</html>\n";
+         . "<body>\n<nav><<<SiteMap>>></nav>\n$inner\n</body>\n</html>\n";
 }
 
 $home = page($nav, $style,
     '<h1>Welcome</h1>'
   . '<p>This is a fresh Congruency site. Add your pages, catalog, and features here.</p>'
   . '<p>It is rendered server-side by the congruency <code>&lt;&lt;&lt;tag&gt;&gt;&gt;</code> engine; '
-  . 'the <code>&lt;title&gt;</code> above was produced by <code>TitleTag</code> from this page&rsquo;s title.</p>');
+  . 'the <code>&lt;title&gt;</code> above was produced by <code>TitleTag</code> from this page&rsquo;s title.</p>', true);
 
 $notfound = page($nav, $style,
-    '<h1>Page not found</h1><p>That page does not exist. <a href="?page=catalog">Return home</a>.</p>');
+    '<h1>Page not found</h1><p>That page does not exist. <a href="?page=catalog">Return home</a>.</p>', true);
 
 $tpl = $pdo->prepare("INSERT INTO Document_Templates (TemplateID, Content) VALUES (?, ?)");
 $tpl->execute(array(1, $home));
