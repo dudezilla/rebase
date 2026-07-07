@@ -89,6 +89,9 @@ gates need `serve.py` up), prints a PASS/FAIL line each, and exits 1 if any fail
 - **`db_import.py`** — rebuild a DB from the seed (`--to`, `--verify`); refuses to clobber without `--force`.
 - **`set_admin.py`** — provision/rotate an admin login (`--db --login --password|--generate`); pairs with the
   `CONGRUENCY_ADMIN_LOGIN`/`_PASSWORD` env that `prod_seed.php` reads at deploy.
+- **`api_key.py`** — mint/list/revoke REST API keys (`--new <label>` / `--list` / `--revoke <key>`); a key
+  authorizes REST writes + token routes via `X-Api-Key` (no admin login). Keys live in `api_keys` (denylisted
+  from REST, excluded from the seed) — mint per-deployment.
 
 ## Rules it obeys (note-for-claude)
 

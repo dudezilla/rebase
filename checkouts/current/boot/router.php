@@ -35,7 +35,7 @@ include(BIN . "Initialize_POM.php");
 // so writes can require the admin login via UserPrivilegeSet::logged_in(); reads stay public. Short-circuits
 // the CMS front controller.
 require $BOOT . '/rest.php';
-if (isset($_GET['api'])) { congruency_rest_dispatch(); exit; }
+if (isset($_GET['api']) || isset($_GET['route'])) { congruency_rest_dispatch(); exit; }
 
 Controller::control();
 

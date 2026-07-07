@@ -28,7 +28,7 @@ from datetime import datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = None
-DEFAULT_EXCLUDE = ("events", "Login_Password", "User_Group_Mappings", "Group_Privileges")
+DEFAULT_EXCLUDE = ("events", "Login_Password", "User_Group_Mappings", "Group_Privileges", "api_keys")
 
 
 def find_registry(start=HERE):

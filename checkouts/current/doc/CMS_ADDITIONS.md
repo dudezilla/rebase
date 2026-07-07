@@ -55,21 +55,28 @@ writes an annotation). Same model the source `⚑ flag` uses (`tag=flag`, `targe
 everything tagged at `?page=annotations` (`<<<Annotations>>>`) — one table over flags + categories, filter
 by `tag` or target-`kind` (source/page/doc/ticket), each target linked back to where it lives.
 
-## REST (`boot/rest.php`, dispatched by `router.php` on `?api=`)
-Generic CRUD over every table (name allowlisted against `sqlite_master`, columns validated) **minus an
-admin denylist** — the self-hosting archive (`code_blobs`/`code_refs`/`doc_blobs`/`doc_refs`) and the auth
-tables (`Login_Password`/`User_Group_Mappings`/`Group_Privileges`) are excluded; a request for one returns
-404 as if it didn't exist. Everything else (`Documents`, `forms`, `tickets`, `annotations`, `Categories`, …)
-is reachable:
-- `GET  ?api=tables` — discovery (lists only the exposed tables)
-- `GET  ?api=<table>[&p=&per=]` — paginated rows; `&id=<pk>` — one row (`404` if absent)
-- `POST ?api=<table>` — create from a JSON object body (`201`; `400` on bad body / no valid columns)
-- `PUT|PATCH ?api=<table>&id=` — update (needs a single-column pk; the pk itself is protected)
-- `DELETE ?api=<table>&id=` — delete one row (needs a single-column pk + `?id=`)
+## REST (`boot/rest.php`, dispatched by `router.php` on `?api=` / `?route=`)
+The flexible system interface over the unified DB, in three layers (table/column names allowlisted vs
+`sqlite_master`/`table_info`; route SQL is admin-authored + trusted; consumer `:params` always bound — no
+injection). An **admin denylist** hides the self-hosting archive (`code_blobs`/`code_refs`/`doc_blobs`/`doc_refs`),
+the auth tables (`Login_Password`/…), and **`api_keys`**; a request for one 404s.
 
-**Reads are public; writes (`POST`/`PUT`/`PATCH`/`DELETE`) require the admin login** — an unauthenticated
-write returns `401`. REST now dispatches from `router.php` *after* the session/POM boot (output-buffered so
-it can still send clean JSON headers), so it can check `UserPrivilegeSet::logged_in()`.
+**1 — Generic table CRUD** (the fast internal path), over every non-denied table:
+- `GET  ?api=tables` — discovery
+- `GET  ?api=<table>[&<col>=<v>&order=<c>.<dir>&limit=&p=&per=]` — **filter by any real column**, order, paginate
+- `GET  ?api=<table>&id=<pk>` — one row (`404` if absent)
+- `POST ?api=<table>` / `PUT|PATCH ?api=<table>&id=` / `DELETE ?api=<table>&id=` — create / update / delete
+
+**2 — Data-driven named routes** (the *stable contract*): endpoints are rows in **`api_routes`**
+(`name, method, sql, auth, params`). `?route=<name>` runs that row's parameterized SQL with bound `:params`
+— **adding/changing an endpoint is a row, no redeploy** (same pattern as pages=`Documents`, forms=`forms`).
+External components bind to the route *name/shape*; the schema behind it can be refactored freely without
+breaking them. Generic CRUD is the internal/experimental path.
+
+**3 — Auth**: **reads are public; writes + `auth='token'` routes need the admin session OR an API key**
+(`X-Api-Key: <key>` header or `?key=`, stored in `api_keys`, minted by `tools/api_key.py` — services use
+this, no login cookie). Unauthenticated write → `401`. REST dispatches from `router.php` *after* the
+session/POM boot (output-buffered for clean JSON headers) so it can check `UserPrivilegeSet::logged_in()`.
 
 ## Self-hosting — the CMS renders its own running source + docs
 `?page=source` and `?page=docs` browse the CMS's own source and documentation, mirrored into the DB on

@@ -5,19 +5,94 @@ Congruency is free software, licensed under the GNU GPLv2 or later.
 See the LICENSE file in the project root for full license terms.
 */
 /*
- * rest.php — a generic REST interface over every table in the unified DB (CONGRUENCY_SQLITE), minus an
- * admin denylist (the self-hosting archive + the auth tables). Dispatched by boot/router.php when ?api is
- * present — AFTER the session/POM/ClassLoader boot, so it can check the admin login:
+ * rest.php — the flexible REST interface over the unified DB (CONGRUENCY_SQLITE). Dispatched by
+ * boot/router.php on ?api= / ?route= AFTER the session/POM/ClassLoader boot (so it can check the login).
+ * Three layers:
  *
- *   GET  ?api=tables              -> { "tables": [ ... ] }        (discovery)
- *   GET  ?api=<table>[&p=&per=]   -> { table,total,page,per,pages,rows:[...] }   (paginated)
- *   GET  ?api=<table>&id=<pk>     -> a single row by primary key
- *   POST/PUT/PATCH/DELETE ?api=   -> create / update / delete
+ *  (1) Generic table CRUD (the fast internal path) — every table minus an admin denylist:
+ *      GET  ?api=tables                                             -> { "tables": [ ... ] }
+ *      GET  ?api=<table>[&<col>=<v>&order=<c>.<dir>&limit=&p=&per=]  -> filtered / paginated rows
+ *      GET  ?api=<table>&id=<pk>                                    -> a single row
+ *      POST/PUT/PATCH/DELETE ?api=<table>[&id=]                     -> create / update / delete
+ *  (2) Data-driven NAMED ROUTES (the stable contract) — endpoints are rows in `api_routes`:
+ *      ?route=<name>  -> runs that row's parameterized SQL with bound :params (add an endpoint = a row).
+ *  (3) Token auth — writes / token-routes accept an API key (X-Api-Key header or ?key=, in `api_keys`)
+ *      OR the admin session. READS stay public.
  *
- * The table name is always validated against sqlite_master before use (allowlist), so it can't be used for
- * injection. READS are public; WRITES (POST/PUT/PATCH/DELETE) require the admin login
- * (UserPrivilegeSet::logged_in()) — an unauthenticated write gets 401.
+ * Table/column names are validated against sqlite_master / table_info (allowlist); route SQL is admin-
+ * authored + trusted, consumer :params are always bound (prepared) — no injection.
  */
+
+/* authorization: admin session OR a valid API key (X-Api-Key header / ?key=, looked up in api_keys). */
+function congruency_rest_apikey($db) {
+    $key = isset($_SERVER['HTTP_X_API_KEY']) ? (string) $_SERVER['HTTP_X_API_KEY'] : (string) ($_GET['key'] ?? '');
+    if ($key === '') { return false; }
+    if (!$db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='api_keys'")->fetch()) { return false; }
+    $st = $db->prepare("SELECT label, scope FROM api_keys WHERE key = ?");
+    $st->execute(array($key));
+    $row = $st->fetch(PDO::FETCH_ASSOC);
+    return $row ? $row : false;
+}
+function congruency_rest_authorized($db) {
+    if (class_exists('UserPrivilegeSet') && UserPrivilegeSet::logged_in()) { return true; }
+    return congruency_rest_apikey($db) !== false;
+}
+
+/* data-driven named route: run one row of api_routes with bound :params. The route's SQL is admin-authored
+ * (writes are gated), so it is trusted; only declared :params that the SQL actually uses are bound. */
+function congruency_rest_route($db, $route, $method) {
+    if (!$db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='api_routes'")->fetch()) {
+        http_response_code(404); echo json_encode(array('error' => 'no api_routes table')) . "\n"; return true;
+    }
+    $rs = $db->prepare("SELECT method, sql, auth, params FROM api_routes WHERE name = ?");
+    $rs->execute(array($route));
+    $def = $rs->fetch(PDO::FETCH_ASSOC);
+    if (!$def) { http_response_code(404); echo json_encode(array('error' => 'unknown route', 'route' => $route)) . "\n"; return true; }
+
+    $allowed = array_map('trim', explode(',', strtoupper((string) $def['method'] ?: 'GET')));
+    if (!in_array($method, $allowed, true)) {
+        http_response_code(405); echo json_encode(array('error' => 'method not allowed', 'route' => $route, 'allowed' => $allowed)) . "\n"; return true;
+    }
+    $auth = strtolower(trim((string) ($def['auth'] ?? 'public')));
+    if ($auth === 'admin' && !(class_exists('UserPrivilegeSet') && UserPrivilegeSet::logged_in())) {
+        http_response_code(401); echo json_encode(array('error' => 'admin login required', 'route' => $route)) . "\n"; return true;
+    }
+    if ($auth === 'token' && !congruency_rest_authorized($db)) {
+        http_response_code(401); echo json_encode(array('error' => 'API key or admin login required', 'route' => $route)) . "\n"; return true;
+    }
+
+    $input = $_GET;
+    if (in_array($method, array('POST', 'PUT', 'PATCH', 'DELETE'), true)) {
+        $body = json_decode((string) file_get_contents('php://input'), true);
+        if (is_array($body)) { $input = array_merge($input, $body); }
+    }
+    $decl = json_decode(((string) ($def['params'] ?? '')) ?: '{}', true);
+    if (!is_array($decl)) { $decl = array(); }
+
+    $st = $db->prepare((string) $def['sql']);
+    foreach ($decl as $pname => $ptype) {
+        if (strpos((string) $def['sql'], ':' . $pname) === false) { continue; }   // only bind params the SQL uses
+        $val = array_key_exists($pname, $input) ? $input[$pname] : null;
+        if ($val !== null) {
+            $t = strtolower((string) $ptype);
+            if ($t === 'int') { $val = (int) $val; }
+            elseif ($t === 'float' || $t === 'real') { $val = (float) $val; }
+            else { $val = (string) $val; }
+        }
+        $st->bindValue(':' . $pname, $val);
+    }
+    $st->execute();
+
+    if (stripos(ltrim((string) $def['sql']), 'select') === 0) {
+        echo json_encode(array('route' => $route, 'rows' => $st->fetchAll(PDO::FETCH_ASSOC)),
+                         JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    } else {
+        echo json_encode(array('route' => $route, 'affected' => $st->rowCount(), 'rowid' => $db->lastInsertId()),
+                         JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    }
+    return true;
+}
+
 function congruency_rest_dispatch() {
     if (ob_get_level()) { ob_clean(); }                 // drop buffered boot whitespace so JSON headers/body are clean
     header('Content-Type: application/json');
@@ -32,19 +107,22 @@ function congruency_rest_dispatch() {
         foreach ($db->query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name") as $r) {
             $tables[$r['name']] = 1;
         }
-        // admin-only: keep the self-hosting source/doc archive + the auth tables out of the public REST surface
+        // admin-only: the self-hosting archive + the auth tables + the API keys stay off the public REST surface
         foreach (array('code_blobs', 'code_refs', 'doc_blobs', 'doc_refs',
-                       'Login_Password', 'User_Group_Mappings', 'Group_Privileges') as $__deny) { unset($tables[$__deny]); }
+                       'Login_Password', 'User_Group_Mappings', 'Group_Privileges', 'api_keys') as $__deny) { unset($tables[$__deny]); }
 
         $api = (string)($_GET['api'] ?? '');
+        $route = (string)($_GET['route'] ?? '');
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
 
-        // Writes require the admin login; reads stay public.
-        if (in_array($method, array('POST', 'PUT', 'PATCH', 'DELETE'), true)
-            && (!class_exists('UserPrivilegeSet') || !UserPrivilegeSet::logged_in())) {
+        // (2) Data-driven named routes: ?route=<name> runs an api_routes row (with its own auth).
+        if ($route !== '') { return congruency_rest_route($db, $route, $method); }
+
+        // (3) Writes require authorization: the admin session OR a valid API key (X-Api-Key / ?key=). Reads public.
+        if (in_array($method, array('POST', 'PUT', 'PATCH', 'DELETE'), true) && !congruency_rest_authorized($db)) {
             http_response_code(401);
-            echo json_encode(array('error' => 'admin login required for writes', 'method' => $method,
-                                   'hint' => 'log in (e.g. via the Login form), then retry')) . "\n";
+            echo json_encode(array('error' => 'authorization required for writes', 'method' => $method,
+                                   'hint' => 'send X-Api-Key: <key> (or ?key=), or log in via the Login form')) . "\n";
             return true;
         }
 
@@ -116,13 +194,33 @@ function congruency_rest_dispatch() {
                 if ($row === false) { http_response_code(404); $out = array('error' => 'not found', 'table' => $api, 'id' => $_GET['id']); }
                 else { $out = array('table' => $api, 'pk' => $pk, 'row' => $row); }
             } else {
-                $per = isset($_GET['per']) ? max(1, min(500, (int)$_GET['per'])) : 50;
+                // filter by any real column named in the query string; order=<col>.<dir>; limit / p / per
+                $cols = array();
+                foreach ($db->query("PRAGMA table_info(\"$api\")") as $c) { $cols[$c['name']] = 1; }
+                $reserved = array('api' => 1, 'route' => 1, 'key' => 1, 'p' => 1, 'per' => 1, 'id' => 1, 'order' => 1, 'limit' => 1);
+                $where = array(); $bind = array();
+                foreach ($_GET as $k => $v) {
+                    if (isset($cols[$k]) && !isset($reserved[$k])) { $where[] = "\"$k\" = :f_$k"; $bind[":f_$k"] = $v; }
+                }
+                $wsql = $where ? (' WHERE ' . implode(' AND ', $where)) : '';
+                $order = '';
+                if (isset($_GET['order'])) {
+                    $op = explode('.', (string)$_GET['order']);
+                    $ocol = $op[0]; $odir = (isset($op[1]) && strtolower($op[1]) === 'desc') ? 'DESC' : 'ASC';
+                    if (isset($cols[$ocol])) { $order = " ORDER BY \"$ocol\" $odir"; }
+                }
+                $per = isset($_GET['per']) ? max(1, min(500, (int)$_GET['per']))
+                     : (isset($_GET['limit']) ? max(1, min(500, (int)$_GET['limit'])) : 50);
                 $pg  = isset($_GET['p'])   ? max(1, (int)$_GET['p']) : 1;
-                $total = (int)$db->query("SELECT COUNT(*) FROM \"$api\"")->fetchColumn();
                 $off = ($pg - 1) * $per;
-                $rows = $db->query("SELECT * FROM \"$api\" LIMIT $per OFFSET $off")->fetchAll(PDO::FETCH_ASSOC);
+                $ct = $db->prepare("SELECT COUNT(*) FROM \"$api\"" . $wsql);
+                $ct->execute($bind);
+                $total = (int)$ct->fetchColumn();
+                $q = $db->prepare("SELECT * FROM \"$api\"" . $wsql . $order . " LIMIT $per OFFSET $off");
+                $q->execute($bind);
+                $rows = $q->fetchAll(PDO::FETCH_ASSOC);
                 $out = array('table' => $api, 'pk' => $pk, 'total' => $total, 'page' => $pg, 'per' => $per,
-                             'pages' => (int)ceil($total / max(1, $per)), 'rows' => $rows);
+                             'pages' => (int)ceil($total / max(1, $per)), 'filter' => array_keys($bind), 'rows' => $rows);
             }
         } else {
             http_response_code(404);
