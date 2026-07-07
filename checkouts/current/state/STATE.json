@@ -1,5 +1,6 @@
 {
-  "_comment": "Per-crank state spec. The installer reads this to know how to (re)create and install this crank's state. Paths are relative to the mono/registry root. State is created deterministically by running `seed` under the provisioned php, tarring the result into `artifact`, and storing it on the `side_branch` at <crank>/database.tar.xz.",
+  "_comment": "Per-crank state spec. The installer reads this to know how to install this crank's state into checkouts/current. State IS the big unified database named by `source_db`: make_state snapshots it (sqlite online-backup, WAL-safe) into `artifact` and stores that on the `side_branch`. `seed` is a legacy fallback ONLY (used when source_db is absent) — it fabricates a throwaway stub and must not be relied on.",
+  "source_db": "~/.jazz/congruency.sqlite",
   "seed": "tooling/congruencey-harness/seed.php",
   "artifact": "checkouts/current/state/database.tar.xz",
   "side_branch": "state",

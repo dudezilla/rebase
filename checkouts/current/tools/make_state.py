@@ -107,19 +107,47 @@ def find_php(reg):
     return p
 
 
-def build_tarball(reg, php, tmp):
-    """Re-seed deterministically into `tmp` and return (tar_path, tables)."""
-    spec = json.load(open(STATE_SPEC)) if os.path.isfile(STATE_SPEC) else {}
-    seed_src = os.path.join(reg["__root__"], spec.get("seed", "tooling/congruencey-harness/seed.php"))
-    if not os.path.isfile(seed_src):
-        raise FileNotFoundError("seed generator missing: %s" % seed_src)
-    seed_tmp = os.path.join(tmp, "seed.php")
-    shutil.copy2(seed_src, seed_tmp)
+def _snapshot_sqlite(src_path, dst_path):
+    """Consistent single-file copy of a possibly-live/WAL sqlite via the online backup API —
+    reads committed + WAL pages without mutating the source, and checkpoints into dst."""
+    src = sqlite3.connect(src_path)
+    try:
+        dst = sqlite3.connect(dst_path)
+        try:
+            src.backup(dst)
+        finally:
+            dst.close()
+    finally:
+        src.close()
 
-    r = subprocess.run([php, seed_tmp], cwd=tmp, capture_output=True, text=True, timeout=60)
+
+def build_tarball(reg, php, tmp):
+    """Capture THIS crank's state into `tmp` and return (tar_path, tables).
+
+    The state IS the big unified database. `source_db` in STATE.json names it (default
+    ~/.jazz/congruency.sqlite); it is snapshotted with sqlite's online backup so a live/WAL
+    db yields a consistent single-file copy. It does NOT fabricate a fresh db — that produced
+    a throwaway stub. The legacy seed generator is used ONLY as a fallback when no source_db
+    is configured or present."""
+    spec = json.load(open(STATE_SPEC)) if os.path.isfile(STATE_SPEC) else {}
     sqlite_tmp = os.path.join(tmp, "congruency.sqlite")
-    if r.returncode != 0 or not os.path.isfile(sqlite_tmp):
-        raise RuntimeError("seed failed (exit %s): %s" % (r.returncode, (r.stderr or r.stdout).strip()[:400]))
+
+    source_db = spec.get("source_db")
+    src_path = os.path.expanduser(source_db) if source_db else None
+    if src_path and os.path.isfile(src_path):
+        _snapshot_sqlite(src_path, sqlite_tmp)                  # snapshot the BIG db
+        members = [(sqlite_tmp, "congruency.sqlite")]
+    else:
+        # legacy fallback: fabricate from the seed generator (the old stub path)
+        seed_src = os.path.join(reg["__root__"], spec.get("seed", "tooling/congruencey-harness/seed.php"))
+        if not os.path.isfile(seed_src):
+            raise FileNotFoundError("no source_db (%s) and seed generator missing: %s" % (src_path, seed_src))
+        seed_tmp = os.path.join(tmp, "seed.php")
+        shutil.copy2(seed_src, seed_tmp)
+        r = subprocess.run([php, seed_tmp], cwd=tmp, capture_output=True, text=True, timeout=60)
+        if r.returncode != 0 or not os.path.isfile(sqlite_tmp):
+            raise RuntimeError("seed failed (exit %s): %s" % (r.returncode, (r.stderr or r.stdout).strip()[:400]))
+        members = [(sqlite_tmp, "congruency.sqlite"), (seed_tmp, "seed.php")]
 
     con = sqlite3.connect(sqlite_tmp)
     try:
@@ -129,7 +157,7 @@ def build_tarball(reg, php, tmp):
         con.close()
     missing = set(spec.get("expect_tables", [])) - set(tables)
     if missing:
-        raise RuntimeError("seeded DB missing expected tables: %s" % sorted(missing))
+        raise RuntimeError("state DB missing expected tables: %s" % sorted(missing))
 
     def _norm(ti):
         # reproducible (bug #3): strip mtime/owner so identical state -> identical blob
@@ -140,8 +168,7 @@ def build_tarball(reg, php, tmp):
         return ti
     tar_path = os.path.join(tmp, "database.tar.xz")
     with tarfile.open(tar_path, "w:xz") as t:
-        for src, arc in sorted([(sqlite_tmp, "congruency.sqlite"), (seed_tmp, "seed.php")],
-                               key=lambda x: x[1]):
+        for src, arc in sorted(members, key=lambda x: x[1]):
             t.add(src, arcname=arc, filter=_norm)   # flat, normalized members
     return tar_path, tables
 
