@@ -196,9 +196,7 @@ def ensure_pages(db):
     def next_tid():
         row = db.execute("SELECT COALESCE(MAX(TemplateID),0)+1 FROM Document_Templates").fetchone()
         return row[0] if row else 1
-    # match the site's standard page wrapper (seed.php page()) so these don't load a different-looking style
-    style = "body{font-family:Georgia,serif;max-width:960px;margin:3rem auto;padding:0 1rem;line-height:1.6;color:#222;background:#f7f4ee}a{color:#8a5a1a}h1{font-weight:normal}code{background:#eae5d8;padding:1px 4px}"
-    nav = "<nav style=\"margin:0 0 1.5rem;padding-bottom:.75rem;border-bottom:1px solid #ccc\"><<<SiteMap>>></nav>"
+    # the site's one stylesheet is the <<<Style>>> tag; every page just embeds it + the <<<SiteMap>>> nav
     pages = {
         "source":      ("Source · Congruency", "The CMS's own running source", "<<<SourceList>>>"),
         "docs":        ("Documentation · Congruency", "The CMS's own documentation", "<<<DocList>>>"),
@@ -208,7 +206,7 @@ def ensure_pages(db):
         if db.execute("SELECT 1 FROM Documents WHERE DocumentID=?", (did,)).fetchone():
             continue
         tid = next_tid()
-        body = "<!DOCTYPE html>\n<html>\n<head>\n<<<TitleTag>>>\n<style>%s</style>\n</head>\n<body>\n%s\n<h1>%s</h1>\n%s\n</body>\n</html>\n" % (style, nav, title, tag)
+        body = "<!DOCTYPE html>\n<html>\n<head>\n<<<TitleTag>>>\n<<<Style>>>\n</head>\n<body>\n<nav><<<SiteMap>>></nav>\n<h1>%s</h1>\n%s\n</body>\n</html>\n" % (title, tag)
         db.execute("INSERT INTO Document_Templates(TemplateID, Content) VALUES(?,?)", (tid, body))
         db.execute("INSERT INTO Documents(DocumentID, TemplateID, Title, Description, ContentID) VALUES(?,?,?,?,?)",
                    (did, tid, title, desc, tid))

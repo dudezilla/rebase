@@ -45,8 +45,7 @@ if (!class_exists("SiteMap")) {
                     $text = isset($label[$id]) ? $label[$id] : $id;
                     $links[] = "<a href='?page=" . self::esc($id) . "'>" . self::esc($text) . "</a>";
                 }
-                return "<span style='text-transform:uppercase;letter-spacing:.04em'>"
-                     . implode(" &nbsp;&middot;&nbsp; ", $links) . "</span>";
+                return implode(" &nbsp;&middot;&nbsp; ", $links);   // nav styling (incl. all-caps) lives in <<<Style>>>
             } catch (\Throwable $e) {
                 return "<!-- SiteMap error: " . self::esc($e->getMessage()) . " -->";
             }

@@ -27,9 +27,10 @@ $style = 'body{font-family:Georgia,serif;max-width:960px;margin:3rem auto;paddin
        . 'h1{font-weight:normal}code{background:#eae5d8;padding:1px 4px}';
 
 function page($nav, $style, $body) {
-    // Each template embeds <<<TitleTag>>> so the recursive tag engine runs on every request.
-    return "<!DOCTYPE html>\n<html>\n<head>\n<<<TitleTag>>>\n<style>$style</style>\n</head>\n"
-         . "<body>\n$nav\n$body\n</body>\n</html>\n";
+    // The one stylesheet is the <<<Style>>> tag and the nav is <<<SiteMap>>>; $nav/$style are legacy
+    // params, ignored. Each template embeds <<<TitleTag>>> so the tag engine runs on every request.
+    return "<!DOCTYPE html>\n<html>\n<head>\n<<<TitleTag>>>\n<<<Style>>>\n</head>\n"
+         . "<body>\n<nav><<<SiteMap>>></nav>\n$body\n</body>\n</html>\n";
 }
 
 $home = page($nav, $style,
