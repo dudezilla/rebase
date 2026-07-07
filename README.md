@@ -1,33 +1,49 @@
-# congruencey
+# congruencey — the ratchet
 
-Steven Peterson's 2006 PHP CMS ("congruency"), resurrected on PHP 8 and folded into a
-ratchet-managed package. Design contract in `note-for-claude`: python-only tooling (no shell),
-a single config registry, and an auto-filed bug report on any unexpected outcome.
-
-## The 3-branch model
-The repo is three single branches — a crank is a **commit + `version-4.05x` tag**, not a branch:
+Steven Peterson's 2006 PHP CMS ("congruency"), resurrected on PHP 8 and folded into a ratchet-managed
+package. The repo is **three single branches** — a crank is a **commit + version tag**, not a branch:
 
 | branch | holds |
 |---|---|
-| **main** | the **ratchet** — `install.py` only, source-free. Installs a source version and stands the CMS up. |
-| **source** | the **CMS + tooling** (this branch). `mint_crank.py` adds a crank = one commit + version tag in place. |
-| **state** | the compressed DB (`database.tar.xz` at root), tagged `state-<version>` to match a source version. |
+| **main** (this one) | the **ratchet** — the installers only: `install.py` (dev/test) + `deploy.py` (production). No app source. |
+| **source** | the CMS + tooling. A crank = one commit + a `version-4.05x` tag, in place (`mint_crank.py`). |
+| **state** | the compressed dev DB (a single `database.tar.xz`), tagged `state-<version>` to match a source version. |
 
-## Layout (the `source` branch)
-| path | what |
-|---|---|
-| `ENTRY_POINT.py` | zero-install tool discovery/runner (finds `checkouts/current/versioning/ops`) |
-| `registry.json` | config registry: paths, php provisioning, the `bug_reports` sink — tools throw if they can't see it |
-| `note-for-claude` | the design contract |
-| `checkouts/current/` | the CMS (`lib/ www/ boot/ bin/`) + the ratchet apparatus (`versioning/ fixes/ tools/ state/`) |
-| `checkouts/state/` | a compressed-DB store (legacy; the `state` branch is now authoritative) |
-| `tooling/` | test / harness / coverage / ops / bug-catalog tooling |
-| `bugs/` | the content-addressed drift map |
-| `logs/` | runtime bug-report sink (`bug_reports.jsonl`, git-ignored) |
+## Install a version (dev / test)
+```
+git clone <repo> && cd congruencey        # lands on main (source-free)
+python3 install.py --version 4.071          # required: which source version to stand up
+```
+`install.py` (stdlib-only, self-contained) per step — recording telemetry, catching any bug thrown:
+1. **checkout** the source tag `version-X` (detached — materializes the source);
+2. **provision php** — `checkouts/current/tools/provision_php.py` (static PHP 8; idempotent);
+3. **install state** — the matching demo DB from the `state` branch (`state-<version>`, else newest ≤ X);
+4. **stand up + verify** — `tooling/congruencey-tests/verify` (stand-up + bug-catalog + branch-coverage).
 
-## Use
-    python3 install.py --version 4.059            # (from main) stand up a source version, verify
-    python3 checkouts/current/tools/mint_crank.py --patch P.py --name x   # (on source) mint a crank
+Flags: `--no-verify`, `--return-to-main`.
 
-More: `checkouts/current/README.md` (the source), `checkouts/current/ARCHITECTURE.md` (CMS internals),
-`checkouts/current/tools/README.md` (the ratchet tools), `checkouts/current/versioning/README.md`.
+## Deploy a version (production)
+```
+python3 deploy.py --target /srv/site --version 4.071
+```
+Exports the app to the target with a JSON config (`install.json`) + a **fresh production stub DB**
+(intro + catalog + 404, current styling, no demo content), creates the target if absent, and boots
+config-driven — verifying the stub is up (recorded as predictions). See **DEPLOY.md**.
+
+## How work happens (on `source`)
+```
+python3 checkouts/current/tools/mint_crank.py --patch P.py --name x   # a crank = commit + version tag
+```
+Each crank is one Python patch, captured **in place** on `source`, **test-first** (predictions recorded
+to `logs/predictions.jsonl`; a refuted prediction is a bug), then state-snapshotted and verified before
+it lands. The `version-4.05x` tags are the crank detents; `make_state.py --version X` snapshots the DB
+to the `state` branch (single `database.tar.xz`) via git plumbing, tagging `state-<version>`.
+
+## Telemetry & bugs
+Every step emits to `jazz_telemetry` (`~/.jazz/congruency.sqlite`) when available; any unexpected
+outcome writes a Variant-A bug report to the registry's `bug_reports` sink (`logs/bug_reports.jsonl`)
+and opens a mechanical-id ticket. Best-effort — never blocks.
+
+## More docs
+`source:README.md` (structure) · `source:DEPLOY.md` (production) · `source:DEPENDENCIES.md` (runtime deps
++ process changes) · `source:checkouts/current/ARCHITECTURE.md` (the 2006 CMS internals).

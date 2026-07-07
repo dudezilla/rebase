@@ -1,17 +1,27 @@
-/tooling/congruencey-harness/php/php
+# rebase — ratchet installers (install.py/deploy.py) + CMS source, one branch.
+# Keep runtime/build/provisioned artifacts out of git.
+
+__pycache__/
+*.pyc
+*~
+*.sqlite
+
+# provisioned / installed into the working tree at runtime by install.py / deploy.py:
+/tooling/congruencey-harness/php/
 /checkouts/current/state/congruency.sqlite
 /checkouts/current/state/seed.php
-/logs/bug_reports.jsonl
+/checkouts/current/install.json
 
+# logs
+logs/
+/logs/bug_reports.jsonl
 /logs/predictions.jsonl
 /logs/doc_watch.json
 
-/checkouts/current/install.json
-__pycache__/
-*.pyc
-
-*~
+# tracker runtime
 /tracker/serve.log
 /tracker/project.db
-tooling/congruencey-harness/wiz.txt
 tracker/project.db.superseded
+
+# misc
+tooling/congruencey-harness/wiz.txt
