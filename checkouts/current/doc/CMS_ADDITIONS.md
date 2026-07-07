@@ -54,12 +54,16 @@ everything tagged at `?page=annotations` (`<<<Annotations>>>`) — one table ove
 by `tag` or target-`kind` (source/page/doc/ticket), each target linked back to where it lives.
 
 ## REST (`boot/rest.php`, dispatched by `router.php` on `?api=`)
-Generic CRUD over **every** table, table name allowlisted against `sqlite_master`, columns validated:
-- `GET  ?api=tables` — discovery
-- `GET  ?api=<table>[&p=&per=]` — paginated rows; `&id=<pk>` — one row
-- `POST ?api=<table>` — create from JSON body
-- `PUT|PATCH ?api=<table>&id=` — update (pk protected)
-- `DELETE ?api=<table>&id=` — delete one row
+Generic CRUD over every table (name allowlisted against `sqlite_master`, columns validated) **minus an
+admin denylist** — the self-hosting archive (`code_blobs`/`code_refs`/`doc_blobs`/`doc_refs`) and the auth
+tables (`Login_Password`/`User_Group_Mappings`/`Group_Privileges`) are excluded; a request for one returns
+404 as if it didn't exist. Everything else (`Documents`, `forms`, `tickets`, `annotations`, `Categories`, …)
+is reachable:
+- `GET  ?api=tables` — discovery (lists only the exposed tables)
+- `GET  ?api=<table>[&p=&per=]` — paginated rows; `&id=<pk>` — one row (`404` if absent)
+- `POST ?api=<table>` — create from a JSON object body (`201`; `400` on bad body / no valid columns)
+- `PUT|PATCH ?api=<table>&id=` — update (needs a single-column pk; the pk itself is protected)
+- `DELETE ?api=<table>&id=` — delete one row (needs a single-column pk + `?id=`)
 
 ## Self-hosting — the CMS renders its own running source + docs
 `?page=source` and `?page=docs` browse the CMS's own source and documentation, mirrored into the DB on
