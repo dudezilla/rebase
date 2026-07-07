@@ -78,6 +78,16 @@ Every crank is verified against these (exit non-zero on failure):
 - **`formelement_roundtrip.php`** — asserts each form element's `to_array()`/`from_array()` round-trips
   through JSON, plus per-element validation + render (the #44/#45 gate). Run with the provisioned php:
   `tooling/congruencey-harness/php/php tools/formelement_roundtrip.php`.
+- **`db_verify.py`** — integrity linter for the self-hosting archive: `git_blob_sha(body) == hash` for every
+  stored blob (`--manifest` also checks the running source vs git HEAD). Exit 1 on any mismatch.
+
+## DB export / import (manual — not on any crank)
+
+- **`db_export.py`** — dump the CMS DB to `state/seed.sql` (git-viewable) + `.xz`; `--keep-auth` bakes in the
+  demo admin, `--last-n N` cuts the history tail. Blob I/O is byte-exact (`newline=""`) so `db_verify` passes.
+- **`db_import.py`** — rebuild a DB from the seed (`--to`, `--verify`); refuses to clobber without `--force`.
+- **`set_admin.py`** — provision/rotate an admin login (`--db --login --password|--generate`); pairs with the
+  `CONGRUENCY_ADMIN_LOGIN`/`_PASSWORD` env that `prod_seed.php` reads at deploy.
 
 ## Rules it obeys (note-for-claude)
 
