@@ -83,6 +83,11 @@ def bug_report(reg, exc, tb):
 def ensure_gitignore(mono, rel):
     gi = os.path.join(mono, ".gitignore")
     line = "/" + rel.replace(os.sep, "/")
+    # Idempotent: if the path is ALREADY ignored (e.g. by a parent-dir pattern), don't touch
+    # .gitignore — appending a redundant line dirties the tracked tree and would block a fresh
+    # install/mint until uninstall. (bug_reports: provision_php ensure_gitignore.)
+    if subprocess.run(["git", "check-ignore", "-q", rel], cwd=mono).returncode == 0:
+        return gi
     existing = open(gi).read().splitlines() if os.path.isfile(gi) else []
     if line not in existing:
         with open(gi, "a") as fh:
