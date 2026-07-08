@@ -4,7 +4,7 @@ Discipline: never ship a runtime-dependency or system-process change without rec
 ledger entry + a prediction). This file is the answer to "did we forget to record a dep/process change?".
 
 ## Runtime dependencies
-- **PHP 8** (static build, provisioned by `checkouts/current/tools/provision_php.py`) with **pdo_sqlite**
+- **PHP 8** (static build, provisioned by `checkouts/current/congruency/tools/provision_php.py`) with **pdo_sqlite**
   + sqlite3 — the CMS runtime. Binary git-ignored at `tooling/congruencey-harness/php/php`.
 - The CMS serves via **`php -S boot/router.php`** (PHP built-in server).
 - **`boot/router.php` requires `boot/configure.php`** (config-as-data) — merges `constants.default.json`
@@ -14,10 +14,9 @@ ledger entry + a prediction). This file is the answer to "did we forget to recor
   relocatable default `state/congruency.sqlite` (dev).
 
 ## System-process changes
-- **Production deploy** (`deploy.py`) CREATES the target folder + `install.json` + `state/` + a fresh stub
-  DB when the target has no config (folder-creation on missing config).
-- **Two databases:** dev/test/inflection use the demo DB on the `state` branch (`install.py --version`);
-  production uses a FRESH stub DB per deploy (`deploy.py` + `state/prod_seed.php`).
+- **State rides in the crank:** each `version-*` tag carries its own `state/database.tar.xz`; `setup.py
+  install` extracts it to `state/congruency.sqlite`. There is no separate `state` branch, and the
+  production deployer (`deploy.py`) was retired — the lifecycle is `setup.py install|up|down|uninstall`.
 - **Config is data:** constants come from `boot/constants.default.json` merged with `install.json` (a flat
   `CONSTANT → value` map); `boot/configure.php` `define()`s them + derives the path constants. There is no
   `Constants_patched.php` any more.
@@ -32,7 +31,6 @@ ledger entry + a prediction). This file is the answer to "did we forget to recor
 
 ## Artifact discipline (no lost/untracked artifacts)
 - **Tracked recipes:** `predict.py`, `boot/configure.php` + `boot/constants.default.json`,
-  `state/prod_seed.php` (source); `deploy.py`,
-  `install.py` (main). Committed via cranks + recorded in `checkouts/current/fixes/index.json`.
-- **Git-ignored runtime artifacts:** the php binary, the sqlite DBs, `logs/*.jsonl`,
-  `checkouts/current/install.json`, and deploy target folders (external). Never commit these.
+  `state/prod_seed.php`, `setup.py` (root). Committed via cranks.
+- **Git-ignored runtime artifacts:** the php binary, the sqlite DBs, `logs/*`,
+  `checkouts/current/install.json`, `checkouts/current/congruency/fixes/index.json`. Never commit these.

@@ -41,14 +41,6 @@ python3 setup.py emit-config      # instrumentation: write ./install.json for th
 `uninstall` is a **tolerated anomaly** point: if bringing it up dirtied the tree, it files a bug
 report and force-recovers the tree to the minted crank.
 
-## Deploy a version (production)
-```
-python3 deploy.py --target /srv/site --version 4.080
-```
-Exports the app to the target with a JSON config (`install.json`) + a **fresh production stub DB**
-(intro + catalog + 404, current styling, no demo content), creates the target if absent, and boots
-config-driven — verifying the stub is up (recorded as predictions). See **DEPLOY.md**.
-
 ## How work happens (minting a crank)
 ```
 python3 checkouts/current/congruency/tools/mint_crank.py --patch P.py --name x
@@ -66,5 +58,5 @@ report to the registry's `bug_reports` sink (`logs/bug_reports.jsonl`) and opens
 ticket. Best-effort — never blocks.
 
 ## More docs
-`VERSION-NOTES.md` (per-crank notes) · `DEPLOY.md` (production) · `DEPENDENCIES.md` (runtime deps +
+`VERSION-NOTES.md` (per-crank notes) · `DEPENDENCIES.md` (runtime deps +
 process changes) · `checkouts/current/congruency/ARCHITECTURE.md` (the 2006 CMS internals).

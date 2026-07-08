@@ -1,4 +1,4 @@
-# rebase — ratchet installers (install.py/deploy.py) + CMS source, one branch.
+# rebase — installer (setup.py) + CMS source, one branch.
 # Keep runtime/build/provisioned artifacts out of git.
 
 __pycache__/
