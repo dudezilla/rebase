@@ -34,7 +34,15 @@ import urllib.request
 from datetime import datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CONFIG_BASENAME = "install.json"     # THE configuration object — stable, first-class, never factored out
+CONFIG_BASENAME = "install.json"     # THE (root) configuration object — stable, first-class, never factored out
+# Per-component config objects: every component carries its own version-stamped config object. The CMS
+# RESERVES congruency/install.json as its constants map (configure.php reads it), so per-component objects
+# use component.json; the root install.json indexes them under "components".
+COMPONENT_CONFIG = "component.json"
+COMPONENTS = [
+    {"name": "congruency", "path": os.path.join("checkouts", "current", "congruency")},
+    {"name": "state", "path": os.path.join("checkouts", "current", "state")},
+]
 SERVE = os.path.join("checkouts", "current", "congruency", "tools", "serve.py")
 PIDFILE = os.path.join("logs", "serve.pid")
 # runtime artifacts materialized during install/up (all gitignored) — purged on uninstall:
@@ -192,14 +200,36 @@ def canonical_config(version, no_verify=False, return_to_main=False, host="0.0.0
     """THE configuration object: version stamp + lifecycle params. Kept in lockstep with
     mint_crank.write_install_config — same schema so an orchestrator drives either path."""
     return {
+        "component": "ratchet",
         "version": version,
         "no_verify": bool(no_verify),
         "return_to_main": bool(return_to_main),
         "host": host,
         "port": int(port),
         "hash_track": bool(hash_track),
+        "components": {c["name"]: version for c in COMPONENTS},   # per-component version index
         "generated_by": "setup.py emit-config",
     }
+
+
+def component_config(name, version):
+    """A per-component config object: version-stamp + identity, separated from code."""
+    return {"component": name, "version": version, "generated_by": "setup.py emit-config"}
+
+
+def write_component_configs(version):
+    """Write a version-stamped config object (component.json) into each component dir. Every
+    component carries its own config object — config separated from code. Returns {name: version}."""
+    out = {}
+    for c in COMPONENTS:
+        d = os.path.join(HERE, c["path"])
+        if not os.path.isdir(d):
+            continue
+        with open(os.path.join(d, COMPONENT_CONFIG), "w") as fh:
+            json.dump(component_config(c["name"], version), fh, indent=2)
+            fh.write("\n")
+        out[c["name"]] = version
+    return out
 
 
 def resolve_config(a):
@@ -251,7 +281,8 @@ def lifecycle_config(a):
 
 
 def emit_config(a):
-    """INSTRUMENTATION: write a version's configuration object (version stamp + lifecycle params)."""
+    """INSTRUMENTATION: write the root configuration object + every per-component config object
+    (config separated from code, version-stamped)."""
     version = getattr(a, "version", None) or newest_version_tag()
     cfg = canonical_config(version, no_verify=getattr(a, "no_verify", False),
                            return_to_main=getattr(a, "return_to_main", False))
@@ -259,9 +290,30 @@ def emit_config(a):
     with open(path, "w") as fh:
         json.dump(cfg, fh, indent=2)
         fh.write("\n")
-    print("emitted configuration object for version-%s -> %s" % (version, path))
-    for k, v in cfg.items():
-        print("   %-14s %s" % (k, v))
+    comps = write_component_configs(version)
+    print("emitted configuration objects for version-%s:" % version)
+    print("   %-12s %-8s %s" % ("ratchet", version, os.path.relpath(path, HERE)))
+    for c in COMPONENTS:
+        if c["name"] in comps:
+            print("   %-12s %-8s %s" % (c["name"], comps[c["name"]], os.path.join(c["path"], COMPONENT_CONFIG)))
+    return 0
+
+
+def do_components():
+    """Read the config objects and print each component's version (orchestration readout)."""
+    root = os.path.join(HERE, CONFIG_BASENAME)
+    rcfg = json.load(open(root)) if os.path.isfile(root) else {}
+    print("configuration objects (version stamps — config separated from code):")
+    print("  %-12s %-8s %s" % ("ratchet", rcfg.get("version", "?"), CONFIG_BASENAME))
+    for c in COMPONENTS:
+        p = os.path.join(HERE, c["path"], COMPONENT_CONFIG)
+        v = "?"
+        if os.path.isfile(p):
+            try:
+                v = json.load(open(p)).get("version", "?")
+            except Exception:  # noqa: BLE001
+                pass
+        print("  %-12s %-8s %s" % (c["name"], v, os.path.join(c["path"], COMPONENT_CONFIG)))
     return 0
 
 
@@ -453,11 +505,17 @@ def do_install(cfg, srcname):
     return 0
 
 
-def do_up(cfg):
+def do_up(cfg, foreground=False):
     host, port = cfg["host"], int(cfg["port"])
     serve = os.path.join(HERE, SERVE)
     if not os.path.isfile(serve):
         raise RuntimeError("serve.py not found (%s) — run `python3 setup.py install` first" % SERVE)
+    if foreground:
+        # Container/Docker entrypoint: serve in the FOREGROUND (blocking, becomes the main process).
+        # No pidfile, no background; port/host come from the config object (config separated from code).
+        print("up (foreground) on http://%s:%s — Ctrl-C / SIGTERM to stop" % (host, port))
+        os.execv(sys.executable, [sys.executable, serve, "--port", str(port)])
+        return 0   # unreachable (execv replaces the process)
     if _server_pids(port) or _is_up(host, port):
         print("already up on %s:%s" % (host, port))
         return 0
@@ -583,13 +641,17 @@ def main():
     pi.add_argument("--no-verify", action="store_true", help="skip the verify suite")
     pi.add_argument("--return-to-main", action="store_true", help="git checkout main when done")
 
-    for name, helptext in (("up", "bring the CMS up (serve on host:port)"),
-                           ("down", "take the CMS down (stop the server)")):
-        p = sub.add_parser(name, help=helptext)
-        p.add_argument("--host", default=None)
-        p.add_argument("--port", type=int, default=None)
+    pu = sub.add_parser("up", help="bring the CMS up (serve on host:port)")
+    pu.add_argument("--host", default=None)
+    pu.add_argument("--port", type=int, default=None)
+    pu.add_argument("--foreground", action="store_true",
+                    help="run the server in the FOREGROUND (blocking) — for Docker/containers")
+    pd = sub.add_parser("down", help="take the CMS down (stop the server)")
+    pd.add_argument("--host", default=None)
+    pd.add_argument("--port", type=int, default=None)
 
     sub.add_parser("uninstall", help="return the tree to the minted crank + purge runtime")
+    sub.add_parser("components", help="list each component + its config-object version")
 
     pe = sub.add_parser("emit-config", help="INSTRUMENTATION: write a version's configuration object")
     pe.add_argument("path", nargs="?", default=None, help="output path (default: ./install.json)")
@@ -605,11 +667,13 @@ def main():
         cfg, srcname = resolve_config(a)
         return do_install(cfg, srcname)
     if a.cmd == "up":
-        return do_up(lifecycle_config(a))
+        return do_up(lifecycle_config(a), foreground=getattr(a, "foreground", False))
     if a.cmd == "down":
         return do_down(lifecycle_config(a))
     if a.cmd == "uninstall":
         return do_uninstall(lifecycle_config(a))
+    if a.cmd == "components":
+        return do_components()
     if a.cmd == "emit-config":
         return emit_config(a)
     ap.print_help()

@@ -1,9 +1,14 @@
 {
-  "version": "4.086",
+  "component": "ratchet",
+  "version": "4.087",
   "no_verify": false,
   "return_to_main": false,
   "host": "0.0.0.0",
   "port": 8899,
   "hash_track": true,
-  "generated_by": "crank 4.086 (REST hash-track teardown search)"
+  "components": {
+    "congruency": "4.087",
+    "state": "4.087"
+  },
+  "generated_by": "setup.py emit-config"
 }

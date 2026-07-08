@@ -160,18 +160,42 @@ def write_install_config(root, version, no_verify=False, return_to_main=False, h
     canonical_config() — same schema."""
     import json
     cfg = {
+        "component": "ratchet",
         "version": version,
         "no_verify": bool(no_verify),
         "return_to_main": bool(return_to_main),
         "host": host,
         "port": int(port),
         "hash_track": bool(hash_track),
+        "components": {name: version for name, _ in COMPONENTS},
         "generated_by": "mint_crank.py (instrumentation)",
     }
     with open(os.path.join(root, "install.json"), "w") as fh:
         json.dump(cfg, fh, indent=2)
         fh.write("\n")
     return cfg
+
+
+# per-component config objects: each component carries its own version-stamped config object
+# (config separated from code). Kept in lockstep with setup.py COMPONENTS / component_config().
+COMPONENTS = [
+    ("congruency", "checkouts/current/congruency"),
+    ("state", "checkouts/current/state"),
+]
+
+
+def write_component_configs(root, version):
+    """Write component.json (version stamp + identity) into each component dir so it rides in the
+    crank. Non-colliding with the CMS's congruency/install.json (its constants map)."""
+    import json
+    for name, rel in COMPONENTS:
+        d = os.path.join(root, rel)
+        if not os.path.isdir(d):
+            continue
+        with open(os.path.join(d, "component.json"), "w") as fh:
+            json.dump({"component": name, "version": version,
+                       "generated_by": "mint_crank.py (instrumentation)"}, fh, indent=2)
+            fh.write("\n")
 
 
 def step_capture(message):
@@ -196,8 +220,9 @@ def step_capture(message):
     version = compute_next_version(g, ROOT)                     # python-computed from live tags
     tag = "version-%s" % version
     write_install_config(ROOT, version)
+    write_component_configs(ROOT, version)                     # per-component config objects
 
-    g.run(["add", "-A"], ROOT, write=True)                     # stages the patch + install.json
+    g.run(["add", "-A"], ROOT, write=True)                     # stages the patch + config objects
     if not (g.query(["diff", "--cached", "--name-only"], ROOT) or "").strip():
         raise Unexpected("nothing staged — the patch produced no change to capture")
 
