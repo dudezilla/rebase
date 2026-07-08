@@ -593,8 +593,9 @@ def _tree_dirty():
 
 
 def do_uninstall(cfg):
-    """Return the tree to the minted crank + purge runtime. Uninstall failure is a tolerated
-    anomaly: file a Variant-A bug report, then force-recover (reset --hard + purge)."""
+    """Tear down: purge runtime, discard tracked drift, then LAND ON `main` (branch-ready).
+    Uninstall failure is a tolerated anomaly: file a Variant-A bug report, then force-recover
+    (reset --hard + purge)."""
     try:
         do_down(cfg)                        # stop the server first (best-effort)
     except Exception:  # noqa: BLE001
@@ -612,12 +613,10 @@ def do_uninstall(cfg):
         print("hash-track: %d stray copy/copies found%s" % (len(strays), " -> bug-reported" if strays else ""))
     crank = git("rev-parse", "HEAD").stdout.strip()
     try:
-        run(["git", "checkout", "-f", "HEAD"], "git checkout -f (return to crank)")
+        run(["git", "checkout", "-f", "HEAD"], "git checkout -f (discard tracked drift at the crank)")
         _purge_runtime()
         if _tree_dirty():
             raise RuntimeError("tree still dirty after uninstall: %s" % _tree_dirty()[:5])
-        print("uninstalled — tree at minted crank %s, runtime purged" % crank[:10])
-        return 0
     except Exception as exc:  # noqa: BLE001 — tolerated anomaly: bug-report then force-recover
         tb = traceback.format_exc()
         p = bug_report(exc, tb, "uninstall")
@@ -626,8 +625,11 @@ def do_uninstall(cfg):
         _purge_runtime()
         if _tree_dirty():
             raise RuntimeError("force-recover failed; tree still dirty: %s" % _tree_dirty()[:5])
-        print("recovered — tree at minted crank %s" % crank[:10])
-        return 0
+    # Land on `main` (branch-ready): install detaches HEAD at the version tag, so ending the
+    # teardown on the branch means the next crank isn't committed onto a detached HEAD.
+    run(["git", "checkout", "main"], "git checkout main")
+    print("uninstalled — runtime purged, HEAD on main (torn down crank %s)" % crank[:10])
+    return 0
 
 
 def main():
