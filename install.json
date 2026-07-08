@@ -1,9 +1,9 @@
 {
-  "version": "4.085",
+  "version": "4.086",
   "no_verify": false,
   "return_to_main": false,
   "host": "0.0.0.0",
   "port": 8899,
   "hash_track": true,
-  "generated_by": "crank 4.085 (REST hash-track feed + python env doc)"
+  "generated_by": "crank 4.086 (REST hash-track teardown search)"
 }

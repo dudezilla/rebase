@@ -42,6 +42,7 @@ RUNTIME_PATHS = [
     "tooling/congruencey-harness/php",
     "checkouts/current/state/congruency.sqlite",
     "checkouts/current/congruency/fixes/index.json",
+    "logs/hashes.json",                                # the hash-track sidecar (stale after purge)
 ]
 
 
@@ -97,6 +98,28 @@ def bug_report(exc, tb, step):
         "possible-cause": "%s: %s" % (type(exc).__name__, exc),
         "traceback": tb.strip().splitlines()[-6:],
         "note": "setup lifecycle step: %s" % step,
+    }
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "a") as fh:
+            fh.write(json.dumps(entry) + "\n")
+    except OSError:
+        pass
+    return path
+
+
+def file_finding(function, cause, note, tb_lines):
+    """File a Variant-A bug report for a FINDING (not a thrown exception) — e.g. a stray checkout
+    detected on teardown. Same sink/schema as bug_report()."""
+    path = bug_sink()
+    entry = {
+        "filename": os.path.basename(__file__),
+        "function": function,
+        "time-of-occurance": datetime.now().isoformat(),
+        "methods-to-reproduce": "python3 setup.py %s" % " ".join(sys.argv[1:]),
+        "possible-cause": cause,
+        "traceback": tb_lines,
+        "note": note,
     }
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -379,6 +402,38 @@ def _feed_hashes(cfg, n=3):
         print("   hash-track: skipped (%s)" % exc, file=sys.stderr)
 
 
+def _search_hashes():
+    """Teardown stray-checkout detection (the SEARCH half): grep the filesystem for THIS session's
+    markers. They should exist ONLY in the live db (+ its wal/shm) and the sidecar — a hit anywhere
+    else is a leaked/duplicate copy (note-for-claude). Returns the list of stray file paths."""
+    sidecar = os.path.join(HERE, HASH_SIDECAR)
+    if not os.path.isfile(sidecar):
+        return []
+    try:
+        markers = json.load(open(sidecar)).get("markers", [])
+    except Exception:  # noqa: BLE001
+        return []
+    if not markers:
+        return []
+    live = _state_sqlite()
+    expected = {os.path.realpath(p) for p in (sidecar, live, live + "-wal", live + "-shm")}
+    marker_args = []
+    for m in markers:
+        marker_args += ["-e", m]
+    strays = set()
+    # (1) the repo tree — treat binary as text (-a) so the sqlite matches, list files (-l), skip .git
+    for h in sh(["grep", "-ralF", "--exclude-dir=.git"] + marker_args + [HERE]).stdout.splitlines():
+        if os.path.realpath(h) not in expected:
+            strays.add(h)
+    # (2) any OTHER congruency.sqlite under $HOME carrying our markers = a stray copy of the live db
+    for db in sh(["find", os.path.expanduser("~"), "-name", "congruency.sqlite", "-type", "f"]).stdout.splitlines():
+        if os.path.realpath(db) in expected:
+            continue
+        if sh(["grep", "-alF"] + marker_args + [db]).stdout.strip():
+            strays.add(db)
+    return sorted(strays)
+
+
 # --------------------------------------------------------------------------- #
 # the four lifecycle verbs                                                     #
 # --------------------------------------------------------------------------- #
@@ -485,6 +540,17 @@ def do_uninstall(cfg):
         do_down(cfg)                        # stop the server first (best-effort)
     except Exception:  # noqa: BLE001
         pass
+    # teardown stray-checkout detection: search the filesystem for this session's markers BEFORE
+    # the purge removes them. Any hit outside the live db is a leaked/duplicate copy -> bug report.
+    if cfg.get("hash_track", True):
+        strays = _search_hashes()
+        for s in strays:
+            file_finding("uninstall",
+                         "stray checkout/copy carrying this session's live-db hash markers: %s" % s,
+                         "note-for-claude stray detection: a file outside the live db holds markers fed "
+                         "via rest.php this session — a leaked/duplicate copy. Track it via git hash + relocate.",
+                         ["_search_hashes matched session markers in: %s" % s])
+        print("hash-track: %d stray copy/copies found%s" % (len(strays), " -> bug-reported" if strays else ""))
     crank = git("rev-parse", "HEAD").stdout.strip()
     try:
         run(["git", "checkout", "-f", "HEAD"], "git checkout -f (return to crank)")
