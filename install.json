@@ -1,6 +1,8 @@
 {
-  "version": "4.081",
+  "version": "4.082",
   "no_verify": false,
   "return_to_main": false,
-  "generated_by": "crank 4.081 (uninstall root-cause fix + mint enabled on main)"
+  "host": "0.0.0.0",
+  "port": 8899,
+  "generated_by": "crank 4.082 (setup.py 4-verb lifecycle)"
 }

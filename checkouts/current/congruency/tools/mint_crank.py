@@ -151,17 +151,20 @@ def step_run(dest):
     return {"stdout_tail": (r.stdout or "").strip().splitlines()[-3:]}
 
 
-def write_install_config(root, version, no_verify=False, return_to_main=False):
-    """Emit the version's install.json at the repo root so it is committed INTO the version tag.
+def write_install_config(root, version, no_verify=False, return_to_main=False, host="0.0.0.0", port=8899):
+    """Emit the version's configuration object (install.json) at the repo root so it is committed
+    INTO the version tag.
 
-    Instrumentation counterpart to the ratchet's install.py: extracts the version + install
-    arguments to JSON ahead of time so `python3 install.py` needs no hand-typed args. Kept in
-    lockstep with install.py's canonical_config()."""
+    Instrumentation counterpart to setup.py: extracts the version stamp + lifecycle params ahead
+    of time so `python3 setup.py` needs no hand-typed args. Kept in lockstep with setup.py's
+    canonical_config() — same schema."""
     import json
     cfg = {
         "version": version,
         "no_verify": bool(no_verify),
         "return_to_main": bool(return_to_main),
+        "host": host,
+        "port": int(port),
         "generated_by": "mint_crank.py (instrumentation)",
     }
     with open(os.path.join(root, "install.json"), "w") as fh:
