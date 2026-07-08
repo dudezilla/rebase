@@ -1,14 +1,14 @@
 {
   "component": "ratchet",
-  "version": "4.087",
+  "version": "4.088",
   "no_verify": false,
   "return_to_main": false,
   "host": "0.0.0.0",
   "port": 8899,
   "hash_track": true,
   "components": {
-    "congruency": "4.087",
-    "state": "4.087"
+    "congruency": "4.088",
+    "state": "4.088"
   },
   "generated_by": "setup.py emit-config"
 }

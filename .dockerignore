@@ -1,0 +1,17 @@
+# Keep the build context lean. IMPORTANT: do NOT ignore .git — `setup.py install` checks out a
+# version-* tag, so the tags must be present. database.tar.xz is TRACKED (the db rides in the
+# crank) and must ship. Everything below is provisioned/generated at build or run time.
+
+**/__pycache__/
+**/*.pyc
+*~
+
+# runtime / provisioned artifacts (setup.py install re-creates these):
+logs/
+tooling/congruencey-harness/php/
+checkouts/current/state/congruency.sqlite
+checkouts/current/state/congruency.sqlite-wal
+checkouts/current/state/congruency.sqlite-shm
+checkouts/current/state/seed.php
+checkouts/current/install.json
+checkouts/current/congruency/fixes/index.json

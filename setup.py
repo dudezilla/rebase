@@ -514,6 +514,7 @@ def do_up(cfg, foreground=False):
         # Container/Docker entrypoint: serve in the FOREGROUND (blocking, becomes the main process).
         # No pidfile, no background; port/host come from the config object (config separated from code).
         print("up (foreground) on http://%s:%s — Ctrl-C / SIGTERM to stop" % (host, port))
+        sys.stdout.flush()                                # flush before execv replaces the process
         os.execv(sys.executable, [sys.executable, serve, "--port", str(port)])
         return 0   # unreachable (execv replaces the process)
     if _server_pids(port) or _is_up(host, port):

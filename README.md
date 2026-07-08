@@ -41,6 +41,16 @@ python3 setup.py emit-config      # instrumentation: write ./install.json for th
 `uninstall` is a **tolerated anomaly** point: if bringing it up dirtied the tree, it files a bug
 report and force-recovers the tree to the minted crank.
 
+## Docker
+```
+docker build -t congruency .          # install runs at build: provisions php + installs db + verify
+docker run -p 8899:8899 congruency    # serves in the foreground on :8899
+```
+The server is **not bundled** — the build provisions a static PHP 8 (needs network at build time).
+It's **config-object-driven**: the port comes from `install.json`, not the Dockerfile
+(`docker run … python3 setup.py up --foreground --port 9000` to override). `.git` and the in-crank
+`database.tar.xz` must be in the build context (`.dockerignore` keeps only runtime artifacts out).
+
 ## How work happens (minting a crank)
 ```
 python3 checkouts/current/congruency/tools/mint_crank.py --patch P.py --name x
