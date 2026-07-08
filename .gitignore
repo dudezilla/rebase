@@ -6,11 +6,13 @@ __pycache__/
 *~
 *.sqlite
 
-# provisioned / installed into the working tree at runtime by install.py / deploy.py:
+# provisioned / installed into the working tree at runtime by the installer:
 /tooling/congruencey-harness/php/
 /checkouts/current/state/congruency.sqlite
 /checkouts/current/state/seed.php
 /checkouts/current/install.json
+# runtime-regenerated index (written by fixes/boot_www.py on stand-up) — keep it from dirtying the tree:
+/checkouts/current/congruency/fixes/index.json
 
 # logs
 logs/

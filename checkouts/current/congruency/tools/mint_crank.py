@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """mint_crank.py — mint a crank: inject one python patch, capture it as the next version.
 
-A crank stroke = INJECT one author-supplied Python patch on the single `source` branch, RUN it
+A crank stroke = INJECT one author-supplied Python patch on the single `main` branch, RUN it
 (its one change), and CAPTURE it (commit + version tag) — the captured patch IS the diff that
 defines the next version. No branch-per-crank: a crank is a commit + tag IN PLACE. This formalises
 the fixes/*.py "ratchet link" discipline into one operation.
 
-    # precondition: on the `source` branch, tracked-clean, php provisioned
+    # precondition: on the `main` branch, tracked-clean, php provisioned
     python3 checkouts/current/congruency/tools/mint_crank.py --patch /path/to/turn_xyz.py [--name xyz] [-m MSG]
 
 Steps (each records a BUG EVENT on ANY unexpected outcome — exception OR expected!=actual —
 then fail-fast):
-    precondition  on `source`, tracked-clean (no fork)
+    precondition  on `main`, tracked-clean (no fork)
     inject        copy the python patch -> checkouts/current/congruency/fixes/<name>.py  (must compile)
     run           python3 <injected>                                          (exit 0)
     state         make_state.py -> in-tree checkouts/current/state/database.tar.xz (rides in the crank)
-    capture       add -A + commit + version-4.05x tag on `source` (db + install.json in the version commit)
+    capture       add -A + commit + version-4.0xx tag on `main` (installer + source + db + install.json in the commit)
     verify        tooling/congruencey-tests/verify                            (0 failed)
 
 Push is a SEPARATE release step (ticket #6) — the mint stays local. python only, registry-gated.
@@ -121,9 +121,9 @@ def run_py(path, *args, timeout=300):
 # steps                                                                       #
 # --------------------------------------------------------------------------- #
 def step_precondition(current):
-    # A crank is now a commit + tag IN PLACE on the single `source` branch (no fork).
-    if current != "source":
-        raise Unexpected("mint must run on the `source` branch, not %r" % current)
+    # A crank is a commit + tag IN PLACE on the single `main` branch (no fork, no side branch).
+    if current != "main":
+        raise Unexpected("mint must run on the `main` branch, not %r" % current)
     if [l for l in git("status", "--porcelain").stdout.splitlines() if not l.startswith("??")]:
         raise Unexpected("tree has uncommitted tracked changes; refusing to mint")
     return current
