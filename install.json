@@ -1,8 +1,9 @@
 {
-  "version": "4.084",
+  "version": "4.085",
   "no_verify": false,
   "return_to_main": false,
   "host": "0.0.0.0",
   "port": 8899,
-  "generated_by": "crank 4.084 (retire deploy.py)"
+  "hash_track": true,
+  "generated_by": "crank 4.085 (REST hash-track feed + python env doc)"
 }

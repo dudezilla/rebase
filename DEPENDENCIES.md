@@ -13,6 +13,15 @@ ledger entry + a prediction). This file is the answer to "did we forget to recor
 - The database is a **single sqlite file** (`CONGRUENCY_SQLITE`); path from `install.json` (prod) or the
   relocatable default `state/congruency.sqlite` (dev).
 
+## Build & host environment (recorded from the reference host)
+- **Python 3.13.5** (`/usr/bin/python3`). `setup.py` is **stdlib-only** — `argparse, hashlib, json, os,
+  signal, subprocess, tarfile, urllib.request, sqlite3` (no third-party packages, no `pip install`).
+- **OS:** Linux x86_64, glibc 2.41. **git** must be on PATH at runtime (the installer + tools shell out to it).
+- **sqlite:** the Python `sqlite3` module (3.46.x) is present and is what all tooling uses; the **`sqlite3`
+  CLI is NOT installed** — inspect the db with `python3 -c "import sqlite3; …"`, not the `sqlite3` command.
+- **php:** not on PATH — a static PHP 8 build is **provisioned** by `provision_php.py` to
+  `tooling/congruencey-harness/php/php` (git-ignored); no system php is assumed.
+
 ## System-process changes
 - **State rides in the crank:** each `version-*` tag carries its own `state/database.tar.xz`; `setup.py
   install` extracts it to `state/congruency.sqlite`. There is no separate `state` branch, and the

@@ -21,6 +21,7 @@ outcome. `install` checks out a version number (ephemeral); `uninstall` returns 
 minted crank, force-recovering (and bug-reporting) if bringing it up dirtied the tree.
 """
 import argparse
+import hashlib
 import json
 import os
 import signal
@@ -164,7 +165,7 @@ def committed_config(version):
         return None
 
 
-def canonical_config(version, no_verify=False, return_to_main=False, host="0.0.0.0", port=8899):
+def canonical_config(version, no_verify=False, return_to_main=False, host="0.0.0.0", port=8899, hash_track=True):
     """THE configuration object: version stamp + lifecycle params. Kept in lockstep with
     mint_crank.write_install_config — same schema so an orchestrator drives either path."""
     return {
@@ -173,6 +174,7 @@ def canonical_config(version, no_verify=False, return_to_main=False, host="0.0.0
         "return_to_main": bool(return_to_main),
         "host": host,
         "port": int(port),
+        "hash_track": bool(hash_track),
         "generated_by": "setup.py emit-config",
     }
 
@@ -311,6 +313,73 @@ def _server_pids(port):
 
 
 # --------------------------------------------------------------------------- #
+# REST hash-tracking (the FEED half): while up, seed unique markers into the   #
+# live db THROUGH rest.php and record them to a gitignored sidecar. `uninstall`#
+# (next crank) greps the filesystem for those markers to catch stray checkouts #
+# (note-for-claude). Markers live only in the gitignored db -> a hit anywhere  #
+# else on teardown means a leaked/duplicate copy.                              #
+# --------------------------------------------------------------------------- #
+HASH_SIDECAR = os.path.join("logs", "hashes.json")     # gitignored (logs/)
+HASH_TABLE = "annotations"                             # id, tag, target, note, ts, meta
+HASH_TAG = "setup:hashmark"
+
+
+def _state_sqlite():
+    return os.path.join(HERE, "checkouts", "current", "state", "congruency.sqlite")
+
+
+def _bootstrap_api_key(sqlite):
+    """api_keys ships empty; rest.php gates writes on a valid key. Insert a write key into the
+    (gitignored) live db so the feed can POST. Never touches tracked files."""
+    import sqlite3
+    key = hashlib.sha256(os.urandom(32)).hexdigest()
+    con = sqlite3.connect(sqlite)
+    try:
+        con.execute("INSERT INTO api_keys (key, label, scope, ts) VALUES (?,?,?,?)",
+                    (key, "setup-hashfeed", "write", int(time.time())))
+        con.commit()
+    finally:
+        con.close()
+    return key
+
+
+def _rest_post(host, port, table, key, obj):
+    url = "http://%s:%s/?api=%s" % (_probe_host(host), port, table)
+    req = urllib.request.Request(url, data=json.dumps(obj).encode(), method="POST",
+                                 headers={"Content-Type": "application/json", "X-Api-Key": key})
+    with urllib.request.urlopen(req, timeout=3) as r:
+        return json.loads(r.read().decode())
+
+
+def _feed_hashes(cfg, n=3):
+    """Feed N unique hash markers into the live db THROUGH rest.php (POST ?api=annotations), and
+    record them to the gitignored sidecar for the teardown search. Best-effort — never fails up."""
+    try:
+        host, port = cfg["host"], int(cfg["port"])
+        sqlite = _state_sqlite()
+        if not os.path.isfile(sqlite):
+            return
+        head = git("rev-parse", "HEAD").stdout.strip()
+        key = _bootstrap_api_key(sqlite)
+        markers, rowids = [], []
+        for i in range(n):
+            marker = hashlib.sha256(os.urandom(32)).hexdigest()
+            res = _rest_post(host, port, HASH_TABLE, key,
+                             {"tag": HASH_TAG, "target": head, "note": marker, "ts": int(time.time()),
+                              "meta": json.dumps({"version": cfg.get("version"), "i": i})})
+            markers.append(marker)
+            rowids.append(res.get("rowid"))
+        sidecar = os.path.join(HERE, HASH_SIDECAR)
+        os.makedirs(os.path.dirname(sidecar), exist_ok=True)
+        with open(sidecar, "w") as fh:
+            json.dump({"head": head, "table": HASH_TABLE, "tag": HASH_TAG,
+                       "markers": markers, "rowids": rowids, "ts": int(time.time())}, fh, indent=2)
+        print("   hash-track: fed %d markers -> %s via rest.php (sidecar: %s)" % (len(markers), HASH_TABLE, HASH_SIDECAR))
+    except Exception as exc:  # noqa: BLE001 — best-effort; the feed must never break `up`
+        print("   hash-track: skipped (%s)" % exc, file=sys.stderr)
+
+
+# --------------------------------------------------------------------------- #
 # the four lifecycle verbs                                                     #
 # --------------------------------------------------------------------------- #
 def do_install(cfg, srcname):
@@ -347,6 +416,8 @@ def do_up(cfg):
     for _ in range(15):
         if _is_up(host, port):
             print("up on http://%s:%s (log: logs/serve.log)" % (host, port))
+            if cfg.get("hash_track", True):
+                _feed_hashes(cfg)                 # seed stray-detection markers via rest.php (best-effort)
             return 0
         time.sleep(1)
     raise RuntimeError("server did not come up on %s:%s (see logs/serve.log)" % (host, port))
